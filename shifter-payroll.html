@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shifter Payroll - جدولة الشيفتات وحساب المرتبات</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
 /* ===== Shifter Payroll - dark navy theme like original ===== */
 :root {
@@ -28,15 +31,31 @@
   --s-w:  #d4a017; /* yellow - weekend */
 }
 
+html, body { height: 100%; }
+
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, 'Arial', sans-serif;
+  font-family: 'Cairo', 'Segoe UI', Tahoma, 'Arial', sans-serif;
   background: var(--bg-1);
   color: var(--text);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 40px;
+}
+main.no-scroll {
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 button {
@@ -63,9 +82,10 @@ input, select {
   padding: 10px 14px;
   gap: 10px;
   border-bottom: 1px solid var(--bg-4);
+  flex: 0 0 auto;
 }
 
-.logo { display: flex; flex-direction: column; align-items: center; width: 50px; }
+.logo { display: flex; flex-direction: column; align-items: center; width: 50px; background: transparent; padding: 0; }
 .logo-tag {
   background: #d63a3a; color: #fff; font-size: 10px; font-weight: 700;
   padding: 2px 6px; border-radius: 3px; margin-bottom: 3px;
@@ -100,6 +120,7 @@ input, select {
 .tabs {
   display: grid; grid-template-columns: repeat(4, 1fr);
   background: var(--bg-3); border-bottom: 1px solid var(--bg-4);
+  flex: 0 0 auto;
 }
 .tab {
   background: transparent; color: var(--text-muted); padding: 14px;
@@ -115,11 +136,17 @@ input, select {
 /* ===== Views ===== */
 .view { display: none; padding: 12px; }
 .view.active { display: block; }
+#view-month.active {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
 /* ===== Month View ===== */
 .month-nav {
   display: flex; align-items: center; justify-content: center;
   gap: 30px; margin: 6px 0 14px;
+  flex: 0 0 auto;
 }
 .month-nav h2 {
   margin: 0; font-size: 22px; letter-spacing: 2px; font-weight: 800;
@@ -133,27 +160,35 @@ input, select {
   display: grid; grid-template-columns: repeat(7, 1fr);
   text-align: center; font-weight: 700; color: var(--text-muted);
   margin-bottom: 6px; letter-spacing: 1px;
+  flex: 0 0 auto;
 }
 
 .calendar {
   display: grid; grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
   gap: 3px; background: var(--bg-3); padding: 3px; border-radius: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 .day {
-  background: #1f2738; aspect-ratio: 0.85; padding: 4px;
+  background: #1f2738; padding: 4px;
   display: flex; flex-direction: column; justify-content: space-between;
   position: relative; cursor: pointer; border: 1px solid transparent;
-  transition: transform 0.1s;
+  min-height: 0;
 }
-.day:hover { transform: scale(1.02); border-color: var(--accent); }
-.day.other { background: #181f2c; opacity: 0.6; }
+.day:hover { border-color: var(--accent); }
+.day.other { background: #181f2c; opacity: 0.25; }
 .day .num-top {
   font-size: 11px; color: var(--text-muted); text-align: right;
   font-family: 'Courier New', monospace;
 }
 .day .label {
-  font-size: 22px; font-weight: 800; text-align: center;
+  font-weight: 800; text-align: center;
   flex: 1; display: flex; align-items: center; justify-content: center;
+  min-width: 0; min-height: 0; width: 100%;
+  overflow: hidden; word-break: break-word; line-height: 1.05;
+  padding: 0 2px;
 }
 
 /* Paint bar */
@@ -161,16 +196,20 @@ input, select {
   margin-top: 12px; display: flex; gap: 4px; align-items: center;
   background: var(--bg-2); padding: 8px; border-radius: 4px;
   overflow-x: auto;
+  flex: 0 0 auto;
 }
 .paint-toggle {
   background: var(--danger); color: #fff; padding: 12px 14px;
   border-radius: 4px; font-size: 16px; font-weight: 700;
+  flex-shrink: 0; white-space: nowrap;
 }
 .paint-btn {
   background: var(--bg-4); color: var(--text); padding: 12px 16px;
   border-radius: 4px; font-weight: 700; font-size: 16px;
   min-width: 50px; text-align: center;
   border: 2px solid transparent;
+  flex-shrink: 0; white-space: nowrap;
+  line-height: 1.3;
 }
 .paint-btn.erase { background: #fff; color: var(--danger); border-color: var(--danger); }
 .paint-btn.active { border-color: var(--accent); }
@@ -228,6 +267,17 @@ input, select {
 .range-pickers.hidden { display: none; }
 .range-pickers div { display: flex; flex-direction: column; gap: 4px; }
 .range-pickers label { color: var(--text-muted); font-size: 12px; }
+
+.date-field { position: relative; }
+.date-field input[type="date"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; z-index: 2;
+}
+.date-field .date-display {
+  display: block; background: var(--bg-4); color: var(--text);
+  border: none; border-radius: 4px; padding: 8px 10px; font-size: 14px;
+  font-family: inherit; white-space: nowrap; min-width: 110px; text-align: center;
+}
 
 .stats-table {
   background: var(--bg-2); border-radius: 6px; padding: 10px;
@@ -308,6 +358,23 @@ input, select {
   border-radius: 4px; font-weight: 700;
 }
 .danger-btn.round { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 18px; }
+
+/* ===== pgConfirm dialog (unified in-app dialog, replaces confirm()/alert()) ===== */
+.pg-confirm-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 20px;
+}
+.pg-confirm-box {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 20px; width: 100%; max-width: 340px;
+  text-align: center;
+}
+.pg-confirm-box p {
+  margin: 0 0 18px; color: var(--text); font-size: 15px; line-height: 1.6;
+}
+.pg-confirm-actions { display: flex; gap: 10px; }
+.pg-confirm-actions button { flex: 1; }
 
 /* ===== Modal ===== */
 .modal {
@@ -423,14 +490,14 @@ input, select {
 <body>
   <!-- Top bar -->
   <header class="top-bar">
-    <div class="logo" title="Shifter">
+    <button class="logo" id="logoBtn" title="إدارة الشيفتات" type="button">
       <span class="logo-tag">Shifter</span>
       <span class="logo-grid">
         <span></span><span></span><span></span>
         <span></span><span></span><span></span>
         <span></span><span></span><span></span>
       </span>
-    </div>
+    </button>
 
     <div class="company-select">
       <span class="edit-icon">✏️</span>
@@ -442,6 +509,7 @@ input, select {
     </div>
 
     <div class="top-actions">
+      <button class="icon-btn" id="settingsBtn" title="الإعدادات">⚙️</button>
       <button class="icon-btn" id="shareBtn" title="مشاركة">🔗</button>
       <button class="icon-btn" id="exportBtn" title="تصدير">📤</button>
       <button class="icon-btn warn" id="resetBtn" title="تحذير">⚠️</button>
@@ -451,7 +519,7 @@ input, select {
   <!-- Tabs -->
   <nav class="tabs">
     <button class="tab active" data-tab="month">JULY</button>
-    <button class="tab" data-tab="year">2026</button>
+    <button class="tab" data-tab="year" id="yearTab">2026</button>
     <button class="tab" data-tab="summary">SUMMARY</button>
     <button class="tab" data-tab="payroll">💰 المرتب</button>
   </nav>
@@ -475,7 +543,7 @@ input, select {
       <!-- Paint bar -->
       <div class="paint-bar" id="paintBar">
         <button class="paint-toggle" id="paintToggle">⌃</button>
-        <button class="paint-btn erase" data-shift="">Erase</button>
+        <button class="paint-btn erase" data-shift="">مسح</button>
         <!-- shift chips injected here -->
       </div>
     </section>
@@ -509,11 +577,17 @@ input, select {
       <div class="range-pickers hidden" id="rangePickers">
         <div>
           <label>FROM</label>
-          <input type="date" id="fromDate" />
+          <div class="date-field">
+            <input type="date" id="fromDate" />
+            <span class="date-display" id="fromDateDisplay">—</span>
+          </div>
         </div>
         <div>
           <label>TO</label>
-          <input type="date" id="toDate" />
+          <div class="date-field">
+            <input type="date" id="toDate" />
+            <span class="date-display" id="toDateDisplay">—</span>
+          </div>
         </div>
       </div>
 
@@ -539,11 +613,17 @@ input, select {
         <div class="range-pickers" style="display:flex">
           <div>
             <label>من</label>
-            <input type="date" id="payFrom" />
+            <div class="date-field">
+              <input type="date" id="payFrom" />
+              <span class="date-display" id="payFromDisplay">—</span>
+            </div>
           </div>
           <div>
             <label>إلى</label>
-            <input type="date" id="payTo" />
+            <div class="date-field">
+              <input type="date" id="payTo" />
+              <span class="date-display" id="payToDisplay">—</span>
+            </div>
           </div>
         </div>
       </div>
@@ -706,6 +786,34 @@ input, select {
     </div>
   </div>
 
+  <!-- SETTINGS MODAL -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeSettings">⌃</button>
+      <h3>الإعدادات</h3>
+
+      <div class="payroll-card">
+        <div class="row">
+          <label>نوع الأرقام</label>
+          <select id="numeralType">
+            <option value="ar">عربي (١٢٣)</option>
+            <option value="en">إنجليزي (123)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>شكل الخط</label>
+          <select id="fontStyle">
+            <option value="Cairo">Cairo (افتراضي)</option>
+            <option value="Tajawal">Tajawal</option>
+            <option value="Almarai">Almarai</option>
+            <option value="IBM Plex Sans Arabic">IBM Plex Sans Arabic</option>
+            <option value="Tahoma">Tahoma (خط النظام)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SHIFT CONFIG MODAL -->
   <div class="modal" id="shiftConfigModal">
     <div class="modal-content">
@@ -749,7 +857,7 @@ input, select {
           <label>TEXT SIZE</label>
           <div class="size-row">
             <span id="sizeVal">36</span>
-            <input type="range" id="textSize" min="20" max="64" value="36" />
+            <input type="range" id="textSize" min="10" max="64" value="36" />
           </div>
         </div>
       </div>
@@ -840,6 +948,71 @@ input, select {
    ============================================================ */
 
 const STORAGE_KEY = 'shifter_payroll_v1';
+const SEQ_KEY = 'shifter_seq';
+
+/* ============================================================
+   Storage wrappers (_getItem/_setItem)
+   ============================================================ */
+function _getItem(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw !== null ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+function _setItem(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+function _removeItem(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* ============================================================
+   nextSeq - persistent sequence counter for unique IDs
+   ============================================================ */
+function nextSeq() {
+  const n = (_getItem(SEQ_KEY, 0) || 0) + 1;
+  _setItem(SEQ_KEY, n);
+  return n;
+}
+
+/* ============================================================
+   pgConfirm - unified in-app dialog (replaces confirm()/alert())
+   Usage: pgConfirm('رسالة').then(ok => { ... })
+   Pass { okOnly: true } for an alert-style single-button dialog.
+   ============================================================ */
+function pgConfirm(message, { okOnly = false } = {}) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'pg-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="pg-confirm-box">
+        <p>${escapeHtml(message)}</p>
+        <div class="pg-confirm-actions">
+          ${okOnly ? '' : '<button class="primary-btn outline" data-act="cancel">إلغاء</button>'}
+          <button class="primary-btn" data-act="ok">حسناً</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const cleanup = result => { overlay.remove(); resolve(result); };
+    overlay.querySelector('[data-act="ok"]').addEventListener('click', () => cleanup(true));
+    const cancelBtn = overlay.querySelector('[data-act="cancel"]');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => cleanup(false));
+    overlay.addEventListener('click', e => { if (e.target === overlay && !okOnly) cleanup(false); });
+  });
+}
 
 const DEFAULT_SHIFTS = [
   { id: 's1', name: 'اول',      abbr: '1', bg: '#f5f5f5', fg: '#1a1a1a', size: 36, start: '08:00', end: '16:00', hours: 8, dayIncome: 253, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
@@ -866,29 +1039,37 @@ const state = {
   selectedBg: '#f5f5f5',
   selectedFg: '#1a1a1a',
   paintMode: null, // selected shift id for painting, or '' for erase
+  settings: { numeralType: 'ar', font: 'Cairo' },
 };
 
 function load() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
+    const data = _getItem(STORAGE_KEY, null);
+    if (data) {
       state.shifts = data.shifts || [];
       state.schedule = data.schedule || {};
+      state.settings = Object.assign({ numeralType: 'ar', font: 'Cairo' }, data.settings || {});
     } else {
-      state.shifts = [];
+      state.shifts = DEFAULT_SHIFTS.map(s => ({ ...s }));
       state.schedule = {};
+      save();
     }
   } catch (e) {
     state.shifts = [];
     state.schedule = {};
   }
+  applyFont();
 }
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    shifts: state.shifts, schedule: state.schedule
-  }));
+  _setItem(STORAGE_KEY, {
+    shifts: state.shifts, schedule: state.schedule, settings: state.settings
+  });
+}
+
+function applyFont() {
+  const f = state.settings.font || 'Cairo';
+  document.body.style.fontFamily = `'${f}', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif`;
 }
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
@@ -910,6 +1091,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + btn.dataset.tab).classList.add('active');
     state.view = btn.dataset.tab;
+    document.querySelector('main').classList.toggle('no-scroll', btn.dataset.tab === 'month');
     if (btn.dataset.tab === 'year') renderYear();
     if (btn.dataset.tab === 'summary') renderSummary();
     if (btn.dataset.tab === 'payroll') initPayroll();
@@ -919,9 +1101,18 @@ document.querySelectorAll('.tab').forEach(btn => {
 /* ============================================================
    Month view
    ============================================================ */
+function updateStaticLabels() {
+  document.getElementById('yearTab').textContent = arDigits(state.current.year);
+  if (state.summaryMode !== 'range') {
+    document.getElementById('periodLabel').textContent = arDigits(
+      state.summaryMode === 'year' ? yearYear : `${MONTHS[state.current.month]} ${state.current.year}`
+    );
+  }
+}
+
 function renderMonth() {
   const { year, month } = state.current;
-  document.getElementById('monthTitle').textContent = `${MONTHS[month]} ${year}`;
+  document.getElementById('monthTitle').textContent = arDigits(`${MONTHS[month]} ${year}`);
 
   // Empty state - no shifts configured
   if (state.shifts.length === 0) {
@@ -942,6 +1133,7 @@ function renderMonth() {
     document.getElementById('paintToggle').addEventListener('click', () => {
       state.paintMode = null;
     });
+    updateStaticLabels();
     return;
   }
 
@@ -971,6 +1163,26 @@ function renderMonth() {
   }
 
   renderPaintBar();
+  fitAllDayLabels();
+  updateStaticLabels();
+}
+
+/* ============================================================
+   Auto-fit: shrink a label's font until it fits inside its box.
+   Prevents abbreviation text (e.g. "بدل عطلة") from overflowing
+   the calendar day cell regardless of the configured text size.
+   ============================================================ */
+function fitLabelText(el, minSize = 8) {
+  let size = parseFloat(getComputedStyle(el).fontSize) || 22;
+  let guard = 40; // safety cap on iterations
+  while (guard-- > 0 && size > minSize &&
+         (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) {
+    size -= 1;
+    el.style.fontSize = size + 'px';
+  }
+}
+function fitAllDayLabels() {
+  document.querySelectorAll('#calendar .day .label').forEach(el => fitLabelText(el));
 }
 
 function makeDayCell(d, year, month, other) {
@@ -982,7 +1194,7 @@ function makeDayCell(d, year, month, other) {
 
   const top = document.createElement('div');
   top.className = 'num-top';
-  top.textContent = d;
+  top.textContent = arDigits(d);
   cell.appendChild(top);
 
   if (shift) {
@@ -991,7 +1203,7 @@ function makeDayCell(d, year, month, other) {
     lbl.className = 'label';
     lbl.style.color = shift.fg;
     lbl.style.fontSize = (shift.size || 36) + 'px';
-    lbl.textContent = shift.abbr;
+    lbl.textContent = arDigits(shift.abbr);
     cell.appendChild(lbl);
   }
 
@@ -1037,7 +1249,7 @@ function renderPaintBar() {
     b.dataset.shift = s.id;
     b.style.background = s.bg;
     b.style.color = s.fg;
-    b.textContent = s.abbr;
+    b.textContent = arDigits(s.abbr);
     if (state.paintMode === s.id) b.classList.add('active');
     b.addEventListener('click', () => {
       state.paintMode = s.id;
@@ -1048,10 +1260,13 @@ function renderPaintBar() {
 
   const erase = bar.querySelector('.erase');
   erase.classList.toggle('active', state.paintMode === '');
-  erase.addEventListener('click', () => {
-    state.paintMode = '';
-    renderPaintBar();
-  }, { once: true });
+  if (!erase.dataset.bound) {
+    erase.dataset.bound = '1';
+    erase.addEventListener('click', () => {
+      state.paintMode = '';
+      renderPaintBar();
+    });
+  }
 }
 
 document.getElementById('paintToggle').addEventListener('click', () => {
@@ -1075,11 +1290,42 @@ function openShiftsModal() {
   document.getElementById('shiftsModal').classList.add('open');
   renderShiftsList();
 }
+document.getElementById('logoBtn').addEventListener('click', () => openShiftsModal());
 document.getElementById('closeShifts').addEventListener('click', () => {
   document.getElementById('shiftsModal').classList.remove('open');
 });
 document.getElementById('shiftsModal').addEventListener('click', e => {
   if (e.target.id === 'shiftsModal') e.target.classList.remove('open');
+});
+
+function refreshAllViews() {
+  renderMonth();
+  syncAllDateDisplays();
+  if (document.getElementById('view-year').classList.contains('active')) renderYear();
+  if (document.getElementById('view-summary').classList.contains('active')) renderSummary();
+  if (document.getElementById('view-payroll').classList.contains('active')) calcPayroll();
+}
+
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('numeralType').value = state.settings.numeralType;
+  document.getElementById('fontStyle').value = state.settings.font;
+  document.getElementById('settingsModal').classList.add('open');
+});
+document.getElementById('closeSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.remove('open');
+});
+document.getElementById('settingsModal').addEventListener('click', e => {
+  if (e.target.id === 'settingsModal') e.target.classList.remove('open');
+});
+document.getElementById('numeralType').addEventListener('change', e => {
+  state.settings.numeralType = e.target.value;
+  save();
+  refreshAllViews();
+});
+document.getElementById('fontStyle').addEventListener('change', e => {
+  state.settings.font = e.target.value;
+  save();
+  applyFont();
 });
 
 function renderShiftsList() {
@@ -1089,10 +1335,10 @@ function renderShiftsList() {
     const row = document.createElement('div');
     row.className = 'shift-item';
     row.innerHTML = `
-      <div class="chip" style="background:${s.bg};color:${s.fg}">${escapeHtml(s.abbr)}</div>
+      <div class="chip" style="background:${s.bg};color:${s.fg}">${escapeHtml(arDigits(s.abbr))}</div>
       <div class="info">
         <div class="nm">${escapeHtml(s.name)}</div>
-        <div class="sub">(${pad(s.start)} - ${pad(s.end)})</div>
+        <div class="sub">(${arDigits(pad(s.start))} - ${arDigits(pad(s.end))})</div>
       </div>
       <div class="menu">☰</div>
     `;
@@ -1103,7 +1349,7 @@ function renderShiftsList() {
 
 document.getElementById('createShift').addEventListener('click', () => {
   const s = {
-    id: 's' + Date.now(),
+    id: 's' + nextSeq(),
     name: 'شيفت جديد', abbr: 'N', bg: '#9a9a9a', fg: '#ffffff', size: 36,
     start: '08:00', end: '16:00', hours: 8, dayIncome: 0, overtimeRate: 0,
     mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م'
@@ -1126,9 +1372,9 @@ document.getElementById('importFile').addEventListener('change', e => {
         save();
         renderShiftsList();
         renderMonth();
-        alert('تم استيراد ' + data.shifts.length + ' شيفت');
+        pgConfirm('تم استيراد ' + data.shifts.length + ' شيفت', { okOnly: true });
       }
-    } catch (err) { alert('ملف غير صالح'); }
+    } catch (err) { pgConfirm('ملف غير صالح', { okOnly: true }); }
   };
   r.readAsText(f);
 });
@@ -1148,12 +1394,12 @@ function openShiftConfig(shift) {
 function fillConfigForm() {
   const s = state.editingShift;
   document.getElementById('shiftName').value = s.name;
-  document.getElementById('shiftPreview').textContent = s.abbr;
+  document.getElementById('shiftPreview').textContent = arDigits(s.abbr);
   document.getElementById('shiftPreview').style.background = s.bg;
   document.getElementById('shiftPreview').style.color = s.fg;
   document.getElementById('shiftAbbr').value = s.abbr;
   document.getElementById('textSize').value = s.size;
-  document.getElementById('sizeVal').textContent = s.size;
+  document.getElementById('sizeVal').textContent = arDigits(s.size);
   document.getElementById('startTime').value = s.start;
   document.getElementById('endTime').value = s.end;
   document.getElementById('restTime').value = 0;
@@ -1196,7 +1442,7 @@ function updateHourlyRate() {
   const hours = +document.getElementById('hours').value || 0;
   const income = +document.getElementById('dayIncome').value || 0;
   const rate = hours > 0 ? (income / hours).toFixed(2) : '0.00';
-  document.getElementById('hourlyRate').value = rate + ' ' + (state.editingShift.currency || 'ج.م');
+  document.getElementById('hourlyRate').value = arDigits(rate + ' ' + (state.editingShift.currency || 'ج.م'));
 }
 
 document.getElementById('shiftName').addEventListener('input', e => {
@@ -1204,11 +1450,11 @@ document.getElementById('shiftName').addEventListener('input', e => {
 });
 document.getElementById('shiftAbbr').addEventListener('input', e => {
   state.editingShift.abbr = e.target.value;
-  document.getElementById('shiftPreview').textContent = e.target.value;
+  document.getElementById('shiftPreview').textContent = arDigits(e.target.value);
 });
 document.getElementById('textSize').addEventListener('input', e => {
   state.editingShift.size = +e.target.value;
-  document.getElementById('sizeVal').textContent = e.target.value;
+  document.getElementById('sizeVal').textContent = arDigits(e.target.value);
   document.getElementById('shiftPreview').style.fontSize = e.target.value + 'px';
 });
 ['hours','dayIncome'].forEach(id => {
@@ -1225,7 +1471,7 @@ document.querySelectorAll('.ct-tab').forEach(t => {
   });
 });
 
-document.getElementById('saveShift').addEventListener('click', () => {
+function syncEditingShiftFromForm() {
   const s = state.editingShift;
   s.start = document.getElementById('startTime').value;
   s.end = document.getElementById('endTime').value;
@@ -1237,6 +1483,11 @@ document.getElementById('saveShift').addEventListener('click', () => {
   s.shiftAllowance = +document.getElementById('shiftAllowance').value || 0;
   s.bg = state.selectedBg;
   s.fg = state.selectedFg;
+}
+
+document.getElementById('saveShift').addEventListener('click', () => {
+  syncEditingShiftFromForm();
+  const s = state.editingShift;
 
   const existing = state.shifts.findIndex(x => x.id === s.id);
   if (existing >= 0) state.shifts[existing] = s;
@@ -1257,7 +1508,8 @@ document.getElementById('closeConfig').addEventListener('click', () => {
 document.getElementById('deleteShift').addEventListener('click', () => deleteShiftAction());
 document.getElementById('deleteShiftIcon').addEventListener('click', () => deleteShiftAction());
 document.getElementById('duplicateShift').addEventListener('click', () => {
-  const copy = { ...state.editingShift, id: 's' + Date.now() };
+  syncEditingShiftFromForm();
+  const copy = { ...state.editingShift, id: 's' + nextSeq() };
   state.shifts.push(copy);
   save();
   renderShiftsList();
@@ -1267,16 +1519,18 @@ document.getElementById('duplicateShift').addEventListener('click', () => {
 
 function deleteShiftAction() {
   if (!state.editingShift) return;
-  if (!confirm('حذف ' + state.editingShift.name + '؟')) return;
-  state.shifts = state.shifts.filter(s => s.id !== state.editingShift.id);
-  // also clear from schedule
-  Object.keys(state.schedule).forEach(k => {
-    if (state.schedule[k] === state.editingShift.id) delete state.schedule[k];
+  pgConfirm('حذف ' + state.editingShift.name + '؟').then(ok => {
+    if (!ok) return;
+    state.shifts = state.shifts.filter(s => s.id !== state.editingShift.id);
+    // also clear from schedule
+    Object.keys(state.schedule).forEach(k => {
+      if (state.schedule[k] === state.editingShift.id) delete state.schedule[k];
+    });
+    save();
+    document.getElementById('shiftConfigModal').classList.remove('open');
+    renderMonth();
+    renderShiftsList();
   });
-  save();
-  document.getElementById('shiftConfigModal').classList.remove('open');
-  renderMonth();
-  renderShiftsList();
 }
 
 /* ============================================================
@@ -1289,7 +1543,7 @@ function renderYear() {
   });
   const grid = document.getElementById('yearGrid');
   grid.innerHTML = '';
-  for (let m = 0; m < 6; m++) {
+  for (let m = 0; m < 12; m++) {
     const wrap = document.createElement('div');
     wrap.className = 'year-month';
     wrap.innerHTML = `<h3>${MONTHS[m]}</h3>`;
@@ -1312,7 +1566,7 @@ function renderYear() {
       const s = state.shifts.find(x => x.id === state.schedule[k]);
       const d = document.createElement('div');
       d.className = 'mday';
-      d.textContent = day;
+      d.textContent = arDigits(day);
       if (s) { d.style.background = s.bg; d.style.color = s.fg; }
       cal.appendChild(d);
     }
@@ -1333,7 +1587,7 @@ document.querySelectorAll('.st-tab').forEach(t => {
     t.classList.add('active');
     state.summaryMode = t.dataset.st;
     document.getElementById('rangePickers').classList.toggle('hidden', t.dataset.st !== 'range');
-    document.getElementById('periodLabel').textContent = t.dataset.st === 'year' ? yearYear : `${MONTHS[state.current.month]} ${state.current.year}`;
+    document.getElementById('periodLabel').textContent = arDigits(t.dataset.st === 'year' ? yearYear : `${MONTHS[state.current.month]} ${state.current.year}`);
     renderSummary();
   });
 });
@@ -1388,21 +1642,44 @@ function renderSummary() {
     row.innerHTML = `
       <div class="name">
         <span class="nm">${escapeHtml(g.shift.name)}</span>
-        <span class="sub">(${pad(g.shift.start)}-${pad(g.shift.end)})</span>
+        <span class="sub">(${arDigits(pad(g.shift.start))}-${arDigits(pad(g.shift.end))})</span>
       </div>
-      <div>${g.count}</div>
-      <div>${g.hours}h,0m<br><span style="color:var(--text-muted)">${g.income.toFixed(2)}</span></div>
+      <div>${arDigits(g.count)}</div>
+      <div>${arDigits(g.hours)}h,0m<br><span style="color:var(--text-muted)">${arDigits(g.income.toFixed(2))}</span></div>
       <div class="check"><span>✓</span></div>
     `;
     body.appendChild(row);
   });
 
   const global = document.getElementById('statsGlobal');
-  global.innerHTML = `Global: ${totalCount} Shifts<br>${totalHours}h,0m<br>${totalIncome.toFixed(2)} ${state.shifts[0]?.currency || 'ج.م'}`;
+  global.innerHTML = `Global: ${arDigits(totalCount)} Shifts<br>${arDigits(totalHours)}h,0m<br>${arDigits(totalIncome.toFixed(2))} ${state.shifts[0]?.currency || 'ج.م'}`;
 }
 
-document.getElementById('fromDate').addEventListener('change', e => { state.range.from = e.target.value; renderSummary(); });
-document.getElementById('toDate').addEventListener('change', e => { state.range.to = e.target.value; renderSummary(); });
+function formatDateDisplay(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return arDigits(`${d}/${m}/${y}`);
+}
+function syncDateDisplay(inputId, displayId) {
+  document.getElementById(displayId).textContent = formatDateDisplay(document.getElementById(inputId).value);
+}
+function syncAllDateDisplays() {
+  syncDateDisplay('fromDate', 'fromDateDisplay');
+  syncDateDisplay('toDate', 'toDateDisplay');
+  syncDateDisplay('payFrom', 'payFromDisplay');
+  syncDateDisplay('payTo', 'payToDisplay');
+}
+
+document.getElementById('fromDate').addEventListener('change', e => {
+  state.range.from = e.target.value;
+  syncDateDisplay('fromDate', 'fromDateDisplay');
+  renderSummary();
+});
+document.getElementById('toDate').addEventListener('change', e => {
+  state.range.to = e.target.value;
+  syncDateDisplay('toDate', 'toDateDisplay');
+  renderSummary();
+});
 
 /* ============================================================
    Payroll view
@@ -1421,12 +1698,13 @@ function initPayroll() {
     state.range.from = from;
     state.range.to = to;
   }
+  syncAllDateDisplays();
   updateLeaveUsed();
   calcPayroll();
 }
 
-document.getElementById('payFrom').addEventListener('change', () => calcPayroll());
-document.getElementById('payTo').addEventListener('change', () => calcPayroll());
+document.getElementById('payFrom').addEventListener('change', () => { syncDateDisplay('payFrom', 'payFromDisplay'); calcPayroll(); });
+document.getElementById('payTo').addEventListener('change', () => { syncDateDisplay('payTo', 'payToDisplay'); calcPayroll(); });
 ['mealDays','mealRate','shiftAllowDays','shiftAllowRate',
  'penaltyAmount','lateHours','otherDeductions','holidayCount',
  'annualLeaveDays','holidayMode','leavePrev','leaveAccrued'
@@ -1439,10 +1717,10 @@ document.getElementById('payTo').addEventListener('change', () => calcPayroll())
 
 function updateLeaveUsed() {
   const used = +document.getElementById('annualLeaveDays').value || 0;
-  document.getElementById('leaveUsed').value = used;
+  document.getElementById('leaveUsed').value = arDigits(used);
   const prev = +document.getElementById('leavePrev').value || 0;
   const accr = +document.getElementById('leaveAccrued').value || 0;
-  document.getElementById('leaveRemaining').value = (prev + accr - used);
+  document.getElementById('leaveRemaining').value = arDigits(prev + accr - used);
 }
 
 document.getElementById('calcPayroll').addEventListener('click', () => calcPayroll());
@@ -1452,7 +1730,7 @@ function calcPayroll() {
   const to = document.getElementById('payTo').value;
   if (!from || !to) return;
   const fromD = new Date(from), toD = new Date(to);
-  if (fromD > toD) { alert('التاريخ من يجب أن يكون قبل إلى'); return; }
+  if (fromD > toD) { pgConfirm('التاريخ من يجب أن يكون قبل إلى', { okOnly: true }); return; }
 
   // Sum incomes from schedule
   let totalDaysIncome = 0;
@@ -1483,7 +1761,6 @@ function calcPayroll() {
   const hCount = +document.getElementById('holidayCount').value || 0;
   // value of one holiday day = avg of working days' income (or 0)
   const avgDay = (() => {
-    const incomes = Object.values(shiftCounts).reduce((sum, _) => sum, 0);
     const totalDays = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
     return totalDays > 0 ? totalDaysIncome / totalDays : 0;
   })();
@@ -1500,13 +1777,13 @@ function calcPayroll() {
     return rates.reduce((a, b) => a + b, 0) / rates.length;
   })();
   totalOvertime = overtimeInput * avgOvertimeRate;
-  document.getElementById('totalOvertime').value = totalOvertime.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+  document.getElementById('totalOvertime').value = arDigits(totalOvertime.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
 
   // Total income
   const totalIncome = totalDaysIncome + totalOvertime + mealTotal + shiftAllowTotal + holidayAllowance;
-  document.getElementById('totalDaysIncome').value = totalDaysIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
-  document.getElementById('holidayAllowance').value = holidayAllowance.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
-  document.getElementById('totalIncome').value = totalIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+  document.getElementById('totalDaysIncome').value = arDigits(totalDaysIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  document.getElementById('holidayAllowance').value = arDigits(holidayAllowance.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  document.getElementById('totalIncome').value = arDigits(totalIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
 
   // Deductions
   const annualLeaveDays = +document.getElementById('annualLeaveDays').value || 0;
@@ -1519,20 +1796,19 @@ function calcPayroll() {
       const s = state.shifts.find(x => x.id === id);
       return sum + ((+s.hours || 0) * c);
     }, 0);
-    const totalD = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
-    return totalD > 0 ? totalDaysIncome / totalH : 0;
+    return totalH > 0 ? totalDaysIncome / totalH : 0;
   })();
   const lateDeduction = lateHours * avgHourly;
   const other = +document.getElementById('otherDeductions').value || 0;
   const totalDeductions = leaveDeduction + penalty + lateDeduction + other;
-  document.getElementById('totalDeductions').value = totalDeductions.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+  document.getElementById('totalDeductions').value = arDigits(totalDeductions.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
 
   // Net
   const net = totalIncome - totalDeductions;
   const cur = state.shifts[0]?.currency || 'ج.م';
-  document.getElementById('netIncome').textContent = totalIncome.toFixed(2) + ' ' + cur;
-  document.getElementById('netDeductions').textContent = totalDeductions.toFixed(2) + ' ' + cur;
-  document.getElementById('netSalary').textContent = net.toFixed(2) + ' ' + cur;
+  document.getElementById('netIncome').textContent = arDigits(totalIncome.toFixed(2) + ' ' + cur);
+  document.getElementById('netDeductions').textContent = arDigits(totalDeductions.toFixed(2) + ' ' + cur);
+  document.getElementById('netSalary').textContent = arDigits(net.toFixed(2) + ' ' + cur);
 }
 
 /* ============================================================
@@ -1553,14 +1829,16 @@ document.getElementById('shareBtn').addEventListener('click', () => {
     navigator.share({ title: 'Shifter Backup', text: data });
   } else {
     navigator.clipboard.writeText(data);
-    alert('تم نسخ البيانات للحافظة');
+    pgConfirm('تم نسخ البيانات للحافظة', { okOnly: true });
   }
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-  if (!confirm('سيتم مسح كل البيانات. متأكد؟')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
+  pgConfirm('سيتم مسح كل البيانات. متأكد؟').then(ok => {
+    if (!ok) return;
+    _removeItem(STORAGE_KEY);
+    location.reload();
+  });
 });
 
 /* ============================================================
@@ -1570,10 +1848,17 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+const AR_DIGITS = { '0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩' };
+function arDigits(v) {
+  if (state.settings && state.settings.numeralType === 'en') return String(v);
+  return String(v).replace(/[0-9]/g, d => AR_DIGITS[d]);
+}
+
 /* ============================================================
    Init
    ============================================================ */
 load();
+document.querySelector('main').classList.add('no-scroll');
 renderMonth();
 
 </script>
