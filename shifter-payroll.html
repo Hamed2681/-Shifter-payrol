@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shifter Payroll - جدولة الشيفتات وحساب المرتبات</title>
+  <style>
+/* ===== Shifter Payroll - dark navy theme like original ===== */
+:root {
+  --bg-1: #2c3548;
+  --bg-2: #364056;
+  --bg-3: #3f4a63;
+  --bg-4: #48556e;
+  --bg-card: #4a5773;
+  --line: #5a6783;
+  --text: #e6ecf5;
+  --text-muted: #aab3c5;
+  --accent: #2bd4a4;
+  --warn: #f0b400;
+  --danger: #e85a4f;
+
+  --s1: #2c2c2c; /* dark - شيفت 3 */
+  --s2: #b0b0b0; /* gray  - شيفت 2 */
+  --s3: #4a4a4a; /* darker */
+  --s-bd: #b8d8e8; /* blue  - بدل عطلة */
+  --s-r:  #1a1a1a; /* black - راحة */
+  --s-h:  #c5e0c0; /* light green - اعتيادي */
+  --s-w:  #d4a017; /* yellow - weekend */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, 'Arial', sans-serif;
+  background: var(--bg-1);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: inherit;
+  background: #fff;
+  color: #1a2238;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+/* ===== Top bar ===== */
+.top-bar {
+  background: var(--bg-3);
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 10px;
+  border-bottom: 1px solid var(--bg-4);
+}
+
+.logo { display: flex; flex-direction: column; align-items: center; width: 50px; }
+.logo-tag {
+  background: #d63a3a; color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 3px; margin-bottom: 3px;
+}
+.logo-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  background: #fff; padding: 3px; border-radius: 3px;
+}
+.logo-grid span { width: 6px; height: 6px; background: #aaa; border-radius: 1px; }
+
+.company-select {
+  flex: 1;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-4); padding: 8px 12px; border-radius: 4px;
+  position: relative;
+}
+.company-select select {
+  flex: 1; background: transparent; color: var(--text); padding: 0;
+  font-weight: 700; font-size: 16px;
+}
+.company-select .edit-icon { font-size: 16px; }
+.company-select .caret { color: var(--text-muted); }
+
+.top-actions { display: flex; gap: 6px; }
+.icon-btn {
+  background: var(--bg-2); color: #fff; padding: 8px 10px;
+  border-radius: 4px; font-size: 14px;
+}
+.icon-btn.warn { background: var(--warn); }
+
+/* ===== Tabs ===== */
+.tabs {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--bg-3); border-bottom: 1px solid var(--bg-4);
+}
+.tab {
+  background: transparent; color: var(--text-muted); padding: 14px;
+  font-weight: 700; letter-spacing: 1px; font-size: 15px;
+  border-bottom: 3px solid transparent; position: relative;
+}
+.tab.active { color: var(--text); }
+.tab.active::after {
+  content: ''; position: absolute; bottom: 0; left: 25%; right: 25%;
+  height: 3px; background: var(--accent); border-radius: 2px;
+}
+
+/* ===== Views ===== */
+.view { display: none; padding: 12px; }
+.view.active { display: block; }
+
+/* ===== Month View ===== */
+.month-nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 30px; margin: 6px 0 14px;
+}
+.month-nav h2 {
+  margin: 0; font-size: 22px; letter-spacing: 2px; font-weight: 800;
+}
+.nav-arrow {
+  background: transparent; color: var(--text-muted); font-size: 36px;
+  padding: 0 14px; line-height: 1;
+}
+
+.weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  text-align: center; font-weight: 700; color: var(--text-muted);
+  margin-bottom: 6px; letter-spacing: 1px;
+}
+
+.calendar {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px; background: var(--bg-3); padding: 3px; border-radius: 4px;
+}
+.day {
+  background: #1f2738; aspect-ratio: 0.85; padding: 4px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; cursor: pointer; border: 1px solid transparent;
+  transition: transform 0.1s;
+}
+.day:hover { transform: scale(1.02); border-color: var(--accent); }
+.day.other { background: #181f2c; opacity: 0.6; }
+.day .num-top {
+  font-size: 11px; color: var(--text-muted); text-align: right;
+  font-family: 'Courier New', monospace;
+}
+.day .label {
+  font-size: 22px; font-weight: 800; text-align: center;
+  flex: 1; display: flex; align-items: center; justify-content: center;
+}
+
+/* Paint bar */
+.paint-bar {
+  margin-top: 12px; display: flex; gap: 4px; align-items: center;
+  background: var(--bg-2); padding: 8px; border-radius: 4px;
+  overflow-x: auto;
+}
+.paint-toggle {
+  background: var(--danger); color: #fff; padding: 12px 14px;
+  border-radius: 4px; font-size: 16px; font-weight: 700;
+}
+.paint-btn {
+  background: var(--bg-4); color: var(--text); padding: 12px 16px;
+  border-radius: 4px; font-weight: 700; font-size: 16px;
+  min-width: 50px; text-align: center;
+  border: 2px solid transparent;
+}
+.paint-btn.erase { background: #fff; color: var(--danger); border-color: var(--danger); }
+.paint-btn.active { border-color: var(--accent); }
+
+/* ===== Year view ===== */
+.year-switcher {
+  display: flex; gap: 8px; justify-content: center; margin-bottom: 14px;
+}
+.year-btn {
+  flex: 1; max-width: 200px;
+  background: var(--bg-2); color: var(--text-muted); padding: 12px;
+  border-radius: 25px; font-weight: 700; font-size: 16px;
+}
+.year-btn.active { background: var(--bg-3); color: var(--text); border: 1px solid var(--accent); }
+.year-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+}
+.year-month h3 {
+  text-align: center; margin: 0 0 6px; font-weight: 800; letter-spacing: 1px;
+}
+.year-month .mini-cal {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  font-size: 11px;
+}
+.mini-cal .mday {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--text); font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+.mini-day-header { color: var(--text-muted); aspect-ratio: 1; font-size: 10px; }
+
+/* ===== Summary view ===== */
+.stats-header { text-align: center; margin-bottom: 14px; }
+.stats-header h3 {
+  font-size: 18px; letter-spacing: 2px; color: var(--text-muted);
+  margin: 0 0 10px;
+}
+.stats-tabs {
+  display: flex; background: var(--bg-3); border-radius: 25px; padding: 4px;
+  margin-bottom: 12px;
+}
+.st-tab {
+  flex: 1; background: transparent; color: var(--text-muted);
+  padding: 10px; border-radius: 22px; font-weight: 700;
+}
+.st-tab.active { background: var(--bg-2); color: var(--text); }
+.stats-picker {
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  background: var(--bg-2); padding: 10px 20px; border-radius: 25px;
+}
+.stats-picker span { font-weight: 700; letter-spacing: 1px; }
+.range-pickers {
+  display: flex; gap: 10px; justify-content: center; margin: 10px 0;
+}
+.range-pickers.hidden { display: none; }
+.range-pickers div { display: flex; flex-direction: column; gap: 4px; }
+.range-pickers label { color: var(--text-muted); font-size: 12px; }
+
+.stats-table {
+  background: var(--bg-2); border-radius: 6px; padding: 10px;
+}
+.stats-head, .stats-row {
+  display: grid; grid-template-columns: 2fr 1fr 1.5fr 50px; gap: 8px;
+  padding: 10px 8px; align-items: center;
+}
+.stats-head {
+  color: var(--text-muted); font-style: italic; font-weight: 700;
+  border-bottom: 1px solid var(--line);
+}
+.stats-row { border-bottom: 1px solid var(--line); }
+.stats-row .name { display: flex; flex-direction: column; }
+.stats-row .name .nm { font-weight: 700; }
+.stats-row .name .sub { font-size: 11px; color: var(--text-muted); }
+.stats-row .check { text-align: center; }
+.stats-row .check span {
+  display: inline-block; width: 26px; height: 26px;
+  background: var(--accent); color: #fff; border-radius: 4px;
+  text-align: center; line-height: 26px; font-weight: 700;
+}
+.stats-global {
+  text-align: right; padding: 10px; font-style: italic;
+  color: var(--text-muted); font-weight: 700; line-height: 1.6;
+}
+
+/* ===== Payroll view ===== */
+.payroll-header { margin-bottom: 14px; }
+.payroll-header h3 { margin: 0 0 4px; font-size: 22px; }
+.muted { color: var(--text-muted); font-size: 13px; margin: 0; }
+
+.payroll-card {
+  background: var(--bg-2); border-radius: 6px; padding: 14px;
+  margin-bottom: 12px;
+}
+.payroll-card h4 { margin: 0 0 10px; font-size: 16px; }
+.payroll-card.final { background: var(--bg-3); border: 1px solid var(--accent); }
+
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  gap: 10px; flex-wrap: wrap;
+}
+.row:last-child { border-bottom: none; }
+.row label { flex: 1; font-size: 14px; }
+.row input[type="text"], .row input[type="number"] {
+  width: 130px; text-align: center;
+}
+.row input[readonly] { background: #e8eef5; color: #555; }
+.row.total { font-weight: 800; background: var(--bg-3); padding: 10px; border-radius: 4px; border: none; margin-top: 6px; }
+.row.total input { font-weight: 800; color: var(--accent); }
+
+.inline { display: flex; gap: 6px; align-items: center; }
+.inline input { width: 70px; }
+.inline span { color: var(--text-muted); font-size: 12px; }
+
+.leave-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.leave-grid label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+.leave-grid input { width: 100%; }
+
+.net-row {
+  display: flex; justify-content: space-between; padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.net-row.big { font-size: 22px; font-weight: 800; border: none; margin-top: 8px; }
+.net-row.big span:last-child { color: var(--accent); }
+
+.primary-btn {
+  background: var(--bg-4); color: var(--text); padding: 10px 16px;
+  border-radius: 4px; font-weight: 700; width: 100%; margin-top: 10px;
+}
+.primary-btn.outline { background: transparent; border: 1px solid var(--line); }
+.danger-btn {
+  background: var(--danger); color: #fff; padding: 10px 14px;
+  border-radius: 4px; font-weight: 700;
+}
+.danger-btn.round { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 18px; }
+
+/* ===== Modal ===== */
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; align-items: flex-end; justify-content: center; z-index: 100;
+}
+.modal.open { display: flex; }
+.modal-content {
+  background: var(--bg-2); width: 100%; max-width: 600px;
+  max-height: 90vh; overflow-y: auto; border-radius: 12px 12px 0 0;
+  padding: 16px; position: relative;
+}
+.modal-close {
+  background: transparent; color: var(--text); font-size: 28px;
+  display: block; margin: 0 auto 10px;
+}
+
+.modal h3 {
+  text-align: center; margin: 0 0 14px; letter-spacing: 2px; font-size: 18px;
+}
+.modal-actions {
+  display: flex; gap: 10px; margin-bottom: 14px;
+}
+.modal-actions button { width: auto; flex: 1; }
+
+#shiftsList { display: flex; flex-direction: column; gap: 8px; }
+.shift-item {
+  display: flex; align-items: center; padding: 10px; background: var(--bg-3);
+  border-radius: 4px; gap: 12px;
+}
+.shift-item .chip {
+  width: 60px; height: 60px; border-radius: 4px; display: flex;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 28px;
+}
+.shift-item .info { flex: 1; }
+.shift-item .info .nm { font-weight: 700; }
+.shift-item .info .sub { color: var(--text-muted); font-size: 12px; }
+.shift-item .menu { color: var(--text-muted); font-size: 18px; }
+
+/* Shift config */
+.field { margin-bottom: 12px; }
+.field label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+.field input[type="text"], .field input[type="number"], .field input[type="time"], .field select {
+  width: 100%; padding: 10px;
+}
+
+.shift-name-row { display: flex; gap: 10px; align-items: stretch; }
+.shift-name-row input { flex: 1; }
+.shift-preview {
+  width: 60px; background: #fff; color: #1a2238; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 800;
+}
+
+.config-tabs {
+  display: flex; border-bottom: 2px solid var(--line); margin-bottom: 12px;
+}
+.ct-tab {
+  flex: 1; background: transparent; color: var(--text-muted); padding: 12px;
+  font-weight: 700; letter-spacing: 1px; font-size: 13px;
+  border-bottom: 3px solid transparent;
+}
+.ct-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.ct-panel { display: none; }
+.ct-panel.active { display: block; }
+
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-wheel {
+  background: #fff; width: 40px; height: 40px; border-radius: 50%;
+  font-size: 20px;
+}
+.swatches { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+.swatch {
+  width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0;
+  position: relative; cursor: pointer;
+}
+.swatch.selected::after {
+  content: '✓'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; color: #fff;
+  font-weight: 800; text-shadow: 0 0 4px #000;
+}
+
+.size-row { display: flex; align-items: center; gap: 10px; }
+.size-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.size-row span {
+  background: var(--bg-3); padding: 4px 10px; border-radius: 4px;
+  font-weight: 700; min-width: 40px; text-align: center;
+}
+
+.time-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.time-row > div { flex: 1; }
+
+.sub-head {
+  font-size: 13px; letter-spacing: 1px; color: var(--text-muted);
+  margin: 16px 0 8px;
+}
+
+.modal-footer {
+  display: flex; gap: 8px; margin-top: 16px; align-items: center;
+  border-top: 1px solid var(--line); padding-top: 12px;
+}
+.modal-footer button { width: auto; flex: 1; }
+.modal-footer .danger-btn.round { flex: 0; }
+
+@media (max-width: 480px) {
+  .year-grid { grid-template-columns: 1fr; }
+  .leave-grid { grid-template-columns: 1fr; }
+  .row label { font-size: 13px; }
+}
+
+</style>
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="top-bar">
+    <div class="logo" title="Shifter">
+      <span class="logo-tag">Shifter</span>
+      <span class="logo-grid">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </span>
+    </div>
+
+    <div class="company-select">
+      <span class="edit-icon">✏️</span>
+      <select id="companySelect">
+        <option>شركة cliopatra</option>
+        <option>شركة ثانية</option>
+      </select>
+      <span class="caret">▾</span>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn" id="shareBtn" title="مشاركة">🔗</button>
+      <button class="icon-btn" id="exportBtn" title="تصدير">📤</button>
+      <button class="icon-btn warn" id="resetBtn" title="تحذير">⚠️</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="month">JULY</button>
+    <button class="tab" data-tab="year">2026</button>
+    <button class="tab" data-tab="summary">SUMMARY</button>
+    <button class="tab" data-tab="payroll">💰 المرتب</button>
+  </nav>
+
+  <main>
+    <!-- MONTH VIEW -->
+    <section class="view active" id="view-month">
+      <div class="month-nav">
+        <button class="nav-arrow" id="prevMonth">›</button>
+        <h2 id="monthTitle">JULY 2026</h2>
+        <button class="nav-arrow" id="nextMonth">‹</button>
+      </div>
+
+      <div class="weekdays">
+        <span>SAT</span><span>SUN</span><span>MON</span><span>TUE</span>
+        <span>WED</span><span>THU</span><span>FRI</span>
+      </div>
+
+      <div class="calendar" id="calendar"></div>
+
+      <!-- Paint bar -->
+      <div class="paint-bar" id="paintBar">
+        <button class="paint-toggle" id="paintToggle">⌃</button>
+        <button class="paint-btn erase" data-shift="">Erase</button>
+        <!-- shift chips injected here -->
+      </div>
+    </section>
+
+    <!-- YEAR VIEW -->
+    <section class="view" id="view-year">
+      <div class="year-switcher">
+        <button class="year-btn" data-year="2025">2025</button>
+        <button class="year-btn active" data-year="2026">2026</button>
+        <button class="year-btn" data-year="2027">2027</button>
+      </div>
+      <div class="year-grid" id="yearGrid"></div>
+    </section>
+
+    <!-- SUMMARY VIEW -->
+    <section class="view" id="view-summary">
+      <div class="stats-header">
+        <h3>STATISTICS</h3>
+        <div class="stats-tabs">
+          <button class="st-tab active" data-st="month">Month</button>
+          <button class="st-tab" data-st="year">Year</button>
+          <button class="st-tab" data-st="range">Range</button>
+        </div>
+        <div class="stats-picker">
+          <button class="nav-arrow" id="prevPeriod">›</button>
+          <span id="periodLabel">JULY 2026</span>
+          <button class="nav-arrow" id="nextPeriod">‹</button>
+        </div>
+      </div>
+
+      <div class="range-pickers hidden" id="rangePickers">
+        <div>
+          <label>FROM</label>
+          <input type="date" id="fromDate" />
+        </div>
+        <div>
+          <label>TO</label>
+          <input type="date" id="toDate" />
+        </div>
+      </div>
+
+      <div class="stats-table" id="statsTable">
+        <div class="stats-head">
+          <span>Shifts</span><span>Count</span><span>Time</span><span>Global</span>
+        </div>
+        <div id="statsBody"></div>
+        <div class="stats-global" id="statsGlobal"></div>
+      </div>
+    </section>
+
+    <!-- PAYROLL VIEW (NEW) -->
+    <section class="view" id="view-payroll">
+      <div class="payroll-header">
+        <h3>💰 حساب المرتب</h3>
+        <p class="muted">احسب صافي المرتب بعد الإضافات والبدلات والخصومات</p>
+      </div>
+
+      <!-- Period -->
+      <div class="payroll-card">
+        <h4>📅 الفترة</h4>
+        <div class="range-pickers" style="display:flex">
+          <div>
+            <label>من</label>
+            <input type="date" id="payFrom" />
+          </div>
+          <div>
+            <label>إلى</label>
+            <input type="date" id="payTo" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Earnings -->
+      <div class="payroll-card">
+        <h4>💵 الدخل</h4>
+        <div class="row">
+          <label>إجمالي أجر الأيام (محسوب تلقائياً)</label>
+          <input type="text" id="totalDaysIncome" readonly value="0.00 ج.م" />
+        </div>
+        <div class="row">
+          <label>إجمالي الإضافي (ساعات × سعر)</label>
+          <div class="inline">
+            <input type="number" id="overtimeHoursTotal" value="0" min="0" step="0.5" placeholder="ساعات" />
+            <span>ساعة</span>
+            <input type="text" id="totalOvertime" readonly value="0.00 ج.م" />
+          </div>
+        </div>
+        <div class="row">
+          <label>🍽️ بدل وجبة (عدد أيام × قيمة)</label>
+          <div class="inline">
+            <input type="number" id="mealDays" value="0" min="0" />
+            <input type="number" id="mealRate" value="0" min="0" step="0.01" placeholder="قيمة البدل" />
+            <span>ج.م</span>
+          </div>
+        </div>
+        <div class="row">
+          <label>🌙 بدل وردية (عدد أيام × قيمة)</label>
+          <div class="inline">
+            <input type="number" id="shiftAllowDays" value="0" min="0" />
+            <input type="number" id="shiftAllowRate" value="0" min="0" step="0.01" placeholder="قيمة البدل" />
+            <span>ج.م</span>
+          </div>
+        </div>
+        <div class="row total">
+          <label>إجمالي الدخل</label>
+          <input type="text" id="totalIncome" readonly value="0.00 ج.م" />
+        </div>
+      </div>
+
+      <!-- Deductions -->
+      <div class="payroll-card">
+        <h4>➖ الخصومات</h4>
+
+        <div class="row">
+          <label>🏖️ إجازات اعتيادية (خصم من الرصيد + بدون دخل)</label>
+          <div class="inline">
+            <input type="number" id="annualLeaveDays" value="0" min="0" placeholder="أيام" />
+            <span>يوم</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>💸 جزاءات/غياب (مبلغ)</label>
+          <div class="inline">
+            <input type="number" id="penaltyAmount" value="0" min="0" step="0.01" />
+            <span>ج.م</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>⏱️ خصم تأخير (ساعات × أجر الساعة)</label>
+          <div class="inline">
+            <input type="number" id="lateHours" value="0" min="0" step="0.5" />
+            <span>ساعة</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>✂️ خصومات أخرى</label>
+          <div class="inline">
+            <input type="number" id="otherDeductions" value="0" min="0" step="0.01" />
+            <span>ج.م</span>
+          </div>
+        </div>
+
+        <div class="row total">
+          <label>إجمالي الخصومات</label>
+          <input type="text" id="totalDeductions" readonly value="0.00 ج.م" />
+        </div>
+      </div>
+
+      <!-- Holiday Allowance Settings -->
+      <div class="payroll-card">
+        <h4>🎉 بدل العطلات الرسمية</h4>
+        <div class="row">
+          <label>طريقة حساب العطلة الرسمية</label>
+          <select id="holidayMode">
+            <option value="1">يوم بدل + يوم دخل</option>
+            <option value="2">يومين بدل فقط</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>عدد العطلات الرسمية في الفترة</label>
+          <div class="inline">
+            <input type="number" id="holidayCount" value="0" min="0" />
+            <span>يوم</span>
+          </div>
+        </div>
+        <div class="row">
+          <label>قيمة بدل اليوم (× أيام العطلات × الوضع)</label>
+          <input type="text" id="holidayAllowance" readonly value="0.00 ج.م" />
+        </div>
+      </div>
+
+      <!-- Leave Balance -->
+      <div class="payroll-card">
+        <h4>🏖️ رصيد الإجازات الاعتيادية</h4>
+        <div class="leave-grid">
+          <div>
+            <label>رصيد سابق (من العام الماضي)</label>
+            <input type="number" id="leavePrev" value="0" step="0.5" />
+          </div>
+          <div>
+            <label>رصيد لاحق (مستحق هذا العام)</label>
+            <input type="number" id="leaveAccrued" value="21" step="0.5" />
+          </div>
+          <div>
+            <label>مستنفذ</label>
+            <input type="text" id="leaveUsed" readonly value="0" />
+          </div>
+          <div>
+            <label>المتبقي</label>
+            <input type="text" id="leaveRemaining" readonly value="21" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Net -->
+      <div class="payroll-card final">
+        <h4>💰 صافي المرتب</h4>
+        <div class="net-row">
+          <span>إجمالي الدخل</span>
+          <span id="netIncome">0.00 ج.م</span>
+        </div>
+        <div class="net-row">
+          <span>إجمالي الخصومات</span>
+          <span id="netDeductions">0.00 ج.م</span>
+        </div>
+        <div class="net-row big">
+          <span>الصافي</span>
+          <span id="netSalary">0.00 ج.م</span>
+        </div>
+        <button class="primary-btn" id="calcPayroll">احسب المرتب</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- SHIFTS PANEL (Modal) -->
+  <div class="modal" id="shiftsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeShifts">⌃</button>
+      <h3>AVAILABLE SHIFTS</h3>
+      <div class="modal-actions">
+        <button class="primary-btn" id="createShift">CREATE NEW SHIFT</button>
+        <button class="primary-btn outline" id="importShifts">IMPORT SHIFTS...</button>
+      </div>
+      <div id="shiftsList"></div>
+    </div>
+  </div>
+
+  <!-- SHIFT CONFIG MODAL -->
+  <div class="modal" id="shiftConfigModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeConfig">⌃</button>
+      <h3>SHIFTS CONFIGURATION</h3>
+
+      <div class="field">
+        <label>Shift name</label>
+        <div class="shift-name-row">
+          <input type="text" id="shiftName" placeholder="اسم الشيفت" />
+          <div class="shift-preview" id="shiftPreview">1</div>
+        </div>
+      </div>
+
+      <div class="config-tabs">
+        <button class="ct-tab active" data-ct="appearance">APPEARANCE</button>
+        <button class="ct-tab" data-ct="schedule">SCHEDULE</button>
+        <button class="ct-tab" data-ct="actions">ACTIONS</button>
+      </div>
+
+      <div class="ct-panel active" data-ct="appearance">
+        <div class="field">
+          <label>ABBREVIATION</label>
+          <input type="text" id="shiftAbbr" maxlength="3" />
+        </div>
+        <div class="field">
+          <label>BACKGROUND COLOR</label>
+          <div class="color-row">
+            <button class="color-wheel" id="bgWheel">🎨</button>
+            <div class="swatches" id="bgSwatches"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>TEXT COLOR</label>
+          <div class="color-row">
+            <button class="color-wheel" id="txtWheel">🎨</button>
+            <div class="swatches" id="txtSwatches"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>TEXT SIZE</label>
+          <div class="size-row">
+            <span id="sizeVal">36</span>
+            <input type="range" id="textSize" min="20" max="64" value="36" />
+          </div>
+        </div>
+      </div>
+
+      <div class="ct-panel" data-ct="schedule">
+        <div class="time-row">
+          <div>
+            <label>Start</label>
+            <input type="time" id="startTime" value="08:00" />
+          </div>
+          <div>
+            <label>End</label>
+            <input type="time" id="endTime" value="16:00" />
+          </div>
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" id="splitShift" /> Split shift
+          </label>
+        </div>
+        <div class="field">
+          <label>Rest Time (minutes)</label>
+          <input type="number" id="restTime" value="0" />
+        </div>
+        <div class="field">
+          <label>
+            <input type="checkbox" id="calcTime" checked /> Calculate shift time
+          </label>
+          <div class="inline">
+            <input type="number" id="hours" value="8" min="0" />
+            <span>h</span>
+            <input type="number" id="minutes" value="0" min="0" max="59" />
+            <span>m</span>
+          </div>
+        </div>
+
+        <h4 class="sub-head">SHIFT'S ALARMS</h4>
+        <label><input type="checkbox" id="alarm1" /> Alarm 1</label>
+        <label><input type="checkbox" id="alarm2" /> Alarm 2</label>
+
+        <h4 class="sub-head">INCOMES (الدخل)</h4>
+        <div class="field">
+          <label>العملة (Currency Symbol)</label>
+          <input type="text" id="currency" value="ج.م" maxlength="4" />
+        </div>
+        <div class="field">
+          <label>إجمالي أجر اليوم (يقسم تلقائياً على ساعات الشيفت)</label>
+          <input type="number" id="dayIncome" value="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label>أجر الساعة المحسوب (معاينة)</label>
+          <input type="text" id="hourlyRate" readonly value="0.00" />
+        </div>
+        <div class="field">
+          <label>أجر/ساعة إضافية (Overtime)</label>
+          <input type="number" id="overtimeRate" value="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label>🍽️ بدل وجبة / يوم</label>
+          <input type="number" id="mealAllowance" value="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label>🌙 بدل وردية / يوم</label>
+          <input type="number" id="shiftAllowance" value="0" step="0.01" />
+        </div>
+      </div>
+
+      <div class="ct-panel" data-ct="actions">
+        <p class="muted">حذف أو نسخ الشيفت</p>
+        <button class="danger-btn" id="deleteShift">🗑️ حذف الشيفت</button>
+        <button class="primary-btn outline" id="duplicateShift">⎘ نسخ الشيفت</button>
+      </div>
+
+      <div class="modal-footer">
+        <button class="danger-btn round" id="deleteShiftIcon" title="حذف">🗑️</button>
+        <button class="primary-btn outline" id="cancelShift">CANCEL</button>
+        <button class="primary-btn" id="saveShift">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="importFile" accept=".json" style="display:none" />
+
+  <script>
+/* ============================================================
+   Shifter Payroll - main app
+   ============================================================ */
+
+const STORAGE_KEY = 'shifter_payroll_v1';
+
+const DEFAULT_SHIFTS = [
+  { id: 's1', name: 'اول',      abbr: '1', bg: '#f5f5f5', fg: '#1a1a1a', size: 36, start: '08:00', end: '16:00', hours: 8, dayIncome: 253, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 's2', name: 'تانية',    abbr: '2', bg: '#9a9a9a', fg: '#fff700', size: 36, start: '16:00', end: '00:00', hours: 8, dayIncome: 263, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 's3', name: 'تالتة',    abbr: '3', bg: '#2c2c2c', fg: '#ffffff', size: 36, start: '00:00', end: '08:00', hours: 8, dayIncome: 263, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 'sBd', name: 'بدل عطلة', abbr: 'ب عطلة', bg: '#b8d8e8', fg: '#0a3a52', size: 22, start: '08:00', end: '16:00', hours: 8, dayIncome: 213, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 'sR', name: 'راحة',      abbr: 'R', bg: '#1a1a1a', fg: '#7a4ad6', size: 24, start: '00:00', end: '00:00', hours: 0, dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 'sH', name: 'اعتيادي',   abbr: 'اعتيادي', bg: '#c5e0c0', fg: '#1a1a1a', size: 18, start: '08:00', end: '16:00', hours: 8, dayIncome: 213, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+];
+
+const PALETTE = [
+  '#f5f5f5','#9a9a9a','#2c2c2c','#1a1a1a','#b8d8e8','#c5e0c0',
+  '#d4a017','#e85a4f','#7a4ad6','#2bd4a4','#0a3a52','#fff700'
+];
+
+const state = {
+  shifts: [],
+  schedule: {},   // { '2026-07-15': 'sH', ... }
+  view: 'month',
+  current: { year: 2026, month: 6 },  // July (0-based)
+  summaryMode: 'month',
+  range: { from: '2026-07-16', to: '2026-08-15' },
+  editingShift: null,
+  selectedBg: '#f5f5f5',
+  selectedFg: '#1a1a1a',
+  paintMode: null, // selected shift id for painting, or '' for erase
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      state.shifts = data.shifts || [];
+      state.schedule = data.schedule || {};
+    } else {
+      state.shifts = [];
+      state.schedule = {};
+    }
+  } catch (e) {
+    state.shifts = [];
+    state.schedule = {};
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    shifts: state.shifts, schedule: state.schedule
+  }));
+}
+
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
+                'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                   'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const WEEKDAYS = ['SAT','SUN','MON','TUE','WED','THU','FRI'];
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function dateKey(y, m, d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+    state.view = btn.dataset.tab;
+    if (btn.dataset.tab === 'year') renderYear();
+    if (btn.dataset.tab === 'summary') renderSummary();
+    if (btn.dataset.tab === 'payroll') initPayroll();
+  });
+});
+
+/* ============================================================
+   Month view
+   ============================================================ */
+function renderMonth() {
+  const { year, month } = state.current;
+  document.getElementById('monthTitle').textContent = `${MONTHS[month]} ${year}`;
+
+  // Empty state - no shifts configured
+  if (state.shifts.length === 0) {
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: var(--bg-2); border-radius: 6px; margin: 20px 0;">
+        <div style="font-size: 48px; margin-bottom: 10px;">📅</div>
+        <h3 style="margin: 0 0 8px; color: var(--text);">لا يوجد شيفتات</h3>
+        <p style="color: var(--text-muted); margin: 0 0 16px;">ابدأ بإضافة الشيفتات الخاصة بك</p>
+        <button onclick="document.querySelectorAll('.tab')[0].click(); setTimeout(openShiftsModal, 100);" 
+                style="background: var(--accent); color: #1a2238; padding: 10px 20px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer;">
+          ➕ إضافة شيفت جديد
+        </button>
+      </div>
+    `;
+    const bar = document.getElementById('paintBar');
+    bar.innerHTML = '<button class="paint-toggle" id="paintToggle">⌃</button>';
+    document.getElementById('paintToggle').addEventListener('click', () => {
+      state.paintMode = null;
+    });
+    return;
+  }
+
+
+  const first = new Date(year, month, 1);
+  // Week starts Saturday in the original app
+  const startDay = (first.getDay() + 1) % 7;  // Sat=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+
+  // Previous month tail
+  for (let i = startDay - 1; i >= 0; i--) {
+    cal.appendChild(makeDayCell(prevDays - i, year, month - 1, true));
+  }
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    cal.appendChild(makeDayCell(d, year, month, false));
+  }
+  // Next month head
+  const total = startDay + daysInMonth;
+  const next = (7 - (total % 7)) % 7;
+  for (let i = 1; i <= next; i++) {
+    cal.appendChild(makeDayCell(i, year, month + 1, true));
+  }
+
+  renderPaintBar();
+}
+
+function makeDayCell(d, year, month, other) {
+  const cell = document.createElement('div');
+  cell.className = 'day' + (other ? ' other' : '');
+  const k = dateKey(year, month, d);
+  const shiftId = state.schedule[k];
+  const shift = state.shifts.find(s => s.id === shiftId);
+
+  const top = document.createElement('div');
+  top.className = 'num-top';
+  top.textContent = d;
+  cell.appendChild(top);
+
+  if (shift) {
+    cell.style.background = shift.bg;
+    const lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.style.color = shift.fg;
+    lbl.style.fontSize = (shift.size || 36) + 'px';
+    lbl.textContent = shift.abbr;
+    cell.appendChild(lbl);
+  }
+
+  cell.addEventListener('click', () => {
+    if (state.paintMode !== null) {
+      if (state.paintMode === '') {
+        delete state.schedule[k];
+      } else {
+        state.schedule[k] = state.paintMode;
+      }
+      save();
+      renderMonth();
+    } else {
+      openShiftPicker(k);
+    }
+  });
+
+  return cell;
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  state.current.month--;
+  if (state.current.month < 0) { state.current.month = 11; state.current.year--; }
+  renderMonth();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  state.current.month++;
+  if (state.current.month > 11) { state.current.month = 0; state.current.year++; }
+  renderMonth();
+});
+
+/* ============================================================
+   Paint bar
+   ============================================================ */
+function renderPaintBar() {
+  const bar = document.getElementById('paintBar');
+  // Remove all except toggle + erase
+  [...bar.querySelectorAll('.paint-btn:not(.erase)')].forEach(b => b.remove());
+
+  state.shifts.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'paint-btn';
+    b.dataset.shift = s.id;
+    b.style.background = s.bg;
+    b.style.color = s.fg;
+    b.textContent = s.abbr;
+    if (state.paintMode === s.id) b.classList.add('active');
+    b.addEventListener('click', () => {
+      state.paintMode = s.id;
+      renderPaintBar();
+    });
+    bar.appendChild(b);
+  });
+
+  const erase = bar.querySelector('.erase');
+  erase.classList.toggle('active', state.paintMode === '');
+  erase.addEventListener('click', () => {
+    state.paintMode = '';
+    renderPaintBar();
+  }, { once: true });
+}
+
+document.getElementById('paintToggle').addEventListener('click', () => {
+  state.paintMode = null;
+  renderPaintBar();
+});
+
+/* ============================================================
+   Shift picker (single day click without paint)
+   ============================================================ */
+function openShiftPicker(key) {
+  // Open config modal in quick mode? Simpler: cycle through shifts.
+  // For now, open shifts list
+  openShiftsModal();
+}
+
+/* ============================================================
+   Shifts modal
+   ============================================================ */
+function openShiftsModal() {
+  document.getElementById('shiftsModal').classList.add('open');
+  renderShiftsList();
+}
+document.getElementById('closeShifts').addEventListener('click', () => {
+  document.getElementById('shiftsModal').classList.remove('open');
+});
+document.getElementById('shiftsModal').addEventListener('click', e => {
+  if (e.target.id === 'shiftsModal') e.target.classList.remove('open');
+});
+
+function renderShiftsList() {
+  const list = document.getElementById('shiftsList');
+  list.innerHTML = '';
+  state.shifts.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'shift-item';
+    row.innerHTML = `
+      <div class="chip" style="background:${s.bg};color:${s.fg}">${escapeHtml(s.abbr)}</div>
+      <div class="info">
+        <div class="nm">${escapeHtml(s.name)}</div>
+        <div class="sub">(${pad(s.start)} - ${pad(s.end)})</div>
+      </div>
+      <div class="menu">☰</div>
+    `;
+    row.addEventListener('click', () => openShiftConfig(s));
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('createShift').addEventListener('click', () => {
+  const s = {
+    id: 's' + Date.now(),
+    name: 'شيفت جديد', abbr: 'N', bg: '#9a9a9a', fg: '#ffffff', size: 36,
+    start: '08:00', end: '16:00', hours: 8, dayIncome: 0, overtimeRate: 0,
+    mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م'
+  };
+  openShiftConfig(s);
+});
+
+document.getElementById('importShifts').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data.shifts)) {
+        state.shifts = data.shifts;
+        save();
+        renderShiftsList();
+        renderMonth();
+        alert('تم استيراد ' + data.shifts.length + ' شيفت');
+      }
+    } catch (err) { alert('ملف غير صالح'); }
+  };
+  r.readAsText(f);
+});
+
+/* ============================================================
+   Shift configuration
+   ============================================================ */
+function openShiftConfig(shift) {
+  state.editingShift = { ...shift };
+  fillConfigForm();
+  document.getElementById('shiftConfigModal').classList.add('open');
+  document.querySelectorAll('.ct-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.ct-tab[data-ct="appearance"]').classList.add('active');
+  document.querySelector('.ct-panel[data-ct="appearance"]').classList.add('active');
+}
+function fillConfigForm() {
+  const s = state.editingShift;
+  document.getElementById('shiftName').value = s.name;
+  document.getElementById('shiftPreview').textContent = s.abbr;
+  document.getElementById('shiftPreview').style.background = s.bg;
+  document.getElementById('shiftPreview').style.color = s.fg;
+  document.getElementById('shiftAbbr').value = s.abbr;
+  document.getElementById('textSize').value = s.size;
+  document.getElementById('sizeVal').textContent = s.size;
+  document.getElementById('startTime').value = s.start;
+  document.getElementById('endTime').value = s.end;
+  document.getElementById('restTime').value = 0;
+  document.getElementById('hours').value = s.hours;
+  document.getElementById('minutes').value = 0;
+  document.getElementById('currency').value = s.currency || 'ج.م';
+  document.getElementById('dayIncome').value = s.dayIncome || 0;
+  document.getElementById('overtimeRate').value = s.overtimeRate || 0;
+  document.getElementById('mealAllowance').value = s.mealAllowance || 0;
+  document.getElementById('shiftAllowance').value = s.shiftAllowance || 0;
+  state.selectedBg = s.bg;
+  state.selectedFg = s.fg;
+  buildSwatches('bgSwatches', s.bg, c => { state.selectedBg = c; updatePreview(); });
+  buildSwatches('txtSwatches', s.fg, c => { state.selectedFg = c; updatePreview(); });
+  updateHourlyRate();
+}
+
+function buildSwatches(id, current, onPick) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  PALETTE.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch' + (c === current ? ' selected' : '');
+    sw.style.background = c;
+    sw.addEventListener('click', () => {
+      el.querySelectorAll('.swatch').forEach(x => x.classList.remove('selected'));
+      sw.classList.add('selected');
+      onPick(c);
+    });
+    el.appendChild(sw);
+  });
+}
+
+function updatePreview() {
+  const p = document.getElementById('shiftPreview');
+  p.style.background = state.selectedBg;
+  p.style.color = state.selectedFg;
+}
+function updateHourlyRate() {
+  const hours = +document.getElementById('hours').value || 0;
+  const income = +document.getElementById('dayIncome').value || 0;
+  const rate = hours > 0 ? (income / hours).toFixed(2) : '0.00';
+  document.getElementById('hourlyRate').value = rate + ' ' + (state.editingShift.currency || 'ج.م');
+}
+
+document.getElementById('shiftName').addEventListener('input', e => {
+  state.editingShift.name = e.target.value;
+});
+document.getElementById('shiftAbbr').addEventListener('input', e => {
+  state.editingShift.abbr = e.target.value;
+  document.getElementById('shiftPreview').textContent = e.target.value;
+});
+document.getElementById('textSize').addEventListener('input', e => {
+  state.editingShift.size = +e.target.value;
+  document.getElementById('sizeVal').textContent = e.target.value;
+  document.getElementById('shiftPreview').style.fontSize = e.target.value + 'px';
+});
+['hours','dayIncome'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateHourlyRate);
+});
+
+// Config tabs
+document.querySelectorAll('.ct-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.ct-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.ct-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelector('.ct-panel[data-ct="' + t.dataset.ct + '"]').classList.add('active');
+  });
+});
+
+document.getElementById('saveShift').addEventListener('click', () => {
+  const s = state.editingShift;
+  s.start = document.getElementById('startTime').value;
+  s.end = document.getElementById('endTime').value;
+  s.hours = +document.getElementById('hours').value || 0;
+  s.currency = document.getElementById('currency').value || 'ج.م';
+  s.dayIncome = +document.getElementById('dayIncome').value || 0;
+  s.overtimeRate = +document.getElementById('overtimeRate').value || 0;
+  s.mealAllowance = +document.getElementById('mealAllowance').value || 0;
+  s.shiftAllowance = +document.getElementById('shiftAllowance').value || 0;
+  s.bg = state.selectedBg;
+  s.fg = state.selectedFg;
+
+  const existing = state.shifts.findIndex(x => x.id === s.id);
+  if (existing >= 0) state.shifts[existing] = s;
+  else state.shifts.push(s);
+  save();
+  document.getElementById('shiftConfigModal').classList.remove('open');
+  renderMonth();
+  renderShiftsList();
+  renderSummary();
+});
+
+document.getElementById('cancelShift').addEventListener('click', () => {
+  document.getElementById('shiftConfigModal').classList.remove('open');
+});
+document.getElementById('closeConfig').addEventListener('click', () => {
+  document.getElementById('shiftConfigModal').classList.remove('open');
+});
+document.getElementById('deleteShift').addEventListener('click', () => deleteShiftAction());
+document.getElementById('deleteShiftIcon').addEventListener('click', () => deleteShiftAction());
+document.getElementById('duplicateShift').addEventListener('click', () => {
+  const copy = { ...state.editingShift, id: 's' + Date.now() };
+  state.shifts.push(copy);
+  save();
+  renderShiftsList();
+  document.getElementById('shiftConfigModal').classList.remove('open');
+  renderMonth();
+});
+
+function deleteShiftAction() {
+  if (!state.editingShift) return;
+  if (!confirm('حذف ' + state.editingShift.name + '؟')) return;
+  state.shifts = state.shifts.filter(s => s.id !== state.editingShift.id);
+  // also clear from schedule
+  Object.keys(state.schedule).forEach(k => {
+    if (state.schedule[k] === state.editingShift.id) delete state.schedule[k];
+  });
+  save();
+  document.getElementById('shiftConfigModal').classList.remove('open');
+  renderMonth();
+  renderShiftsList();
+}
+
+/* ============================================================
+   Year view
+   ============================================================ */
+let yearYear = 2026;
+function renderYear() {
+  document.querySelectorAll('.year-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.year === yearYear);
+  });
+  const grid = document.getElementById('yearGrid');
+  grid.innerHTML = '';
+  for (let m = 0; m < 6; m++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'year-month';
+    wrap.innerHTML = `<h3>${MONTHS[m]}</h3>`;
+    const cal = document.createElement('div');
+    cal.className = 'mini-cal';
+    WEEKDAYS.forEach(w => {
+      const d = document.createElement('div');
+      d.className = 'mini-day-header';
+      d.textContent = w[0];
+      cal.appendChild(d);
+    });
+    const first = new Date(yearYear, m, 1);
+    const startDay = (first.getDay() + 1) % 7;
+    const days = new Date(yearYear, m + 1, 0).getDate();
+    for (let i = 0; i < startDay; i++) {
+      const d = document.createElement('div'); d.className = 'mday'; cal.appendChild(d);
+    }
+    for (let day = 1; day <= days; day++) {
+      const k = dateKey(yearYear, m, day);
+      const s = state.shifts.find(x => x.id === state.schedule[k]);
+      const d = document.createElement('div');
+      d.className = 'mday';
+      d.textContent = day;
+      if (s) { d.style.background = s.bg; d.style.color = s.fg; }
+      cal.appendChild(d);
+    }
+    wrap.appendChild(cal);
+    grid.appendChild(wrap);
+  }
+}
+document.querySelectorAll('.year-btn').forEach(b => {
+  b.addEventListener('click', () => { yearYear = +b.dataset.year; renderYear(); });
+});
+
+/* ============================================================
+   Summary view
+   ============================================================ */
+document.querySelectorAll('.st-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.st-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    state.summaryMode = t.dataset.st;
+    document.getElementById('rangePickers').classList.toggle('hidden', t.dataset.st !== 'range');
+    document.getElementById('periodLabel').textContent = t.dataset.st === 'year' ? yearYear : `${MONTHS[state.current.month]} ${state.current.year}`;
+    renderSummary();
+  });
+});
+
+function getActiveShifts() {
+  let from, to;
+  if (state.summaryMode === 'month') {
+    const y = state.current.year, m = state.current.month;
+    from = new Date(y, m, 1);
+    to = new Date(y, m + 1, 0);
+  } else if (state.summaryMode === 'year') {
+    from = new Date(yearYear, 0, 1);
+    to = new Date(yearYear, 11, 31);
+  } else {
+    from = new Date(state.range.from);
+    to = new Date(state.range.to);
+  }
+  const result = [];
+  for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+    const k = dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+    const sid = state.schedule[k];
+    if (sid) {
+      const s = state.shifts.find(x => x.id === sid);
+      if (s) result.push({ date: k, shift: s });
+    }
+  }
+  return result;
+}
+
+function renderSummary() {
+  const data = getActiveShifts();
+  const body = document.getElementById('statsBody');
+  body.innerHTML = '';
+
+  // group by shift
+  const groups = {};
+  data.forEach(({ shift }) => {
+    if (!groups[shift.id]) groups[shift.id] = { shift, count: 0, hours: 0, income: 0 };
+    groups[shift.id].count++;
+    groups[shift.id].hours += (shift.hours || 0);
+    groups[shift.id].income += (shift.dayIncome || 0);
+  });
+
+  let totalCount = 0, totalHours = 0, totalIncome = 0;
+
+  Object.values(groups).sort((a,b) => b.income - a.income).forEach(g => {
+    totalCount += g.count;
+    totalHours += g.hours;
+    totalIncome += g.income;
+    const row = document.createElement('div');
+    row.className = 'stats-row';
+    row.innerHTML = `
+      <div class="name">
+        <span class="nm">${escapeHtml(g.shift.name)}</span>
+        <span class="sub">(${pad(g.shift.start)}-${pad(g.shift.end)})</span>
+      </div>
+      <div>${g.count}</div>
+      <div>${g.hours}h,0m<br><span style="color:var(--text-muted)">${g.income.toFixed(2)}</span></div>
+      <div class="check"><span>✓</span></div>
+    `;
+    body.appendChild(row);
+  });
+
+  const global = document.getElementById('statsGlobal');
+  global.innerHTML = `Global: ${totalCount} Shifts<br>${totalHours}h,0m<br>${totalIncome.toFixed(2)} ${state.shifts[0]?.currency || 'ج.م'}`;
+}
+
+document.getElementById('fromDate').addEventListener('change', e => { state.range.from = e.target.value; renderSummary(); });
+document.getElementById('toDate').addEventListener('change', e => { state.range.to = e.target.value; renderSummary(); });
+
+/* ============================================================
+   Payroll view
+   ============================================================ */
+function initPayroll() {
+  // Default period = current month
+  const y = state.current.year, m = state.current.month;
+  const from = dateKey(y, m, 1);
+  const to = dateKey(y, m, new Date(y, m + 1, 0).getDate());
+  document.getElementById('payFrom').value = from;
+  document.getElementById('payTo').value = to;
+  // Default range
+  if (!document.getElementById('fromDate').value) {
+    document.getElementById('fromDate').value = from;
+    document.getElementById('toDate').value = to;
+    state.range.from = from;
+    state.range.to = to;
+  }
+  updateLeaveUsed();
+  calcPayroll();
+}
+
+document.getElementById('payFrom').addEventListener('change', () => calcPayroll());
+document.getElementById('payTo').addEventListener('change', () => calcPayroll());
+['mealDays','mealRate','shiftAllowDays','shiftAllowRate',
+ 'penaltyAmount','lateHours','otherDeductions','holidayCount',
+ 'annualLeaveDays','holidayMode','leavePrev','leaveAccrued'
+].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    updateLeaveUsed();
+    calcPayroll();
+  });
+});
+
+function updateLeaveUsed() {
+  const used = +document.getElementById('annualLeaveDays').value || 0;
+  document.getElementById('leaveUsed').value = used;
+  const prev = +document.getElementById('leavePrev').value || 0;
+  const accr = +document.getElementById('leaveAccrued').value || 0;
+  document.getElementById('leaveRemaining').value = (prev + accr - used);
+}
+
+document.getElementById('calcPayroll').addEventListener('click', () => calcPayroll());
+
+function calcPayroll() {
+  const from = document.getElementById('payFrom').value;
+  const to = document.getElementById('payTo').value;
+  if (!from || !to) return;
+  const fromD = new Date(from), toD = new Date(to);
+  if (fromD > toD) { alert('التاريخ من يجب أن يكون قبل إلى'); return; }
+
+  // Sum incomes from schedule
+  let totalDaysIncome = 0;
+  let totalOvertime = 0; // user can add manually below
+  const shiftCounts = {};
+  for (let d = new Date(fromD); d <= toD; d.setDate(d.getDate() + 1)) {
+    const k = dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+    const sid = state.schedule[k];
+    if (sid) {
+      const s = state.shifts.find(x => x.id === sid);
+      if (s) {
+        totalDaysIncome += (+s.dayIncome || 0);
+        shiftCounts[s.id] = (shiftCounts[s.id] || 0) + 1;
+      }
+    }
+  }
+
+  // Allowances
+  const mealDays = +document.getElementById('mealDays').value || 0;
+  const mealRate = +document.getElementById('mealRate').value || 0;
+  const mealTotal = mealDays * mealRate;
+  const shiftAllowDays = +document.getElementById('shiftAllowDays').value || 0;
+  const shiftAllowRate = +document.getElementById('shiftAllowRate').value || 0;
+  const shiftAllowTotal = shiftAllowDays * shiftAllowRate;
+
+  // Holiday allowance
+  const hMode = +document.getElementById('holidayMode').value; // 1 or 2
+  const hCount = +document.getElementById('holidayCount').value || 0;
+  // value of one holiday day = avg of working days' income (or 0)
+  const avgDay = (() => {
+    const incomes = Object.values(shiftCounts).reduce((sum, _) => sum, 0);
+    const totalDays = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
+    return totalDays > 0 ? totalDaysIncome / totalDays : 0;
+  })();
+  const holidayAllowance = hCount * avgDay * hMode;
+
+  // Overtime
+  const overtimeInput = +document.getElementById('overtimeHoursTotal').value || 0;
+  // avg overtime rate from configured shifts (use max for safety, or prompt user)
+  // Simpler: read from a single field below
+  // We'll use overtimeHours * avgOvertimeRate:
+  const avgOvertimeRate = (() => {
+    const rates = state.shifts.map(s => +s.overtimeRate || 0).filter(r => r > 0);
+    if (rates.length === 0) return 0;
+    return rates.reduce((a, b) => a + b, 0) / rates.length;
+  })();
+  totalOvertime = overtimeInput * avgOvertimeRate;
+  document.getElementById('totalOvertime').value = totalOvertime.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+
+  // Total income
+  const totalIncome = totalDaysIncome + totalOvertime + mealTotal + shiftAllowTotal + holidayAllowance;
+  document.getElementById('totalDaysIncome').value = totalDaysIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+  document.getElementById('holidayAllowance').value = holidayAllowance.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+  document.getElementById('totalIncome').value = totalIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+
+  // Deductions
+  const annualLeaveDays = +document.getElementById('annualLeaveDays').value || 0;
+  // Deduct income of those leave days (avg of working days' income)
+  const leaveDeduction = annualLeaveDays * avgDay;
+  const penalty = +document.getElementById('penaltyAmount').value || 0;
+  const lateHours = +document.getElementById('lateHours').value || 0;
+  const avgHourly = (() => {
+    const totalH = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
+      const s = state.shifts.find(x => x.id === id);
+      return sum + ((+s.hours || 0) * c);
+    }, 0);
+    const totalD = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
+    return totalD > 0 ? totalDaysIncome / totalH : 0;
+  })();
+  const lateDeduction = lateHours * avgHourly;
+  const other = +document.getElementById('otherDeductions').value || 0;
+  const totalDeductions = leaveDeduction + penalty + lateDeduction + other;
+  document.getElementById('totalDeductions').value = totalDeductions.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م');
+
+  // Net
+  const net = totalIncome - totalDeductions;
+  const cur = state.shifts[0]?.currency || 'ج.م';
+  document.getElementById('netIncome').textContent = totalIncome.toFixed(2) + ' ' + cur;
+  document.getElementById('netDeductions').textContent = totalDeductions.toFixed(2) + ' ' + cur;
+  document.getElementById('netSalary').textContent = net.toFixed(2) + ' ' + cur;
+}
+
+/* ============================================================
+   Top actions
+   ============================================================ */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const data = JSON.stringify({ shifts: state.shifts, schedule: state.schedule }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'shifter-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('shareBtn').addEventListener('click', () => {
+  const data = JSON.stringify({ shifts: state.shifts, schedule: state.schedule });
+  if (navigator.share) {
+    navigator.share({ title: 'Shifter Backup', text: data });
+  } else {
+    navigator.clipboard.writeText(data);
+    alert('تم نسخ البيانات للحافظة');
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('سيتم مسح كل البيانات. متأكد؟')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+load();
+renderMonth();
+
+</script>
+</body>
+</html>
