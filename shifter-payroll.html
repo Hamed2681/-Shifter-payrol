@@ -229,9 +229,10 @@ input, select {
 .paint-bar {
   margin-top: 12px; display: flex; gap: 4px; align-items: center;
   background: var(--bg-2); padding: 8px; border-radius: 4px;
-  overflow-x: auto;
   flex: 0 0 auto;
 }
+.paint-fixed { display: flex; gap: 4px; flex-shrink: 0; }
+.paint-scroll { display: flex; gap: 4px; overflow-x: auto; min-width: 0; flex: 1; }
 .paint-toggle {
   background: var(--danger); color: #fff; padding: 12px 14px;
   border-radius: 4px; font-size: 16px; font-weight: 700;
@@ -247,8 +248,7 @@ input, select {
 }
 .paint-btn.erase { background: #fff; color: var(--danger); border-color: var(--danger); }
 .paint-btn.active { border-color: var(--accent); }
-.paint-bar.collapsed { overflow: hidden; }
-.paint-bar.collapsed > *:not(.paint-toggle) { display: none; }
+.paint-bar.collapsed .paint-scroll { display: none; }
 
 /* ===== Year view ===== */
 .year-switcher {
@@ -594,9 +594,13 @@ input, select {
 
       <!-- Paint bar -->
       <div class="paint-bar" id="paintBar">
-        <button class="paint-toggle" id="paintToggle">⌃</button>
-        <button class="paint-btn erase" data-shift="">مسح</button>
-        <!-- shift chips injected here -->
+        <div class="paint-fixed">
+          <button class="paint-toggle" id="paintToggle">⌃</button>
+          <button class="paint-btn erase" data-shift="">مسح</button>
+        </div>
+        <div class="paint-scroll" id="paintScroll">
+          <!-- shift chips injected here -->
+        </div>
       </div>
     </section>
 
@@ -696,6 +700,22 @@ input, select {
           </div>
         </div>
         <div class="row">
+          <label>🍽️ بدل وجبة (تلقائي: أيام العمل × قيمة البدل بالشيفت)</label>
+          <input type="text" id="mealTotal" readonly value="0.00 ج.م" />
+        </div>
+        <div class="row">
+          <label>🌙 بدل وردية (تلقائي: أيام العمل × قيمة البدل بالشيفت)</label>
+          <input type="text" id="shiftAllowTotal" readonly value="0.00 ج.م" />
+        </div>
+        <div class="row total">
+          <label>إجمالي الدخل</label>
+          <input type="text" id="totalIncome" readonly value="0.00 ج.م" />
+        </div>
+      </div>
+
+      <!-- Legacy manual fields (hidden, kept only so old saved payroll pages don't break) -->
+      <div class="payroll-card" style="display:none">
+        <div class="row">
           <label>🍽️ بدل وجبة (عدد أيام × قيمة)</label>
           <div class="inline">
             <input type="number" id="mealDays" value="0" min="0" />
@@ -710,10 +730,6 @@ input, select {
             <input type="number" id="shiftAllowRate" value="0" min="0" step="0.01" placeholder="قيمة البدل" />
             <span>ج.م</span>
           </div>
-        </div>
-        <div class="row total">
-          <label>إجمالي الدخل</label>
-          <input type="text" id="totalIncome" readonly value="0.00 ج.م" />
         </div>
       </div>
 
@@ -1081,6 +1097,7 @@ const state = {
   current: { year: 2026, month: 6 },  // July (0-based)
   summaryMode: 'month',
   range: { from: '2026-07-16', to: '2026-08-15' },
+  payRange: { from: null, to: null },
   editingShift: null,
   selectedBg: '#f5f5f5',
   selectedFg: '#1a1a1a',
@@ -1104,6 +1121,12 @@ function load() {
       if (Array.isArray(data.deductionTypes) && data.deductionTypes.length) {
         state.deductionTypes = data.deductionTypes;
       }
+      if (data.range && data.range.from && data.range.to) {
+        state.range = data.range;
+      }
+      if (data.payRange && data.payRange.from && data.payRange.to) {
+        state.payRange = data.payRange;
+      }
     } else {
       state.shifts = DEFAULT_SHIFTS.map(s => ({ ...s }));
       state.schedule = {};
@@ -1119,7 +1142,7 @@ function load() {
 function save() {
   _setItem(STORAGE_KEY, {
     shifts: state.shifts, schedule: state.schedule, settings: state.settings,
-    deductionTypes: state.deductionTypes
+    deductionTypes: state.deductionTypes, range: state.range, payRange: state.payRange
   });
 }
 
@@ -1149,7 +1172,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     state.view = btn.dataset.tab;
     document.querySelector('main').classList.toggle('no-scroll', btn.dataset.tab === 'month');
     if (btn.dataset.tab === 'year') renderYear();
-    if (btn.dataset.tab === 'summary') renderSummary();
+    if (btn.dataset.tab === 'summary') { initSummaryRangeDefaults(); renderSummary(); }
     if (btn.dataset.tab === 'payroll') initPayroll();
   });
 });
@@ -1185,7 +1208,13 @@ function renderMonth() {
       </div>
     `;
     const bar = document.getElementById('paintBar');
-    bar.innerHTML = '<button class="paint-toggle" id="paintToggle">⌃</button>';
+    bar.innerHTML = `
+      <div class="paint-fixed">
+        <button class="paint-toggle" id="paintToggle">⌃</button>
+        <button class="paint-btn erase" data-shift="">مسح</button>
+      </div>
+      <div class="paint-scroll" id="paintScroll"></div>
+    `;
     document.getElementById('paintToggle').addEventListener('click', () => {
       state.paintMode = null;
     });
@@ -1328,14 +1357,14 @@ document.getElementById('nextMonth').addEventListener('click', () => {
    ============================================================ */
 function renderPaintBar() {
   const bar = document.getElementById('paintBar');
+  const scroll = document.getElementById('paintScroll');
   bar.classList.toggle('collapsed', !!state.paintBarCollapsed);
   const toggleBtn = document.getElementById('paintToggle');
   if (toggleBtn) {
     toggleBtn.textContent = state.paintBarCollapsed ? '⌄' : '⌃';
     toggleBtn.title = state.paintBarCollapsed ? 'إظهار الورديات' : 'إخفاء الورديات';
   }
-  // Remove all except toggle + erase
-  [...bar.querySelectorAll('.paint-btn:not(.erase)')].forEach(b => b.remove());
+  scroll.innerHTML = '';
 
   state.shifts.forEach(s => {
     const b = document.createElement('button');
@@ -1349,7 +1378,7 @@ function renderPaintBar() {
       state.paintMode = s.id;
       renderPaintBar();
     });
-    bar.appendChild(b);
+    scroll.appendChild(b);
   });
 
   const erase = bar.querySelector('.erase');
@@ -1486,7 +1515,7 @@ function renderShiftsList() {
 
 document.getElementById('createShift').addEventListener('click', () => {
   const s = {
-    id: 's' + nextSeq(),
+    id: 'shf' + nextSeq(),
     name: 'شيفت جديد', abbr: 'N', bg: '#9a9a9a', fg: '#ffffff', size: 36,
     start: '08:00', end: '16:00', hours: 8, dayIncome: 0, overtimeRate: 0,
     mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م'
@@ -1646,7 +1675,7 @@ document.getElementById('deleteShift').addEventListener('click', () => deleteShi
 document.getElementById('deleteShiftIcon').addEventListener('click', () => deleteShiftAction());
 document.getElementById('duplicateShift').addEventListener('click', () => {
   syncEditingShiftFromForm();
-  const copy = { ...state.editingShift, id: 's' + nextSeq() };
+  const copy = { ...state.editingShift, id: 'shf' + nextSeq() };
   state.shifts.push(copy);
   save();
   renderShiftsList();
@@ -1809,11 +1838,13 @@ function syncAllDateDisplays() {
 
 document.getElementById('fromDate').addEventListener('change', e => {
   state.range.from = e.target.value;
+  save();
   syncDateDisplay('fromDate', 'fromDateDisplay');
   renderSummary();
 });
 document.getElementById('toDate').addEventListener('change', e => {
   state.range.to = e.target.value;
+  save();
   syncDateDisplay('toDate', 'toDateDisplay');
   renderSummary();
 });
@@ -1846,30 +1877,61 @@ function renderDeductionsRows() {
   });
 }
 
-function initPayroll() {
-  // Default period = current month
-  const y = state.current.year, m = state.current.month;
-  const from = dateKey(y, m, 1);
-  const to = dateKey(y, m, new Date(y, m + 1, 0).getDate());
-  document.getElementById('payFrom').value = from;
-  document.getElementById('payTo').value = to;
-  // Default range
-  if (!document.getElementById('fromDate').value) {
-    document.getElementById('fromDate').value = from;
-    document.getElementById('toDate').value = to;
-    state.range.from = from;
-    state.range.to = to;
+function initSummaryRangeDefaults() {
+  if (!state.range.from || !state.range.to) {
+    const y = state.current.year, m = state.current.month;
+    state.range.from = dateKey(y, m, 1);
+    state.range.to = dateKey(y, m, new Date(y, m + 1, 0).getDate());
+    save();
   }
+  document.getElementById('fromDate').value = state.range.from;
+  document.getElementById('toDate').value = state.range.to;
+  syncDateDisplay('fromDate', 'fromDateDisplay');
+  syncDateDisplay('toDate', 'toDateDisplay');
+}
+
+function initPayroll() {
+  // Default period = current month (only if the user hasn't already chosen a period)
+  const y = state.current.year, m = state.current.month;
+  const defaultFrom = dateKey(y, m, 1);
+  const defaultTo = dateKey(y, m, new Date(y, m + 1, 0).getDate());
+  if (state.payRange.from && state.payRange.to) {
+    document.getElementById('payFrom').value = state.payRange.from;
+    document.getElementById('payTo').value = state.payRange.to;
+  } else {
+    document.getElementById('payFrom').value = defaultFrom;
+    document.getElementById('payTo').value = defaultTo;
+    state.payRange.from = defaultFrom;
+    state.payRange.to = defaultTo;
+    save();
+  }
+  // Default range (Summary) - only if the user hasn't already chosen one
+  if (!state.range.from || !state.range.to) {
+    state.range.from = defaultFrom;
+    state.range.to = defaultTo;
+    save();
+  }
+  document.getElementById('fromDate').value = state.range.from;
+  document.getElementById('toDate').value = state.range.to;
   syncAllDateDisplays();
   renderDeductionsRows();
   updateLeaveUsed();
   calcPayroll();
 }
 
-document.getElementById('payFrom').addEventListener('change', () => { syncDateDisplay('payFrom', 'payFromDisplay'); calcPayroll(); });
-document.getElementById('payTo').addEventListener('change', () => { syncDateDisplay('payTo', 'payToDisplay'); calcPayroll(); });
-['mealDays','mealRate','shiftAllowDays','shiftAllowRate',
- 'holidayCount','annualLeaveDays','holidayMode','leavePrev','leaveAccrued'
+document.getElementById('payFrom').addEventListener('change', e => {
+  state.payRange.from = e.target.value;
+  save();
+  syncDateDisplay('payFrom', 'payFromDisplay');
+  calcPayroll();
+});
+document.getElementById('payTo').addEventListener('change', e => {
+  state.payRange.to = e.target.value;
+  save();
+  syncDateDisplay('payTo', 'payToDisplay');
+  calcPayroll();
+});
+['holidayCount','annualLeaveDays','holidayMode','leavePrev','leaveAccrued'
 ].forEach(id => {
   document.getElementById(id).addEventListener('input', () => {
     updateLeaveUsed();
@@ -1910,13 +1972,17 @@ function calcPayroll() {
     }
   }
 
-  // Allowances
-  const mealDays = +document.getElementById('mealDays').value || 0;
-  const mealRate = +document.getElementById('mealRate').value || 0;
-  const mealTotal = mealDays * mealRate;
-  const shiftAllowDays = +document.getElementById('shiftAllowDays').value || 0;
-  const shiftAllowRate = +document.getElementById('shiftAllowRate').value || 0;
-  const shiftAllowTotal = shiftAllowDays * shiftAllowRate;
+  // Allowances - calculated automatically from worked days × each shift's configured per-day rate
+  const mealTotal = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
+    const s = state.shifts.find(x => x.id === id);
+    return sum + (c * (+s?.mealAllowance || 0));
+  }, 0);
+  const shiftAllowTotal = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
+    const s = state.shifts.find(x => x.id === id);
+    return sum + (c * (+s?.shiftAllowance || 0));
+  }, 0);
+  document.getElementById('mealTotal').value = arDigits(mealTotal.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  document.getElementById('shiftAllowTotal').value = arDigits(shiftAllowTotal.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
 
   // Holiday allowance
   const hMode = +document.getElementById('holidayMode').value; // 1 or 2
