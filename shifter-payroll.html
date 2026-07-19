@@ -119,15 +119,15 @@ input, select {
 /* ===== Tabs ===== */
 .tabs {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  background: var(--bg-3); border-bottom: 1px solid var(--bg-4);
+  background: #e8e8e8; border-bottom: 1px solid var(--bg-4);
   flex: 0 0 auto;
 }
 .tab {
-  background: transparent; color: var(--text-muted); padding: 14px;
+  background: transparent; color: #1b2a4a; padding: 8px;
   font-weight: 700; letter-spacing: 1px; font-size: 15px;
   border-bottom: 3px solid transparent; position: relative;
 }
-.tab.active { color: var(--text); }
+.tab.active { color: #1b2a4a; }
 .tab.active::after {
   content: ''; position: absolute; bottom: 0; left: 25%; right: 25%;
   height: 3px; background: var(--accent); border-radius: 2px;
@@ -174,20 +174,28 @@ input, select {
 .day {
   background: #1f2738; padding: 4px;
   display: flex; flex-direction: column; justify-content: space-between;
-  position: relative; cursor: pointer; border: 1px solid transparent;
-  min-height: 0;
+  position: relative; cursor: pointer; border: 1px solid var(--line);
+  min-height: 0; min-width: 0;
 }
 .day:hover { border-color: var(--accent); }
-.day.other { background: #181f2c; opacity: 0.25; }
+.day.other { background: #181f2c; opacity: 0.12; border-color: transparent; }
+.frame-edge { position: absolute; background: var(--accent); z-index: 3; pointer-events: none; border-radius: 1px; }
+.frame-edge-top, .frame-edge-bottom { left: -2px; right: -2px; height: 3px; }
+.frame-edge-top { top: -2px; }
+.frame-edge-bottom { bottom: -2px; }
+.frame-edge-left, .frame-edge-right { top: -2px; bottom: -2px; width: 3px; }
+.frame-edge-left { left: -2px; }
+.frame-edge-right { right: -2px; }
 .day .num-top {
-  font-size: 11px; color: var(--text-muted); text-align: right;
+  position: absolute; top: 1px; right: 1px; margin: 0; padding: 0;
+  font-size: 9px; color: #fff; line-height: 1;
   font-family: 'Courier New', monospace;
 }
 .day .label {
   font-weight: 800; text-align: center;
   flex: 1; display: flex; align-items: center; justify-content: center;
   min-width: 0; min-height: 0; width: 100%;
-  overflow: hidden; word-break: break-word; line-height: 1.05;
+  overflow: hidden; white-space: nowrap; line-height: 1.05;
   padding: 0 2px;
 }
 
@@ -213,6 +221,8 @@ input, select {
 }
 .paint-btn.erase { background: #fff; color: var(--danger); border-color: var(--danger); }
 .paint-btn.active { border-color: var(--accent); }
+.paint-bar.collapsed { overflow: hidden; }
+.paint-bar.collapsed > *:not(.paint-toggle) { display: none; }
 
 /* ===== Year view ===== */
 .year-switcher {
@@ -236,7 +246,7 @@ input, select {
 }
 .mini-cal .mday {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  color: var(--text); font-weight: 700;
+  color: #fff; font-weight: 700;
   font-family: 'Courier New', monospace;
 }
 .mini-day-header { color: var(--text-muted); aspect-ratio: 1; font-size: 10px; }
@@ -521,7 +531,7 @@ input, select {
     <button class="tab active" data-tab="month">JULY</button>
     <button class="tab" data-tab="year" id="yearTab">2026</button>
     <button class="tab" data-tab="summary">SUMMARY</button>
-    <button class="tab" data-tab="payroll">💰 المرتب</button>
+    <button class="tab" data-tab="payroll">المرتب</button>
   </nav>
 
   <main>
@@ -1039,6 +1049,7 @@ const state = {
   selectedBg: '#f5f5f5',
   selectedFg: '#1a1a1a',
   paintMode: null, // selected shift id for painting, or '' for erase
+  paintBarCollapsed: false,
   settings: { numeralType: 'ar', font: 'Cairo' },
 };
 
@@ -1165,6 +1176,38 @@ function renderMonth() {
   renderPaintBar();
   fitAllDayLabels();
   updateStaticLabels();
+  applyMonthFrame(startDay, daysInMonth);
+}
+
+/* ============================================================
+   Trace a single outline around the current-month block only,
+   following its actual (possibly L-shaped) boundary - matching
+   a real calendar's "current month" highlight.
+   ============================================================ */
+function applyMonthFrame(startDay, daysInMonth) {
+  const cells = [...document.querySelectorAll('#calendar .day')];
+  const total = cells.length;
+  const cols = 7;
+  const isCurrent = idx => idx >= startDay && idx < startDay + daysInMonth;
+
+  const addEdge = (cell, side) => {
+    const bar = document.createElement('div');
+    bar.className = 'frame-edge frame-edge-' + side;
+    cell.appendChild(bar);
+  };
+
+  cells.forEach((cell, idx) => {
+    cell.querySelectorAll('.frame-edge').forEach(e => e.remove());
+    if (!isCurrent(idx)) return;
+    const col = idx % cols;
+
+    if (idx - cols < 0 || !isCurrent(idx - cols)) addEdge(cell, 'top');
+    if (idx + cols >= total || !isCurrent(idx + cols)) addEdge(cell, 'bottom');
+    // RTL grid: logical "previous" cell (idx-1) sits physically to the right,
+    // logical "next" cell (idx+1) sits physically to the left.
+    if (col === 0 || !isCurrent(idx - 1)) addEdge(cell, 'right');
+    if (col === cols - 1 || !isCurrent(idx + 1)) addEdge(cell, 'left');
+  });
 }
 
 /* ============================================================
@@ -1240,6 +1283,12 @@ document.getElementById('nextMonth').addEventListener('click', () => {
    ============================================================ */
 function renderPaintBar() {
   const bar = document.getElementById('paintBar');
+  bar.classList.toggle('collapsed', !!state.paintBarCollapsed);
+  const toggleBtn = document.getElementById('paintToggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = state.paintBarCollapsed ? '⌄' : '⌃';
+    toggleBtn.title = state.paintBarCollapsed ? 'إظهار الورديات' : 'إخفاء الورديات';
+  }
   // Remove all except toggle + erase
   [...bar.querySelectorAll('.paint-btn:not(.erase)')].forEach(b => b.remove());
 
@@ -1271,6 +1320,7 @@ function renderPaintBar() {
 
 document.getElementById('paintToggle').addEventListener('click', () => {
   state.paintMode = null;
+  state.paintBarCollapsed = !state.paintBarCollapsed;
   renderPaintBar();
 });
 
