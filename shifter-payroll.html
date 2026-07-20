@@ -6,7 +6,7 @@
   <title>Shifter Payroll - جدولة الشيفتات وحساب المرتبات</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700;800&family=Readex+Pro:wght@400;500;600;700&family=Changa:wght@400;500;600;700;800&family=El+Messiri:wght@400;500;600;700&family=Amiri:wght@400;700&family=Rakkas:wght@400;700&family=Markazi+Text:wght@400;500;600;700&family=Mada:wght@400;500;600;700;800&family=Rubik:wght@400;500;600;700;800&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
   <style>
 /* ===== Shifter Payroll - dark navy theme like original ===== */
 :root {
@@ -141,6 +141,12 @@ input, select {
   padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 700;
 }
 .side-menu-item.warn { background: var(--warn); color: #fff; }
+.side-menu-group { margin-bottom: 14px; }
+.side-menu-label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
+.side-menu-select {
+  width: 100%; background: var(--bg-3); color: var(--text);
+  padding: 10px; border-radius: 6px; font-weight: 700; font-size: 14px;
+}
 
 /* ===== Tabs ===== */
 .tabs {
@@ -197,6 +203,37 @@ input, select {
   min-height: 0;
   overflow: hidden;
 }
+.calendar-list {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 2px 8px;
+}
+.day-row {
+  display: flex; align-items: center; gap: 10px;
+  background: #1f2738; border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 12px; cursor: pointer; flex-shrink: 0;
+}
+.day-row.other { opacity: 0.35; border-color: transparent; }
+.day-row .dr-date {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 44px; font-family: 'Courier New', monospace;
+}
+.day-row .dr-date .dr-num { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; }
+.day-row .dr-date .dr-wd { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; }
+.day-row .dr-shift {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 6px;
+  font-weight: 800; text-align: center; white-space: nowrap; overflow: hidden;
+}
+.day-row .dr-empty { flex: 1; color: var(--text-muted); font-size: 13px; text-align: center; }
+
+#view-month.list-mode .calendar { display: none; }
+#view-month.list-mode .calendar-list { display: flex; }
+#view-month.list-mode #weekdaysRow { display: none; }
 .day {
   background: #1f2738; padding: 0px;
   display: flex; flex-direction: column; justify-content: space-between;
@@ -371,11 +408,39 @@ input, select {
 .inline input { width: 70px; }
 .inline span { color: var(--text-muted); font-size: 12px; }
 
+.addition-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.addition-row:last-child { border-bottom: none; }
+.addition-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+.addition-row .addition-label { flex: 1; }
+.addition-row .addition-title { font-size: 14px; font-weight: 700; cursor: pointer; }
+.addition-row .addition-note { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.addition-row .addition-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.addition-row .addition-actions button {
+  background: var(--bg-4); color: var(--text); width: 30px; height: 30px;
+  border-radius: 4px; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.addition-row .addition-actions button.add-del { background: var(--danger); color: #fff; }
+
+.pg-checkbox-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; font-size: 13px; color: var(--text); text-align: right; }
+.pg-checkbox-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); flex-shrink: 0; }
+
 .leave-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
 }
 .leave-grid label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
 .leave-grid input { width: 100%; }
+
+.mini-list-title { color: var(--text-muted); font-size: 12px; margin: 12px 0 6px; }
+.mini-list { display: flex; flex-direction: column; gap: 6px; }
+.mini-list-empty { color: var(--text-muted); font-size: 13px; padding: 8px 0; text-align: center; }
+.mini-list-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--bg-3); border-radius: 6px; padding: 8px 10px;
+}
+.mini-list-item .mli-info { display: flex; flex-direction: column; gap: 2px; }
+.mini-list-item .mli-name { font-weight: 700; font-size: 13px; }
+.mini-list-item .mli-sub { color: var(--text-muted); font-size: 11px; }
+.mini-list-item .mli-del { color: var(--danger); font-size: 18px; font-weight: 800; padding: 2px 8px; }
 
 .net-row {
   display: flex; justify-content: space-between; padding: 8px 0;
@@ -408,6 +473,11 @@ input, select {
 }
 .pg-confirm-box p {
   margin: 0 0 18px; color: var(--text); font-size: 15px; line-height: 1.6;
+}
+.pg-prompt-input {
+  width: 100%; background: var(--bg-3); color: var(--text);
+  padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 14px;
+  text-align: center;
 }
 .pg-confirm-actions { display: flex; gap: 10px; }
 .pg-confirm-actions button { flex: 1; }
@@ -545,11 +615,8 @@ input, select {
     </button>
 
     <div class="company-select">
-      <span class="edit-icon">✏️</span>
-      <select id="companySelect">
-        <option>شركة cliopatra</option>
-        <option>شركة ثانية</option>
-      </select>
+      <span class="edit-icon" id="editCompanyBtn">✏️</span>
+      <select id="companySelect"></select>
       <span class="caret">▾</span>
     </div>
 
@@ -563,6 +630,15 @@ input, select {
   <div class="side-menu-overlay" id="sideMenuOverlay">
     <nav class="side-menu" id="sideMenu">
       <button class="side-menu-close" id="closeSideMenu">✕</button>
+
+      <div class="side-menu-group">
+        <label class="side-menu-label">شكل التقويم</label>
+        <select id="calendarViewSelect" class="side-menu-select">
+          <option value="grid">شبكة (شهر)</option>
+          <option value="list">قائمة رأسية (أيام)</option>
+        </select>
+      </div>
+
       <button class="side-menu-item" id="menuExport">📤 تصدير / حفظ البيانات</button>
       <button class="side-menu-item warn" id="menuReset">⚠️ مسح كل البيانات</button>
     </nav>
@@ -585,12 +661,10 @@ input, select {
         <button class="nav-arrow" id="nextMonth">‹</button>
       </div>
 
-      <div class="weekdays">
-        <span>SAT</span><span>SUN</span><span>MON</span><span>TUE</span>
-        <span>WED</span><span>THU</span><span>FRI</span>
-      </div>
+      <div class="weekdays" id="weekdaysRow"></div>
 
       <div class="calendar" id="calendar"></div>
+      <div class="calendar-list" id="calendarList"></div>
 
       <!-- Paint bar -->
       <div class="paint-bar" id="paintBar">
@@ -654,6 +728,85 @@ input, select {
         <div id="statsBody"></div>
         <div class="stats-global" id="statsGlobal"></div>
       </div>
+
+      <!-- Annual Leave Balance -->
+      <div class="payroll-card">
+        <h4>🏖️ رصيد الإجازات الاعتيادية</h4>
+        <div class="leave-grid">
+          <div>
+            <label>سابق</label>
+            <input type="number" id="sumLeavePrev" step="0.5" />
+          </div>
+          <div>
+            <label>حالي</label>
+            <input type="number" id="sumLeaveAccrued" step="0.5" />
+          </div>
+          <div>
+            <label>مستنفذ (خلال الفترة المحددة)</label>
+            <input type="text" id="sumLeaveUsed" readonly />
+          </div>
+          <div>
+            <label>المتبقي</label>
+            <input type="text" id="sumLeaveRemaining" readonly />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <label>🎉 رصيد بدل العطلات (تلقائي - أيام تم العمل بها في عطلة رسمية)</label>
+          <input type="text" id="sumHolidayCompBalance" readonly />
+        </div>
+
+        <p class="muted" style="margin-top:12px">
+          يتم احتساب أيام الإجازة الاعتيادية تلقائياً من جدول التقويم — أي يوم مجدول بوردية
+          "اعتيادي" (أو أي وردية مُفعّل عليها "تُحسب كإجازة اعتيادية" من إعداداتها) يُخصم
+          تلقائياً من الرصيد.
+        </p>
+
+        <div class="mini-list-title">أيام الإجازة الاعتيادية (من التقويم) خلال الفترة المحددة</div>
+        <div id="leaveDatesList" class="mini-list"></div>
+      </div>
+
+      <!-- Official Holidays -->
+      <div class="payroll-card">
+        <h4>🎉 العطلات الرسمية</h4>
+        <div id="holidaysList" class="mini-list"></div>
+
+        <div class="row" style="margin-top:12px">
+          <label>إضافة عطلة جديدة</label>
+          <select id="newHolidayName">
+            <option value="">اختر اسم العطلة...</option>
+            <option value="رأس السنة الميلادية">رأس السنة الميلادية</option>
+            <option value="عيد الشرطة (ثورة 25 يناير)">عيد الشرطة (ثورة 25 يناير)</option>
+            <option value="عيد تحرير سيناء">عيد تحرير سيناء</option>
+            <option value="عيد شم النسيم">عيد شم النسيم</option>
+            <option value="عيد العمال">عيد العمال</option>
+            <option value="ثورة 30 يونيو">ثورة 30 يونيو</option>
+            <option value="ثورة 23 يوليو">ثورة 23 يوليو</option>
+            <option value="عيد الفطر">عيد الفطر</option>
+            <option value="عيد الأضحى">عيد الأضحى</option>
+            <option value="رأس السنة الهجرية">رأس السنة الهجرية</option>
+            <option value="المولد النبوي الشريف">المولد النبوي الشريف</option>
+            <option value="نصر أكتوبر (عيد القوات المسلحة)">نصر أكتوبر (عيد القوات المسلحة)</option>
+            <option value="__other__">أخرى (اسم مخصص)</option>
+          </select>
+        </div>
+        <div class="row" id="row-customHolidayName" style="display:none">
+          <label>اسم العطلة المخصص</label>
+          <input type="text" id="newHolidayNameCustom" placeholder="اكتب اسم العطلة" />
+        </div>
+        <div class="row">
+          <label>التاريخ / الرصيد (أيام)</label>
+          <div class="inline">
+            <input type="date" id="newHolidayDate" style="flex:1" />
+            <input type="number" id="newHolidayBalance" value="1" min="0" step="0.5" style="width:70px" />
+          </div>
+        </div>
+        <div class="row">
+          <label>تاريخ الإجازة (اختياري، لو مختلف عن تاريخ العطلة)</label>
+          <input type="date" id="newHolidayLeaveDate" />
+        </div>
+        <button class="primary-btn outline" id="addHoliday">➕ إضافة العطلة</button>
+      </div>
     </section>
 
     <!-- PAYROLL VIEW (NEW) -->
@@ -691,22 +844,7 @@ input, select {
           <label>إجمالي أجر الأيام (محسوب تلقائياً)</label>
           <input type="text" id="totalDaysIncome" readonly value="0.00 ج.م" />
         </div>
-        <div class="row">
-          <label>إجمالي الإضافي (ساعات × سعر)</label>
-          <div class="inline">
-            <input type="number" id="overtimeHoursTotal" value="0" min="0" step="0.5" placeholder="ساعات" />
-            <span>ساعة</span>
-            <input type="text" id="totalOvertime" readonly value="0.00 ج.م" />
-          </div>
-        </div>
-        <div class="row">
-          <label>🍽️ بدل وجبة (تلقائي: أيام العمل × قيمة البدل بالشيفت)</label>
-          <input type="text" id="mealTotal" readonly value="0.00 ج.م" />
-        </div>
-        <div class="row">
-          <label>🌙 بدل وردية (تلقائي: أيام العمل × قيمة البدل بالشيفت)</label>
-          <input type="text" id="shiftAllowTotal" readonly value="0.00 ج.م" />
-        </div>
+        <div id="additionsIncomeRows"></div>
         <div class="row total">
           <label>إجمالي الدخل</label>
           <input type="text" id="totalIncome" readonly value="0.00 ج.م" />
@@ -737,65 +875,11 @@ input, select {
       <div class="payroll-card">
         <h4>➖ الخصومات</h4>
 
-        <div class="row">
-          <label>🏖️ إجازات اعتيادية (خصم من الرصيد + بدون دخل)</label>
-          <div class="inline">
-            <input type="number" id="annualLeaveDays" value="0" min="0" placeholder="أيام" />
-            <span>يوم</span>
-          </div>
-        </div>
-
         <div id="deductionsRows"></div>
 
         <div class="row total">
           <label>إجمالي الخصومات</label>
           <input type="text" id="totalDeductions" readonly value="0.00 ج.م" />
-        </div>
-      </div>
-
-      <!-- Holiday Allowance Settings -->
-      <div class="payroll-card">
-        <h4>🎉 بدل العطلات الرسمية</h4>
-        <div class="row">
-          <label>طريقة حساب العطلة الرسمية</label>
-          <select id="holidayMode">
-            <option value="1">يوم بدل + يوم دخل</option>
-            <option value="2">يومين بدل فقط</option>
-          </select>
-        </div>
-        <div class="row">
-          <label>عدد العطلات الرسمية في الفترة</label>
-          <div class="inline">
-            <input type="number" id="holidayCount" value="0" min="0" />
-            <span>يوم</span>
-          </div>
-        </div>
-        <div class="row">
-          <label>قيمة بدل اليوم (× أيام العطلات × الوضع)</label>
-          <input type="text" id="holidayAllowance" readonly value="0.00 ج.م" />
-        </div>
-      </div>
-
-      <!-- Leave Balance -->
-      <div class="payroll-card">
-        <h4>🏖️ رصيد الإجازات الاعتيادية</h4>
-        <div class="leave-grid">
-          <div>
-            <label>رصيد سابق (من العام الماضي)</label>
-            <input type="number" id="leavePrev" value="0" step="0.5" />
-          </div>
-          <div>
-            <label>رصيد لاحق (مستحق هذا العام)</label>
-            <input type="number" id="leaveAccrued" value="21" step="0.5" />
-          </div>
-          <div>
-            <label>مستنفذ</label>
-            <input type="text" id="leaveUsed" readonly value="0" />
-          </div>
-          <div>
-            <label>المتبقي</label>
-            <input type="text" id="leaveRemaining" readonly value="21" />
-          </div>
         </div>
       </div>
 
@@ -853,8 +937,56 @@ input, select {
             <option value="Tajawal">Tajawal</option>
             <option value="Almarai">Almarai</option>
             <option value="IBM Plex Sans Arabic">IBM Plex Sans Arabic</option>
+            <option value="Noto Sans Arabic">Noto Sans Arabic</option>
+            <option value="Readex Pro">Readex Pro</option>
+            <option value="Changa">Changa</option>
+            <option value="El Messiri">El Messiri</option>
+            <option value="Amiri">Amiri</option>
+            <option value="Rakkas">Rakkas</option>
+            <option value="Markazi Text">Markazi Text</option>
+            <option value="Mada">Mada</option>
+            <option value="Rubik">Rubik</option>
+            <option value="Baloo Bhaijaan 2">Baloo Bhaijaan 2</option>
+            <option value="Aref Ruqaa">Aref Ruqaa</option>
             <option value="Tahoma">Tahoma (خط النظام)</option>
           </select>
+        </div>
+        <div class="row">
+          <label>بداية الأسبوع</label>
+          <select id="weekStart">
+            <option value="sat">السبت</option>
+            <option value="sun">الأحد</option>
+            <option value="mon">الإثنين</option>
+            <option value="tue">الثلاثاء</option>
+            <option value="wed">الأربعاء</option>
+            <option value="thu">الخميس</option>
+            <option value="fri">الجمعة</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="payroll-card">
+        <h4>➕ الإضافات (تُضاف إلى الدخل)</h4>
+        <div id="additionTypesList"></div>
+        <button class="primary-btn outline" id="addAdditionType" style="margin-top:8px">➕ إضافة بند جديد</button>
+      </div>
+
+      <div class="payroll-card">
+        <h4>🎉 العطلات الرسمية (بدل العطلة)</h4>
+        <div class="row">
+          <label>طريقة حساب العطلة الرسمية</label>
+          <select id="holidayMode">
+            <option value="1">يوم بدل + يوم دخل</option>
+            <option value="2">يومين بدل فقط</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>عدد أيام العطلات الرسمية في الفترة الحالية (محسوب)</label>
+          <input type="text" id="holidayCount" readonly value="0" />
+        </div>
+        <div class="row">
+          <label>قيمة بدل العطلة (محسوبة × أيام العطلات × الوضع)</label>
+          <input type="text" id="holidayAllowance" readonly value="0.00 ج.م" />
         </div>
       </div>
 
@@ -985,6 +1117,12 @@ input, select {
           <label>🌙 بدل وردية / يوم</label>
           <input type="number" id="shiftAllowance" value="0" step="0.01" />
         </div>
+        <div id="customAdditionFields"></div>
+        <div class="field">
+          <label>
+            <input type="checkbox" id="isAnnualLeave" /> 🏖️ تُحسب كإجازة اعتيادية (تُخصم تلقائياً من رصيد الإجازات عند جدولتها في التقويم)
+          </label>
+        </div>
       </div>
 
       <div class="ct-panel" data-ct="actions">
@@ -1076,13 +1214,81 @@ function pgConfirm(message, { okOnly = false } = {}) {
   });
 }
 
+function pgPrompt(message, defaultValue = '') {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'pg-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="pg-confirm-box">
+        <p>${escapeHtml(message)}</p>
+        <input type="text" class="pg-prompt-input" id="pgPromptInput" value="${escapeHtml(defaultValue)}" />
+        <div class="pg-confirm-actions">
+          <button class="primary-btn outline" data-act="cancel">إلغاء</button>
+          <button class="primary-btn" data-act="ok">حفظ</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#pgPromptInput');
+    input.focus();
+    input.select();
+    const cleanup = result => { overlay.remove(); resolve(result); };
+    overlay.querySelector('[data-act="ok"]').addEventListener('click', () => cleanup(input.value.trim()));
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => cleanup(null));
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') cleanup(input.value.trim()); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(null); });
+  });
+}
+
+/* ============================================================
+   pgAdditionForm - dialog to add/edit an "addition" (income) type
+   Resolves to { label, mode } where mode is 'manual' or 'perShift',
+   or null if cancelled.
+   ============================================================ */
+function pgAdditionForm(existing) {
+  return new Promise(resolve => {
+    const isSpecial = !!(existing && existing.special);
+    const overlay = document.createElement('div');
+    overlay.className = 'pg-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="pg-confirm-box">
+        <p>${existing ? 'تعديل البند' : 'إضافة بند جديد للإضافات'}</p>
+        <input type="text" class="pg-prompt-input" id="addFormLabel" placeholder="اسم البند" value="${escapeHtml(existing?.label || '')}" />
+        <label class="pg-checkbox-row">
+          <input type="checkbox" id="addFormPerShift" ${existing?.mode === 'perShift' ? 'checked' : ''} ${isSpecial ? 'disabled' : ''} />
+          <span>إضافة في الوردية (تُحسب تلقائياً حسب أيام الحضور × القيمة المحددة لكل وردية)${isSpecial ? ' — ثابت لهذا البند' : ''}</span>
+        </label>
+        <div class="pg-confirm-actions">
+          <button class="primary-btn outline" data-act="cancel">إلغاء</button>
+          <button class="primary-btn" data-act="ok">حفظ</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const labelInput = overlay.querySelector('#addFormLabel');
+    labelInput.focus();
+    labelInput.select();
+    const perShiftInput = overlay.querySelector('#addFormPerShift');
+    const cleanup = result => { overlay.remove(); resolve(result); };
+    overlay.querySelector('[data-act="ok"]').addEventListener('click', () => {
+      const label = labelInput.value.trim();
+      if (!label) return;
+      const mode = isSpecial ? existing.mode : (perShiftInput.checked ? 'perShift' : 'manual');
+      cleanup({ label, mode });
+    });
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', () => cleanup(null));
+    labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') overlay.querySelector('[data-act="ok"]').click(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(null); });
+  });
+}
+
 const DEFAULT_SHIFTS = [
   { id: 's1', name: 'اول',      abbr: '1', bg: '#f5f5f5', fg: '#1a1a1a', size: 36, start: '08:00', end: '16:00', hours: 8, dayIncome: 253, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
   { id: 's2', name: 'تانية',    abbr: '2', bg: '#9a9a9a', fg: '#fff700', size: 36, start: '16:00', end: '00:00', hours: 8, dayIncome: 263, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
   { id: 's3', name: 'تالتة',    abbr: '3', bg: '#2c2c2c', fg: '#ffffff', size: 36, start: '00:00', end: '08:00', hours: 8, dayIncome: 263, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
   { id: 'sBd', name: 'بدل عطلة', abbr: 'ب عطلة', bg: '#b8d8e8', fg: '#0a3a52', size: 22, start: '08:00', end: '16:00', hours: 8, dayIncome: 213, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
   { id: 'sR', name: 'راحة',      abbr: 'R', bg: '#1a1a1a', fg: '#7a4ad6', size: 24, start: '00:00', end: '00:00', hours: 0, dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
-  { id: 'sH', name: 'اعتيادي',   abbr: 'اعتيادي', bg: '#c5e0c0', fg: '#1a1a1a', size: 18, start: '08:00', end: '16:00', hours: 8, dayIncome: 213, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م' },
+  { id: 'sH', name: 'اعتيادي',   abbr: 'اعتيادي', bg: '#c5e0c0', fg: '#1a1a1a', size: 18, start: '08:00', end: '16:00', hours: 8, dayIncome: 213, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, currency: 'ج.م', isAnnualLeave: true },
 ];
 
 const PALETTE = [
@@ -1097,13 +1303,27 @@ const state = {
   current: { year: 2026, month: 6 },  // July (0-based)
   summaryMode: 'month',
   range: { from: '2026-07-16', to: '2026-08-15' },
-  payRange: { from: null, to: null },
+  payRange: { from: null, to: null, overtimeHours: 0, manualAdditions: {} },
   editingShift: null,
   selectedBg: '#f5f5f5',
   selectedFg: '#1a1a1a',
   paintMode: null, // selected shift id for painting, or '' for erase
   paintBarCollapsed: false,
-  settings: { numeralType: 'ar', font: 'Cairo' },
+  settings: {
+    numeralType: 'ar', font: 'Cairo', calendarView: 'grid'
+  },
+  additionTypes: [
+    { id: 'shiftAllowance', label: 'بدل وردية', mode: 'perShift', enabled: true, special: 'shiftAllowance' },
+    { id: 'mealAllowance', label: 'بدل وجبة', mode: 'perShift', enabled: true, special: 'mealAllowance' },
+    { id: 'overtime', label: 'إضافي', mode: 'manual', enabled: true, special: 'overtime' },
+    { id: 'incentives', label: 'حوافز', mode: 'manual', enabled: true, special: null },
+    { id: 'profits', label: 'أرباح', mode: 'manual', enabled: true, special: null },
+  ],
+  companies: ['شركة cliopatra', 'شركة ثانية'],
+  currentCompanyIndex: 0,
+  leaveBalance: { previous: 0, accrued: 21 },
+  leaveLog: [],
+  holidays: [],
   deductionTypes: [
     { id: 'd1', label: 'جزاءات/غياب', unit: 'amount' },
     { id: 'd2', label: 'خصم تأخير', unit: 'hours' },
@@ -1116,8 +1336,28 @@ function load() {
     const data = _getItem(STORAGE_KEY, null);
     if (data) {
       state.shifts = data.shifts || [];
+      state.shifts.forEach(s => {
+        if (s.isAnnualLeave === undefined) s.isAnnualLeave = (s.id === 'sH' || s.name === 'اعتيادي');
+      });
       state.schedule = data.schedule || {};
-      state.settings = Object.assign({ numeralType: 'ar', font: 'Cairo' }, data.settings || {});
+      state.settings = Object.assign({ numeralType: 'ar', font: 'Cairo', calendarView: 'grid', weekStart: 'sat', holidayMode: 1 }, data.settings || {});
+      // Migrate/merge addition types (supports old boolean settings.additions from earlier versions)
+      const defaultAdditionTypes = [
+        { id: 'shiftAllowance', label: 'بدل وردية', mode: 'perShift', enabled: true, special: 'shiftAllowance' },
+        { id: 'mealAllowance', label: 'بدل وجبة', mode: 'perShift', enabled: true, special: 'mealAllowance' },
+        { id: 'overtime', label: 'إضافي', mode: 'manual', enabled: true, special: 'overtime' },
+        { id: 'incentives', label: 'حوافز', mode: 'manual', enabled: true, special: null },
+        { id: 'profits', label: 'أرباح', mode: 'manual', enabled: true, special: null },
+      ];
+      if (Array.isArray(data.additionTypes) && data.additionTypes.length) {
+        state.additionTypes = data.additionTypes;
+      } else if (data.settings && data.settings.additions) {
+        const old = data.settings.additions;
+        state.additionTypes = defaultAdditionTypes.map(a => ({ ...a, enabled: old[a.id] !== undefined ? !!old[a.id] : true }));
+      } else {
+        state.additionTypes = defaultAdditionTypes;
+      }
+      delete state.settings.additions;
       if (Array.isArray(data.deductionTypes) && data.deductionTypes.length) {
         state.deductionTypes = data.deductionTypes;
       }
@@ -1125,8 +1365,24 @@ function load() {
         state.range = data.range;
       }
       if (data.payRange && data.payRange.from && data.payRange.to) {
-        state.payRange = data.payRange;
+        state.payRange = Object.assign({ overtimeHours: 0, manualAdditions: {} }, data.payRange);
+        // migrate old fixed incentives/profits amounts into the generic manualAdditions map
+        if (data.payRange.incentives !== undefined && state.payRange.manualAdditions.incentives === undefined) {
+          state.payRange.manualAdditions.incentives = +data.payRange.incentives || 0;
+        }
+        if (data.payRange.profits !== undefined && state.payRange.manualAdditions.profits === undefined) {
+          state.payRange.manualAdditions.profits = +data.payRange.profits || 0;
+        }
       }
+      if (Array.isArray(data.companies) && data.companies.length) {
+        state.companies = data.companies;
+      }
+      if (Number.isInteger(data.currentCompanyIndex)) {
+        state.currentCompanyIndex = data.currentCompanyIndex;
+      }
+      state.leaveBalance = Object.assign({ previous: 0, accrued: 21 }, data.leaveBalance || {});
+      state.leaveLog = Array.isArray(data.leaveLog) ? data.leaveLog : [];
+      state.holidays = Array.isArray(data.holidays) ? data.holidays : [];
     } else {
       state.shifts = DEFAULT_SHIFTS.map(s => ({ ...s }));
       state.schedule = {};
@@ -1142,7 +1398,10 @@ function load() {
 function save() {
   _setItem(STORAGE_KEY, {
     shifts: state.shifts, schedule: state.schedule, settings: state.settings,
-    deductionTypes: state.deductionTypes, range: state.range, payRange: state.payRange
+    additionTypes: state.additionTypes,
+    deductionTypes: state.deductionTypes, range: state.range, payRange: state.payRange,
+    companies: state.companies, currentCompanyIndex: state.currentCompanyIndex,
+    leaveBalance: state.leaveBalance, leaveLog: state.leaveLog, holidays: state.holidays
   });
 }
 
@@ -1155,7 +1414,37 @@ const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
                 'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
                    'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+// Original WEEKDAYS order (column 0 = Sat, column 6 = Fri)
 const WEEKDAYS = ['SAT','SUN','MON','TUE','WED','THU','FRI'];
+// JS getDay() name lookup (0=Sun..6=Sat)
+const JS_DAY_NAMES = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+// Map of weekStart setting -> JS getDay() index of the first day of the week
+// JS getDay(): 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+const WEEK_START_INDEX = { sat: 6, sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };
+function getWeekStart() {
+  return WEEK_START_INDEX[state.settings.weekStart] ?? 6;
+}
+// Column position (0..6) of a given JS getDay() value, with column 0 = first weekday
+function weekdayCol(jsDay) {
+  const first = getWeekStart();
+  return (jsDay - first + 7) % 7;
+}
+// Returns the 7 day labels in column order (column 0 first)
+function getWeekdayLabels() {
+  const first = getWeekStart();
+  const labels = [];
+  for (let col = 0; col < 7; col++) {
+    const jsDay = (first + col) % 7;
+    labels.push(JS_DAY_NAMES[jsDay]);
+  }
+  return labels;
+}
+function renderWeekdaysHeader() {
+  const row = document.getElementById('weekdaysRow');
+  if (!row) return;
+  const labels = getWeekdayLabels();
+  row.innerHTML = labels.map(l => `<span>${l}</span>`).join('');
+}
 
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 function dateKey(y, m, d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
@@ -1192,12 +1481,13 @@ function updateStaticLabels() {
 function renderMonth() {
   const { year, month } = state.current;
   document.getElementById('monthTitle').textContent = arDigits(`${MONTHS[month]} ${year}`);
+  const isList = state.settings.calendarView === 'list';
+  document.getElementById('view-month').classList.toggle('list-mode', isList);
 
   // Empty state - no shifts configured
   if (state.shifts.length === 0) {
-    const cal = document.getElementById('calendar');
-    cal.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: var(--bg-2); border-radius: 6px; margin: 20px 0;">
+    const emptyHtml = `
+      <div style="padding: 40px 20px; text-align: center; background: var(--bg-2); border-radius: 6px; margin: 20px 0;">
         <div style="font-size: 48px; margin-bottom: 10px;">📅</div>
         <h3 style="margin: 0 0 8px; color: var(--text);">لا يوجد شيفتات</h3>
         <p style="color: var(--text-muted); margin: 0 0 16px;">ابدأ بإضافة الشيفتات الخاصة بك</p>
@@ -1207,6 +1497,13 @@ function renderMonth() {
         </button>
       </div>
     `;
+    if (isList) {
+      document.getElementById('calendarList').innerHTML = emptyHtml;
+      document.getElementById('calendar').innerHTML = '';
+    } else {
+      document.getElementById('calendar').innerHTML = `<div style="grid-column: 1 / -1;">${emptyHtml}</div>`;
+      document.getElementById('calendarList').innerHTML = '';
+    }
     const bar = document.getElementById('paintBar');
     bar.innerHTML = `
       <div class="paint-fixed">
@@ -1222,10 +1519,17 @@ function renderMonth() {
     return;
   }
 
+  if (isList) {
+    renderMonthList(year, month);
+    renderPaintBar();
+    updateStaticLabels();
+    return;
+  }
+
 
   const first = new Date(year, month, 1);
-  // Week starts Saturday in the original app
-  const startDay = (first.getDay() + 1) % 7;  // Sat=0
+  // Week start is configurable in settings (default: Saturday)
+  const startDay = weekdayCol(first.getDay());
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevDays = new Date(year, month, 0).getDate();
 
@@ -1302,6 +1606,66 @@ function fitAllDayLabels() {
   document.querySelectorAll('#calendar .day .label').forEach(el => fitLabelText(el));
 }
 
+function handleDayClick(k) {
+  if (state.paintMode !== null) {
+    if (state.paintMode === '') {
+      delete state.schedule[k];
+    } else {
+      state.schedule[k] = state.paintMode;
+    }
+    save();
+    renderMonth();
+  } else {
+    openShiftPicker(k);
+  }
+}
+
+function renderMonthList(year, month) {
+  const listEl = document.getElementById('calendarList');
+  listEl.innerHTML = '';
+  const WD = getWeekdayLabels();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const k = dateKey(year, month, d);
+    const wdIndex = weekdayCol(new Date(year, month, d).getDay());
+    const shiftId = state.schedule[k];
+    const shift = state.shifts.find(s => s.id === shiftId);
+
+    const row = document.createElement('div');
+    row.className = 'day-row';
+
+    const dateBox = document.createElement('div');
+    dateBox.className = 'dr-date';
+    const num = document.createElement('span');
+    num.className = 'dr-num';
+    num.textContent = arDigits(d);
+    const wd = document.createElement('span');
+    wd.className = 'dr-wd';
+    wd.textContent = WD[wdIndex];
+    dateBox.appendChild(num);
+    dateBox.appendChild(wd);
+    row.appendChild(dateBox);
+
+    if (shift) {
+      const chip = document.createElement('div');
+      chip.className = 'dr-shift';
+      chip.style.background = shift.bg;
+      chip.style.color = shift.fg;
+      chip.textContent = arDigits(shift.abbr) + (shift.name ? ' — ' + shift.name : '');
+      row.appendChild(chip);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'dr-empty';
+      empty.textContent = '—';
+      row.appendChild(empty);
+    }
+
+    row.addEventListener('click', () => handleDayClick(k));
+    listEl.appendChild(row);
+  }
+}
+
 function makeDayCell(d, year, month, other) {
   const cell = document.createElement('div');
   cell.className = 'day' + (other ? ' other' : '');
@@ -1324,19 +1688,7 @@ function makeDayCell(d, year, month, other) {
     cell.appendChild(lbl);
   }
 
-  cell.addEventListener('click', () => {
-    if (state.paintMode !== null) {
-      if (state.paintMode === '') {
-        delete state.schedule[k];
-      } else {
-        state.schedule[k] = state.paintMode;
-      }
-      save();
-      renderMonth();
-    } else {
-      openShiftPicker(k);
-    }
-  });
+  cell.addEventListener('click', () => handleDayClick(k));
 
   return cell;
 }
@@ -1433,6 +1785,13 @@ function refreshAllViews() {
 document.getElementById('settingsBtn').addEventListener('click', () => {
   document.getElementById('numeralType').value = state.settings.numeralType;
   document.getElementById('fontStyle').value = state.settings.font;
+  document.getElementById('weekStart').value = state.settings.weekStart || 'sat';
+  document.getElementById('holidayMode').value = String(state.settings.holidayMode || 1);
+  renderAdditionTypesList();
+  // refresh computed values if payroll is open
+  if (document.getElementById('view-payroll').classList.contains('active')) {
+    calcPayroll();
+  }
   renderDeductionTypesList();
   document.getElementById('settingsModal').classList.add('open');
 });
@@ -1452,6 +1811,107 @@ document.getElementById('fontStyle').addEventListener('change', e => {
   save();
   applyFont();
 });
+document.getElementById('weekStart').addEventListener('change', e => {
+  state.settings.weekStart = e.target.value;
+  save();
+  renderWeekdaysHeader();
+  refreshAllViews();
+});
+document.getElementById('holidayMode').addEventListener('change', e => {
+  state.settings.holidayMode = +e.target.value;
+  save();
+  calcPayroll();
+});
+
+/* ============================================================
+   Addition types (الإضافات) - manageable list: add / edit / delete,
+   with a per-item "إضافة في الوردية" (perShift) toggle.
+   ============================================================ */
+function renderAdditionTypesList() {
+  const list = document.getElementById('additionTypesList');
+  list.innerHTML = '';
+  state.additionTypes.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'addition-row';
+    const note = a.special === 'overtime'
+      ? 'مبلغ إجمالي (عدد الساعات × سعر الساعة) يُضاف على المرتب'
+      : (a.mode === 'perShift'
+          ? 'تلقائي حسب أيام الحضور الفعلي × القيمة المحددة لكل وردية'
+          : 'مبلغ إجمالي يُدخل يدوياً في صفحة المرتب');
+    row.innerHTML = `
+      <input type="checkbox" class="add-enable" data-id="${a.id}" ${a.enabled ? 'checked' : ''} />
+      <label class="addition-label">
+        <div class="addition-title">${escapeHtml(a.label)}</div>
+        <div class="addition-note">${note}</div>
+      </label>
+      <div class="addition-actions">
+        <button type="button" class="add-edit" data-id="${a.id}" title="تعديل">✏️</button>
+        ${a.special ? '' : `<button type="button" class="add-del" data-id="${a.id}" title="حذف">×</button>`}
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.add-enable').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const a = state.additionTypes.find(x => x.id === cb.dataset.id);
+      if (a) a.enabled = cb.checked;
+      save();
+      if (document.getElementById('view-payroll').classList.contains('active')) {
+        renderPayrollAdditionsRows();
+        calcPayroll();
+      }
+    });
+  });
+  list.querySelectorAll('.add-edit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const a = state.additionTypes.find(x => x.id === btn.dataset.id);
+      if (!a) return;
+      const result = await pgAdditionForm(a);
+      if (!result) return;
+      a.label = result.label;
+      a.mode = result.mode;
+      save();
+      renderAdditionTypesList();
+      renderCustomAdditionFields();
+      if (document.getElementById('view-payroll').classList.contains('active')) {
+        renderPayrollAdditionsRows();
+        calcPayroll();
+      }
+    });
+  });
+  list.querySelectorAll('.add-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ok = await pgConfirm('حذف هذا البند من الإضافات؟');
+      if (!ok) return;
+      const id = btn.dataset.id;
+      state.additionTypes = state.additionTypes.filter(x => x.id !== id);
+      state.shifts.forEach(s => { if (s.customAdditions) delete s.customAdditions[id]; });
+      if (state.payRange.manualAdditions) delete state.payRange.manualAdditions[id];
+      save();
+      renderAdditionTypesList();
+      renderCustomAdditionFields();
+      if (document.getElementById('view-payroll').classList.contains('active')) {
+        renderPayrollAdditionsRows();
+        calcPayroll();
+      }
+    });
+  });
+}
+
+document.getElementById('addAdditionType').addEventListener('click', async () => {
+  const result = await pgAdditionForm(null);
+  if (!result) return;
+  state.additionTypes.push({
+    id: 'cadd' + nextSeq(), label: result.label, mode: result.mode, enabled: true, special: null
+  });
+  save();
+  renderAdditionTypesList();
+  renderCustomAdditionFields();
+  if (document.getElementById('view-payroll').classList.contains('active')) {
+    renderPayrollAdditionsRows();
+    calcPayroll();
+  }
+});
 
 function renderDeductionTypesList() {
   const list = document.getElementById('deductionTypesList');
@@ -1464,8 +1924,7 @@ function renderDeductionTypesList() {
     const row = document.createElement('div');
     row.className = 'ded-type-item';
     row.innerHTML = `
-      <div class="info">
-        <div class="nm">${escapeHtml(dt.label)}</div>
+      <div class="info">        <div class="nm">${escapeHtml(dt.label)}</div>
         <div class="sub">${dt.unit === 'hours' ? 'ساعات × متوسط أجر الساعة' : 'مبلغ ثابت'}</div>
       </div>
       <button class="del" type="button" data-id="${dt.id}">×</button>
@@ -1576,11 +2035,31 @@ function fillConfigForm() {
   document.getElementById('overtimeRate').value = s.overtimeRate || 0;
   document.getElementById('mealAllowance').value = s.mealAllowance || 0;
   document.getElementById('shiftAllowance').value = s.shiftAllowance || 0;
+  document.getElementById('isAnnualLeave').checked = !!s.isAnnualLeave;
+  renderCustomAdditionFields();
   state.selectedBg = s.bg;
   state.selectedFg = s.fg;
   buildSwatches('bgSwatches', s.bg, c => { state.selectedBg = c; updatePreview(); });
   buildSwatches('txtSwatches', s.fg, c => { state.selectedFg = c; updatePreview(); });
   updateHourlyRate();
+}
+
+/* ============================================================
+   Custom per-shift addition fields (for addition types marked
+   "إضافة في الوردية" that aren't the built-in meal/shift allowance)
+   ============================================================ */
+function renderCustomAdditionFields() {
+  const container = document.getElementById('customAdditionFields');
+  if (!container) return;
+  const s = state.editingShift;
+  const customPerShift = state.additionTypes.filter(a => a.mode === 'perShift' && !a.special);
+  container.innerHTML = customPerShift.map(a => `
+    <div class="field">
+      <label>➕ ${escapeHtml(a.label)} / يوم</label>
+      <input type="number" class="custom-addition-input" data-id="${a.id}"
+             value="${(s && s.customAdditions && s.customAdditions[a.id]) || 0}" step="0.01" />
+    </div>
+  `).join('');
 }
 
 function buildSwatches(id, current, onPick) {
@@ -1647,6 +2126,11 @@ function syncEditingShiftFromForm() {
   s.overtimeRate = +document.getElementById('overtimeRate').value || 0;
   s.mealAllowance = +document.getElementById('mealAllowance').value || 0;
   s.shiftAllowance = +document.getElementById('shiftAllowance').value || 0;
+  s.isAnnualLeave = document.getElementById('isAnnualLeave').checked;
+  s.customAdditions = s.customAdditions || {};
+  document.querySelectorAll('.custom-addition-input').forEach(inp => {
+    s.customAdditions[inp.dataset.id] = +inp.value || 0;
+  });
   s.bg = state.selectedBg;
   s.fg = state.selectedFg;
 }
@@ -1715,14 +2199,14 @@ function renderYear() {
     wrap.innerHTML = `<h3>${MONTHS[m]}</h3>`;
     const cal = document.createElement('div');
     cal.className = 'mini-cal';
-    WEEKDAYS.forEach(w => {
+    getWeekdayLabels().forEach(w => {
       const d = document.createElement('div');
       d.className = 'mini-day-header';
       d.textContent = w[0];
       cal.appendChild(d);
     });
     const first = new Date(yearYear, m, 1);
-    const startDay = (first.getDay() + 1) % 7;
+    const startDay = weekdayCol(first.getDay());
     const days = new Date(yearYear, m + 1, 0).getDate();
     for (let i = 0; i < startDay; i++) {
       const d = document.createElement('div'); d.className = 'mday'; cal.appendChild(d);
@@ -1757,6 +2241,25 @@ document.querySelectorAll('.st-tab').forEach(t => {
     renderSummary();
   });
 });
+
+function getSummaryPeriodRange() {
+  let from, to;
+  if (state.summaryMode === 'month') {
+    const y = state.current.year, m = state.current.month;
+    from = new Date(y, m, 1);
+    to = new Date(y, m + 1, 0);
+  } else if (state.summaryMode === 'year') {
+    from = new Date(yearYear, 0, 1);
+    to = new Date(yearYear, 11, 31);
+  } else {
+    from = new Date(state.range.from);
+    to = new Date(state.range.to);
+  }
+  return {
+    fromKey: dateKey(from.getFullYear(), from.getMonth(), from.getDate()),
+    toKey: dateKey(to.getFullYear(), to.getMonth(), to.getDate())
+  };
+}
 
 function getActiveShifts() {
   let from, to;
@@ -1819,7 +2322,139 @@ function renderSummary() {
 
   const global = document.getElementById('statsGlobal');
   global.innerHTML = `Global: ${arDigits(totalCount)} Shifts<br>${arDigits(totalHours)}h,0m<br>${arDigits(totalIncome.toFixed(2))} ${state.shifts[0]?.currency || 'ج.م'}`;
+
+  renderLeaveBalance();
+  renderHolidaysList();
 }
+
+/* ============================================================
+   Annual leave balance (Statistics page)
+   ============================================================ */
+function renderLeaveBalance() {
+  document.getElementById('sumLeavePrev').value = state.leaveBalance.previous;
+  document.getElementById('sumLeaveAccrued').value = state.leaveBalance.accrued;
+
+  const { fromKey, toKey } = getSummaryPeriodRange();
+
+  // Annual leave days used = calendar days within the period scheduled with a shift
+  // marked "تُحسب كإجازة اعتيادية" (isAnnualLeave), e.g. the "اعتيادي" shift.
+  const leaveDatesInPeriod = Object.entries(state.schedule)
+    .filter(([date, sid]) => {
+      if (date < fromKey || date > toKey) return false;
+      const s = state.shifts.find(x => x.id === sid);
+      return !!(s && s.isAnnualLeave);
+    })
+    .map(([date, sid]) => ({ date, shift: state.shifts.find(x => x.id === sid) }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const used = leaveDatesInPeriod.length;
+
+  // Automatic compensatory leave balance: for every official holiday within the period
+  // where the user actually worked a shift (اولى/تانية/تالتة...) on the holiday's exact
+  // date, credit that holiday's configured balance (e.g. يومين) to the leave balance.
+  const holidayCompBalance = state.holidays
+    .filter(h => h.date >= fromKey && h.date <= toKey && state.schedule[h.date])
+    .reduce((sum, h) => sum + (+h.balance || 1), 0);
+  document.getElementById('sumHolidayCompBalance').value = arDigits(holidayCompBalance);
+
+  const remaining = (+state.leaveBalance.previous || 0) + (+state.leaveBalance.accrued || 0) + holidayCompBalance - used;
+
+  document.getElementById('sumLeaveUsed').value = arDigits(used);
+  document.getElementById('sumLeaveRemaining').value = arDigits(remaining);
+
+  const list = document.getElementById('leaveDatesList');
+  list.innerHTML = '';
+  if (leaveDatesInPeriod.length === 0) {
+    list.innerHTML = '<div class="mini-list-empty">لا يوجد أيام إجازة اعتيادية مجدولة في هذه الفترة</div>';
+  } else {
+    leaveDatesInPeriod.forEach(({ date, shift }) => {
+      const item = document.createElement('div');
+      item.className = 'mini-list-item';
+      item.innerHTML = `
+        <div class="mli-info">
+          <span class="mli-name">${arDigits(formatDateDisplay(date))}</span>
+          <span class="mli-sub">${escapeHtml(shift?.name || '')}</span>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+}
+
+document.getElementById('sumLeavePrev').addEventListener('input', e => {
+  state.leaveBalance.previous = +e.target.value || 0;
+  save();
+  renderLeaveBalance();
+});
+document.getElementById('sumLeaveAccrued').addEventListener('input', e => {
+  state.leaveBalance.accrued = +e.target.value || 0;
+  save();
+  renderLeaveBalance();
+});
+
+/* ============================================================
+   Official holidays (Statistics page)
+   ============================================================ */
+function renderHolidaysList() {
+  const list = document.getElementById('holidaysList');
+  list.innerHTML = '';
+  if (state.holidays.length === 0) {
+    list.innerHTML = '<div class="mini-list-empty">لا يوجد عطلات رسمية مسجلة</div>';
+    return;
+  }
+  [...state.holidays].sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'mini-list-item';
+    const scheduledShiftId = h.date ? state.schedule[h.date] : null;
+    const scheduledShift = scheduledShiftId ? state.shifts.find(x => x.id === scheduledShiftId) : null;
+    const sub = [
+      h.date ? arDigits(formatDateDisplay(h.date)) : '',
+      'الرصيد: ' + arDigits(h.balance || 1) + ' يوم',
+      h.leaveDate ? 'تاريخ الإجازة: ' + arDigits(formatDateDisplay(h.leaveDate)) : '',
+      scheduledShift ? '⏰ تم العمل (وردية ' + escapeHtml(scheduledShift.name) + ') — يُحسب البدل حسب أجر هذه الوردية' : ''
+    ].filter(Boolean).join(' · ');
+    item.innerHTML = `
+      <div class="mli-info">
+        <span class="mli-name">${escapeHtml(h.name)}</span>
+        <span class="mli-sub">${sub}</span>
+      </div>
+      <button class="mli-del" type="button" data-id="${h.id}">×</button>
+    `;
+    list.appendChild(item);
+  });
+  list.querySelectorAll('.mli-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.holidays = state.holidays.filter(h => h.id !== btn.dataset.id);
+      save();
+      renderHolidaysList();
+      if (document.getElementById('view-payroll').classList.contains('active')) calcPayroll();
+    });
+  });
+}
+
+document.getElementById('newHolidayName').addEventListener('change', e => {
+  document.getElementById('row-customHolidayName').style.display = e.target.value === '__other__' ? '' : 'none';
+});
+
+document.getElementById('addHoliday').addEventListener('click', () => {
+  const selectVal = document.getElementById('newHolidayName').value;
+  const name = selectVal === '__other__'
+    ? document.getElementById('newHolidayNameCustom').value.trim()
+    : selectVal;
+  const date = document.getElementById('newHolidayDate').value;
+  const balance = +document.getElementById('newHolidayBalance').value || 1;
+  const leaveDate = document.getElementById('newHolidayLeaveDate').value || null;
+  if (!name || !date) return;
+  state.holidays.push({ id: 'hol' + nextSeq(), name, date, balance, leaveDate });
+  save();
+  document.getElementById('newHolidayName').value = '';
+  document.getElementById('newHolidayNameCustom').value = '';
+  document.getElementById('row-customHolidayName').style.display = 'none';
+  document.getElementById('newHolidayDate').value = '';
+  document.getElementById('newHolidayBalance').value = '1';
+  document.getElementById('newHolidayLeaveDate').value = '';
+  renderHolidaysList();
+  if (document.getElementById('view-payroll').classList.contains('active')) calcPayroll();
+});
 
 function formatDateDisplay(iso) {
   if (!iso) return '—';
@@ -1914,9 +2549,64 @@ function initPayroll() {
   document.getElementById('fromDate').value = state.range.from;
   document.getElementById('toDate').value = state.range.to;
   syncAllDateDisplays();
+  renderPayrollAdditionsRows();
   renderDeductionsRows();
-  updateLeaveUsed();
   calcPayroll();
+}
+
+/* ============================================================
+   renderPayrollAdditionsRows - build the dynamic "الإضافات" rows
+   in the Payroll view's earnings card, based on state.additionTypes.
+   ============================================================ */
+function renderPayrollAdditionsRows() {
+  const container = document.getElementById('additionsIncomeRows');
+  if (!container) return;
+  container.innerHTML = '';
+  state.additionTypes.forEach(a => {
+    if (!a.enabled) return;
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.id = 'row-add-' + a.id;
+    if (a.special === 'overtime') {
+      row.innerHTML = `
+        <label>${escapeHtml(a.label)} (ساعات × سعر)</label>
+        <div class="inline">
+          <input type="number" id="overtimeHoursTotal" value="${state.payRange.overtimeHours || 0}" min="0" step="0.5" placeholder="ساعات" />
+          <span>ساعة</span>
+          <input type="text" id="totalOvertime" readonly value="0.00 ج.م" />
+        </div>
+      `;
+    } else if (a.mode === 'perShift') {
+      row.innerHTML = `
+        <label>${escapeHtml(a.label)} (تلقائي: أيام العمل × قيمة البدل بالشيفت)</label>
+        <input type="text" id="addTotal_${a.id}" readonly value="0.00 ج.م" />
+      `;
+    } else {
+      const savedVal = (state.payRange.manualAdditions && state.payRange.manualAdditions[a.id]) || 0;
+      row.innerHTML = `
+        <label>${escapeHtml(a.label)} (مبلغ إجمالي)</label>
+        <input type="number" id="addManual_${a.id}" value="${savedVal}" min="0" step="0.01" placeholder="القيمة" />
+      `;
+    }
+    container.appendChild(row);
+  });
+  const overtimeHoursEl = document.getElementById('overtimeHoursTotal');
+  if (overtimeHoursEl) {
+    overtimeHoursEl.addEventListener('change', e => {
+      state.payRange.overtimeHours = +e.target.value || 0;
+      save();
+      calcPayroll();
+    });
+  }
+  container.querySelectorAll('input[id^="addManual_"]').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const id = inp.id.replace('addManual_', '');
+      state.payRange.manualAdditions = state.payRange.manualAdditions || {};
+      state.payRange.manualAdditions[id] = +e.target.value || 0;
+      save();
+      calcPayroll();
+    });
+  });
 }
 
 document.getElementById('payFrom').addEventListener('change', e => {
@@ -1931,22 +2621,7 @@ document.getElementById('payTo').addEventListener('change', e => {
   syncDateDisplay('payTo', 'payToDisplay');
   calcPayroll();
 });
-['holidayCount','annualLeaveDays','holidayMode','leavePrev','leaveAccrued'
-].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    updateLeaveUsed();
-    calcPayroll();
-  });
-});
-
-function updateLeaveUsed() {
-  const used = +document.getElementById('annualLeaveDays').value || 0;
-  document.getElementById('leaveUsed').value = arDigits(used);
-  const prev = +document.getElementById('leavePrev').value || 0;
-  const accr = +document.getElementById('leaveAccrued').value || 0;
-  document.getElementById('leaveRemaining').value = arDigits(prev + accr - used);
-}
-
+document.getElementById('holidayMode').addEventListener('change', () => calcPayroll());
 document.getElementById('calcPayroll').addEventListener('click', () => calcPayroll());
 
 function calcPayroll() {
@@ -1958,7 +2633,6 @@ function calcPayroll() {
 
   // Sum incomes from schedule
   let totalDaysIncome = 0;
-  let totalOvertime = 0; // user can add manually below
   const shiftCounts = {};
   for (let d = new Date(fromD); d <= toD; d.setDate(d.getDate() + 1)) {
     const k = dateKey(d.getFullYear(), d.getMonth(), d.getDate());
@@ -1972,51 +2646,72 @@ function calcPayroll() {
     }
   }
 
-  // Allowances - calculated automatically from worked days × each shift's configured per-day rate
-  const mealTotal = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
-    const s = state.shifts.find(x => x.id === id);
-    return sum + (c * (+s?.mealAllowance || 0));
-  }, 0);
-  const shiftAllowTotal = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
-    const s = state.shifts.find(x => x.id === id);
-    return sum + (c * (+s?.shiftAllowance || 0));
-  }, 0);
-  document.getElementById('mealTotal').value = arDigits(mealTotal.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
-  document.getElementById('shiftAllowTotal').value = arDigits(shiftAllowTotal.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  const cur = state.shifts[0]?.currency || 'ج.م';
 
-  // Holiday allowance
-  const hMode = +document.getElementById('holidayMode').value; // 1 or 2
-  const hCount = +document.getElementById('holidayCount').value || 0;
-  // value of one holiday day = avg of working days' income (or 0)
+  // Holiday allowance - automatic from the holidays list within this payroll period
+  // holidayMode is configured in Settings (1 = day allowance + day income, 2 = 2 days allowance)
+  const hMode = +state.settings.holidayMode || 1;
+  const holidaysInPeriod = state.holidays.filter(h => h.date >= from && h.date <= to);
+  const hCount = holidaysInPeriod.reduce((sum, h) => sum + (+h.balance || 1), 0);
+  document.getElementById('holidayCount').value = arDigits(hCount);
+  // fallback value of one holiday day = avg of working days' income (used only if no shift is
+  // scheduled on the holiday's exact date)
   const avgDay = (() => {
     const totalDays = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
     return totalDays > 0 ? totalDaysIncome / totalDays : 0;
   })();
-  const holidayAllowance = hCount * avgDay * hMode;
+  // If the user scheduled a shift (اولى/تانية/تالتة...) on the same date as the holiday,
+  // use that specific shift's pre-configured day income instead of the average.
+  const holidayAllowance = holidaysInPeriod.reduce((sum, h) => {
+    const balance = +h.balance || 1;
+    const sid = state.schedule[h.date];
+    const scheduledShift = sid ? state.shifts.find(x => x.id === sid) : null;
+    const dayValue = scheduledShift ? (+scheduledShift.dayIncome || 0) : avgDay;
+    return sum + (balance * dayValue * hMode);
+  }, 0);
 
-  // Overtime
-  const overtimeInput = +document.getElementById('overtimeHoursTotal').value || 0;
-  // avg overtime rate from configured shifts (use max for safety, or prompt user)
-  // Simpler: read from a single field below
-  // We'll use overtimeHours * avgOvertimeRate:
-  const avgOvertimeRate = (() => {
-    const rates = state.shifts.map(s => +s.overtimeRate || 0).filter(r => r > 0);
-    if (rates.length === 0) return 0;
-    return rates.reduce((a, b) => a + b, 0) / rates.length;
-  })();
-  totalOvertime = overtimeInput * avgOvertimeRate;
-  document.getElementById('totalOvertime').value = arDigits(totalOvertime.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  // Additions - generic loop over state.additionTypes (enabled only)
+  let additionsTotal = 0;
+  state.additionTypes.forEach(a => {
+    if (!a.enabled) return;
+    if (a.special === 'overtime') {
+      const hoursEl = document.getElementById('overtimeHoursTotal');
+      const overtimeInput = +(hoursEl?.value || 0);
+      const avgOvertimeRate = (() => {
+        const rates = state.shifts.map(s => +s.overtimeRate || 0).filter(r => r > 0);
+        if (rates.length === 0) return 0;
+        return rates.reduce((x, y) => x + y, 0) / rates.length;
+      })();
+      const total = overtimeInput * avgOvertimeRate;
+      const totalEl = document.getElementById('totalOvertime');
+      if (totalEl) totalEl.value = arDigits(total.toFixed(2) + ' ' + cur);
+      additionsTotal += total;
+    } else if (a.mode === 'perShift') {
+      const valueKey = a.special === 'shiftAllowance' ? 'shiftAllowance'
+        : a.special === 'mealAllowance' ? 'mealAllowance' : null;
+      const total = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
+        const s = state.shifts.find(x => x.id === id);
+        if (!s) return sum;
+        const perDay = valueKey ? (+s[valueKey] || 0) : (+(s.customAdditions?.[a.id]) || 0);
+        return sum + (c * perDay);
+      }, 0);
+      const totalEl = document.getElementById('addTotal_' + a.id);
+      if (totalEl) totalEl.value = arDigits(total.toFixed(2) + ' ' + cur);
+      additionsTotal += total;
+    } else {
+      const el = document.getElementById('addManual_' + a.id);
+      const val = el ? (+el.value || 0) : ((state.payRange.manualAdditions && state.payRange.manualAdditions[a.id]) || 0);
+      additionsTotal += val;
+    }
+  });
 
   // Total income
-  const totalIncome = totalDaysIncome + totalOvertime + mealTotal + shiftAllowTotal + holidayAllowance;
-  document.getElementById('totalDaysIncome').value = arDigits(totalDaysIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
-  document.getElementById('holidayAllowance').value = arDigits(holidayAllowance.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
-  document.getElementById('totalIncome').value = arDigits(totalIncome.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
+  const totalIncome = totalDaysIncome + additionsTotal + holidayAllowance;
+  document.getElementById('totalDaysIncome').value = arDigits(totalDaysIncome.toFixed(2) + ' ' + cur);
+  document.getElementById('holidayAllowance').value = arDigits(holidayAllowance.toFixed(2) + ' ' + cur);
+  document.getElementById('totalIncome').value = arDigits(totalIncome.toFixed(2) + ' ' + cur);
 
   // Deductions
-  const annualLeaveDays = +document.getElementById('annualLeaveDays').value || 0;
-  // Deduct income of those leave days (avg of working days' income)
-  const leaveDeduction = annualLeaveDays * avgDay;
   const avgHourly = (() => {
     const totalH = Object.entries(shiftCounts).reduce((sum, [id, c]) => {
       const s = state.shifts.find(x => x.id === id);
@@ -2029,12 +2724,11 @@ function calcPayroll() {
     const val = el ? (+el.value || 0) : 0;
     return sum + (dt.unit === 'hours' ? val * avgHourly : val);
   }, 0);
-  const totalDeductions = leaveDeduction + customDeductionsTotal;
+  const totalDeductions = customDeductionsTotal;
   document.getElementById('totalDeductions').value = arDigits(totalDeductions.toFixed(2) + ' ' + (state.shifts[0]?.currency || 'ج.م'));
 
   // Net
   const net = totalIncome - totalDeductions;
-  const cur = state.shifts[0]?.currency || 'ج.م';
   document.getElementById('netIncome').textContent = arDigits(totalIncome.toFixed(2) + ' ' + cur);
   document.getElementById('netDeductions').textContent = arDigits(totalDeductions.toFixed(2) + ' ' + cur);
   document.getElementById('netSalary').textContent = arDigits(net.toFixed(2) + ' ' + cur);
@@ -2043,7 +2737,29 @@ function calcPayroll() {
 /* ============================================================
    Side menu
    ============================================================ */
+/* ============================================================
+   Company selector
+   ============================================================ */
+function renderCompanySelect() {
+  const sel = document.getElementById('companySelect');
+  sel.innerHTML = state.companies.map((c, i) => `<option value="${i}">${escapeHtml(c)}</option>`).join('');
+  sel.value = state.currentCompanyIndex;
+}
+document.getElementById('companySelect').addEventListener('change', e => {
+  state.currentCompanyIndex = +e.target.value;
+  save();
+});
+document.getElementById('editCompanyBtn').addEventListener('click', async () => {
+  const current = state.companies[state.currentCompanyIndex] || '';
+  const name = await pgPrompt('اسم الشركة', current);
+  if (name === null || name === '') return;
+  state.companies[state.currentCompanyIndex] = name;
+  save();
+  renderCompanySelect();
+});
+
 document.getElementById('menuBtn').addEventListener('click', () => {
+  document.getElementById('calendarViewSelect').value = state.settings.calendarView || 'grid';
   document.getElementById('sideMenuOverlay').classList.add('open');
 });
 document.getElementById('closeSideMenu').addEventListener('click', () => {
@@ -2051,6 +2767,11 @@ document.getElementById('closeSideMenu').addEventListener('click', () => {
 });
 document.getElementById('sideMenuOverlay').addEventListener('click', e => {
   if (e.target.id === 'sideMenuOverlay') e.target.classList.remove('open');
+});
+document.getElementById('calendarViewSelect').addEventListener('change', e => {
+  state.settings.calendarView = e.target.value;
+  save();
+  renderMonth();
 });
 
 document.getElementById('menuExport').addEventListener('click', () => {
@@ -2089,7 +2810,9 @@ function arDigits(v) {
    Init
    ============================================================ */
 load();
+renderCompanySelect();
 document.querySelector('main').classList.add('no-scroll');
+renderWeekdaysHeader();
 renderMonth();
 
 </script>
