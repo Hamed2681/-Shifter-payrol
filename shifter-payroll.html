@@ -513,12 +513,20 @@ input, select {
 }
 .shift-item .chip {
   width: 60px; height: 60px; border-radius: 4px; display: flex;
-  align-items: center; justify-content: center; font-weight: 800; font-size: 28px;
+  align-items: center; justify-content: center; font-weight: 800;
+  text-align: center; line-height: 1.1; padding: 4px; box-sizing: border-box;
+  overflow: hidden; word-break: break-word; flex-shrink: 0;
 }
 .shift-item .info { flex: 1; }
 .shift-item .info .nm { font-weight: 700; }
 .shift-item .info .sub { color: var(--text-muted); font-size: 12px; }
 .shift-item .menu { color: var(--text-muted); font-size: 18px; }
+.shift-item .reorder-btns { display: flex; flex-direction: column; gap: 2px; }
+.shift-item .reorder-btns button {
+  width: 26px; height: 22px; background: var(--bg-4); color: var(--text);
+  border-radius: 3px; font-size: 11px; display: flex; align-items: center; justify-content: center;
+}
+.shift-item .reorder-btns button:disabled { opacity: 0.25; }
 
 .ded-type-item {
   display: flex; align-items: center; padding: 10px; background: var(--bg-3);
@@ -1953,23 +1961,62 @@ document.getElementById('addDedType').addEventListener('click', () => {
   if (document.getElementById('view-payroll').classList.contains('active')) renderDeductionsRows();
 });
 
+function chipFontSize(abbr) {
+  const len = (abbr || '').length;
+  if (len <= 2) return 28;
+  if (len <= 4) return 20;
+  if (len <= 6) return 15;
+  if (len <= 9) return 12;
+  return 10;
+}
+
 function renderShiftsList() {
   const list = document.getElementById('shiftsList');
   list.innerHTML = '';
-  state.shifts.forEach(s => {
+  state.shifts.forEach((s, idx) => {
     const row = document.createElement('div');
     row.className = 'shift-item';
+    const abbrText = arDigits(s.abbr);
     row.innerHTML = `
-      <div class="chip" style="background:${s.bg};color:${s.fg}">${escapeHtml(arDigits(s.abbr))}</div>
+      <div class="chip" style="background:${s.bg};color:${s.fg};font-size:${chipFontSize(s.abbr)}px">${escapeHtml(abbrText)}</div>
       <div class="info">
         <div class="nm">${escapeHtml(s.name)}</div>
         <div class="sub">(${arDigits(pad(s.start))} - ${arDigits(pad(s.end))})</div>
       </div>
-      <div class="menu">☰</div>
+      <div class="reorder-btns">
+        <button type="button" class="move-up" data-id="${s.id}" ${idx === 0 ? 'disabled' : ''} title="لأعلى">▲</button>
+        <button type="button" class="move-down" data-id="${s.id}" ${idx === state.shifts.length - 1 ? 'disabled' : ''} title="لأسفل">▼</button>
+      </div>
     `;
-    row.addEventListener('click', () => openShiftConfig(s));
+    row.addEventListener('click', e => {
+      if (e.target.closest('.reorder-btns')) return;
+      openShiftConfig(s);
+    });
     list.appendChild(row);
   });
+  list.querySelectorAll('.move-up').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      moveShift(btn.dataset.id, -1);
+    });
+  });
+  list.querySelectorAll('.move-down').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      moveShift(btn.dataset.id, 1);
+    });
+  });
+}
+
+function moveShift(id, dir) {
+  const idx = state.shifts.findIndex(s => s.id === id);
+  const newIdx = idx + dir;
+  if (idx === -1 || newIdx < 0 || newIdx >= state.shifts.length) return;
+  const [item] = state.shifts.splice(idx, 1);
+  state.shifts.splice(newIdx, 0, item);
+  save();
+  renderShiftsList();
+  renderPaintBar();
 }
 
 document.getElementById('createShift').addEventListener('click', () => {
