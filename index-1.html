@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1e293b" />
+  <title>Shifter Payroll - Material Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Material Design Tokens ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --md-sys-color-primary: #4f46e5;
+      --md-sys-color-on-primary: #ffffff;
+      --md-sys-color-surface: #f8fafc;
+      --md-sys-color-surface-container: #ffffff;
+      --md-sys-color-surface-dim: #e2e8f0;
+      --md-sys-color-on-surface: #0f172a;
+      --md-sys-color-on-surface-variant: #475569;
+      --md-sys-color-outline-variant: #cbd5e1;
+      --md-sys-color-error: #ef4444;
+      --md-sys-color-warning: #f59e0b;
+      --md-shadow: 0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);
+      --md-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);
+      --md-radius: 12px;
+      --md-radius-sm: 8px;
+      --md-radius-full: 9999px;
+      --md-font: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+    }
+    html, body { height: 100%; overflow: hidden; font-family: var(--md-font); background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--md-sys-color-outline-variant); border-radius: 10px; }
+
+    /* ===== Top Bar ===== */
+    .top-bar {
+      background: var(--md-sys-color-surface-container);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      box-shadow: var(--md-shadow);
+      flex: 0 0 auto;
+      min-height: 56px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      padding: 4px 8px;
+      border-radius: var(--md-radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .logo:hover { background: var(--md-sys-color-surface-dim); }
+    .logo-tag { font-weight: 800; font-size: 16px; color: var(--md-sys-color-primary); }
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 2px;
+      background: var(--md-sys-color-primary);
+      padding: 3px;
+      border-radius: 4px;
+    }
+    .logo-grid span { width: 6px; height: 6px; background: var(--md-sys-color-on-primary); border-radius: 1px; }
+
+    .company-select {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--md-sys-color-surface-dim);
+      padding: 6px 12px;
+      border-radius: var(--md-radius-sm);
+    }
+    .company-select select {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface);
+      font-weight: 700;
+      font-size: 15px;
+      padding: 4px 0;
+      font-family: var(--md-font);
+      outline: none;
+    }
+    .company-select .edit-icon { font-size: 18px; cursor: pointer; color: var(--md-sys-color-on-surface-variant); }
+    .company-select .edit-icon:hover { color: var(--md-sys-color-primary); }
+    .company-select .caret { color: var(--md-sys-color-on-surface-variant); }
+
+    .top-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface-variant);
+      padding: 8px;
+      border-radius: var(--md-radius-full);
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .icon-btn:hover { background: var(--md-sys-color-surface-dim); color: var(--md-sys-color-on-surface); }
+
+    /* ===== Tabs ===== */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      background: var(--md-sys-color-surface-container);
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      flex: 0 0 auto;
+      padding: 0 8px;
+    }
+    .tab {
+      background: transparent;
+      border: none;
+      padding: 12px 4px 10px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab:hover { color: var(--md-sys-color-on-surface); }
+    .tab.active { color: var(--md-sys-color-primary); border-bottom-color: var(--md-sys-color-primary); }
+
+    /* ===== Main ===== */
+    main {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--md-sys-color-surface);
+    }
+    .view { display: none; animation: fadeIn 0.25s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ===== Buttons ===== */
+    .btn {
+      font-family: var(--md-font);
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--md-radius-sm);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-shadow);
+    }
+    .btn:hover { box-shadow: var(--md-shadow-md); filter: brightness(0.95); }
+    .btn:active { transform: scale(0.97); }
+    .btn-outline { background: transparent; color: var(--md-sys-color-primary); box-shadow: none; border: 1px solid var(--md-sys-color-primary); }
+    .btn-outline:hover { background: var(--md-sys-color-primary-container); box-shadow: none; }
+    .btn-danger { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+    .btn-danger:hover { filter: brightness(0.9); }
+    .btn-icon { padding: 8px; border-radius: var(--md-radius-full); min-width: 40px; min-height: 40px; font-size: 20px; }
+
+    /* ===== Cards ===== */
+    .card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--md-radius);
+      padding: 16px;
+      box-shadow: var(--md-shadow);
+      margin-bottom: 16px;
+    }
+    .card-title { font-size: 16px; font-weight: 700; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; }
+    .card-subtitle { font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin: 0 0 12px 0; }
+
+    /* ===== Inputs ===== */
+    .input-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .input-field label { font-size: 12px; font-weight: 600; color: var(--md-sys-color-on-surface-variant); }
+    .input-field input, .input-field select {
+      padding: 10px 12px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-radius-sm);
+      font-family: var(--md-font);
+      font-size: 14px;
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .input-field input:focus, .input-field select:focus {
+      outline: none;
+      border-color: var(--md-sys-color-primary);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+    .input-field input[readonly] { background: var(--md-sys-color-surface-dim); color: var(--md-sys-color-on-surface-variant); }
+
+    .date-field { position: relative; }
+    .date-field input[type="date"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .date-field .date-display {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-radius-sm);
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      font-size: 14px;
+      text-align: center;
+      min-width: 110px;
+    }
+
+    /* ===== Month View ===== */
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+    .month-nav h2 { font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 0; }
+    .nav-arrow {
+      background: transparent;
+      border: none;
+      font-size: 28px;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      padding: 4px 12px;
+      border-radius: var(--md-radius-full);
+      transition: background 0.2s;
+      line-height: 1;
+    }
+    .nav-arrow:hover { background: var(--md-sys-color-surface-dim); color: var(--md-sys-color-on-surface); }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      text-align: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 4px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      gap: 2px;
+      background: var(--md-sys-color-outline-variant);
+      padding: 2px;
+      border-radius: var(--md-radius-sm);
+      flex: 1 1 auto;
+      min-height: 280px;
+    }
+    .day {
+      background: var(--md-sys-color-surface-container);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.2s;
+      min-height: 48px;
+    }
+    .day:hover { background: var(--md-sys-color-surface-dim); }
+    .day.other { background: var(--md-sys-color-surface-dim); opacity: 0.4; }
+    .day .num-top {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+    .day .label {
+      font-weight: 800;
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.2;
+      padding: 0 2px;
+      word-break: break-word;
+      max-width: 100%;
+    }
+
+    .calendar-list { display: none; flex-direction: column; gap: 6px; flex: 1 1 auto; overflow-y: auto; }
+    #view-month.list-mode .calendar { display: none; }
+    #view-month.list-mode .calendar-list { display: flex; }
+    #view-month.list-mode .weekdays { display: none; }
+
+    .day-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--md-radius-sm);
+      padding: 10px 14px;
+      box-shadow: var(--md-shadow);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .day-row:hover { background: var(--md-sys-color-surface-dim); }
+    .day-row.other { opacity: 0.4; }
+    .day-row .dr-date { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+    .day-row .dr-date .dr-num { font-size: 18px; font-weight: 800; line-height: 1.1; }
+    .day-row .dr-date .dr-wd { font-size: 10px; color: var(--md-sys-color-on-surface-variant); }
+    .day-row .dr-shift {
+      flex: 1;
+      padding: 6px 12px;
+      border-radius: var(--md-radius-sm);
+      font-weight: 700;
+      text-align: center;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .day-row .dr-empty { flex: 1; color: var(--md-sys-color-on-surface-variant); font-size: 13px; text-align: center; }
+
+    /* ===== Paint Bar ===== */
+    .paint-bar {
+      margin-top: 12px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: var(--md-sys-color-surface-container);
+      padding: 8px 12px;
+      border-radius: var(--md-radius);
+      box-shadow: var(--md-shadow);
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+    .paint-fixed { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+    .paint-scroll { display: flex; gap: 4px; overflow-x: auto; flex: 1; padding-bottom: 2px; }
+    .paint-toggle {
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 18px;
+      padding: 6px 8px;
+      border-radius: var(--md-radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .paint-toggle:hover { background: var(--md-sys-color-surface-dim); }
+    .paint-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: var(--md-radius-sm);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--md-font);
+      background: var(--md-sys-color-surface-dim);
+      color: var(--md-sys-color-on-surface);
+      transition: background 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .paint-btn:hover { background: var(--md-sys-color-outline-variant); }
+    .paint-btn.erase { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+    .paint-btn.erase:hover { filter: brightness(0.9); }
+    .paint-btn.active { box-shadow: 0 0 0 2px var(--md-sys-color-primary); }
+    .paint-bar.collapsed .paint-scroll { display: none; }
+
+    /* ===== Stats ===== */
+    .stats-head, .stats-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.5fr 50px;
+      gap: 8px;
+      padding: 10px 8px;
+      align-items: center;
+      font-size: 13px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .stats-head { font-weight: 700; color: var(--md-sys-color-on-surface-variant); border-bottom: 2px solid var(--md-sys-color-outline-variant); }
+    .stats-row:last-child { border-bottom: none; }
+    .stats-global { text-align: right; padding: 10px 8px; font-weight: 700; color: var(--md-sys-color-on-surface-variant); border-top: 1px solid var(--md-sys-color-outline-variant); margin-top: 4px; }
+
+    .stats-tabs {
+      display: flex;
+      background: var(--md-sys-color-surface-dim);
+      border-radius: var(--md-radius-full);
+      padding: 4px;
+      margin-bottom: 12px;
+    }
+    .st-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--md-radius-full);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      font-family: var(--md-font);
+      transition: background 0.2s, color 0.2s;
+    }
+    .st-tab.active { background: var(--md-sys-color-surface-container); color: var(--md-sys-color-primary); box-shadow: var(--md-shadow); }
+    .st-tab:hover:not(.active) { background: var(--md-sys-color-surface-container-high); }
+
+    .stats-picker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--md-sys-color-surface-container);
+      padding: 8px 16px;
+      border-radius: var(--md-radius-full);
+      box-shadow: var(--md-shadow);
+      margin-bottom: 12px;
+    }
+    .stats-picker span { font-weight: 700; min-width: 100px; text-align: center; }
+    .range-pickers { display: none; gap: 12px; margin-bottom: 12px; }
+    .range-pickers.visible { display: flex; }
+    .range-pickers>div { flex: 1; min-width: 0; }
+
+    /* ===== Leave Grid ===== */
+    .leave-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px,1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .leave-grid label { display: block; font-size: 11px; font-weight: 600; color: var(--md-sys-color-on-surface-variant); margin-bottom: 2px; text-align: center; }
+    .leave-grid input {
+      width: 100%;
+      text-align: center;
+      padding: 8px 4px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-radius-sm);
+      font-family: var(--md-font);
+      font-size: 13px;
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+    }
+    .leave-grid input:focus { outline: none; border-color: var(--md-sys-color-primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .leave-grid input[readonly] { background: var(--md-sys-color-surface-dim); color: var(--md-sys-color-on-surface-variant); }
+
+    /* ===== Mini List ===== */
+    .mini-list { display: flex; flex-direction: column; gap: 6px; }
+    .mini-list-empty { color: var(--md-sys-color-on-surface-variant); font-size: 13px; padding: 8px 0; text-align: center; }
+    .mini-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--md-sys-color-surface-dim);
+      border-radius: var(--md-radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .mini-list-item .mli-info { display: flex; flex-direction: column; gap: 2px; }
+    .mini-list-item .mli-name { font-weight: 700; }
+    .mini-list-item .mli-sub { color: var(--md-sys-color-on-surface-variant); font-size: 11px; }
+    .mini-list-item .mli-del {
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-error);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--md-radius-sm);
+      transition: background 0.2s;
+    }
+    .mini-list-item .mli-del:hover { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+    .mini-list-item.holiday-item { flex-direction: column; align-items: stretch; gap: 8px; }
+    .mini-list-item.holiday-item .mli-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+    .collapse-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; padding: 4px 0; }
+    .collapse-arrow { font-size: 20px; transition: transform 0.2s; color: var(--md-sys-color-on-surface-variant); }
+    .collapse-arrow.collapsed { transform: rotate(-90deg); }
+
+    /* ===== Net Row ===== */
+    .net-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+    .net-row.big { font-size: 22px; font-weight: 800; border: none; padding-top: 12px; margin-top: 4px; border-top: 2px solid var(--md-sys-color-primary); }
+    .net-row.big span:last-child { color: var(--md-sys-color-primary); }
+
+    /* ===== Modals ===== */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: var(--md-sys-color-surface-container);
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: var(--md-radius) var(--md-radius) 0 0;
+      padding: 20px;
+      box-shadow: var(--md-shadow-lg);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 28px;
+      color: var(--md-sys-color-on-surface-variant);
+      display: block;
+      margin: 0 auto 8px;
+      cursor: pointer;
+      padding: 4px 12px;
+      border-radius: var(--md-radius-full);
+      transition: background 0.2s;
+    }
+    .modal-close:hover { background: var(--md-sys-color-surface-dim); }
+    .modal h3 { text-align: center; margin: 0 0 16px; font-size: 20px; letter-spacing: 0.5px; }
+    .modal-actions { display: flex; gap: 10px; margin-bottom: 16px; }
+    .modal-actions .btn { flex: 1; }
+
+    /* ===== Side Menu ===== */
+    .side-menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 300;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+    .side-menu-overlay.open { display: block; }
+    .side-menu {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 280px;
+      background: var(--md-sys-color-surface-container);
+      box-shadow: var(--md-shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      overflow-y: auto;
+    }
+    .side-menu-overlay.open .side-menu { transform: translateX(0); }
+    .side-menu-close {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      color: var(--md-sys-color-on-surface-variant);
+      align-self: flex-start;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: var(--md-radius-full);
+      transition: background 0.2s;
+    }
+    .side-menu-close:hover { background: var(--md-sys-color-surface-dim); }
+    .side-menu-item {
+      background: transparent;
+      border: none;
+      padding: 12px 14px;
+      border-radius: var(--md-radius-sm);
+      font-family: var(--md-font);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface);
+      text-align: right;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .side-menu-item:hover { background: var(--md-sys-color-surface-dim); }
+    .side-menu-item.warn { color: var(--md-sys-color-warning); }
+    .side-menu-item.danger { color: var(--md-sys-color-error); }
+    .side-menu-divider { height: 1px; background: var(--md-sys-color-outline-variant); margin: 8px 0; }
+    .side-menu-label { display: block; font-size: 12px; font-weight: 600; color: var(--md-sys-color-on-surface-variant); margin-bottom: 4px; }
+    .side-menu-select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-radius-sm);
+      font-family: var(--md-font);
+      font-weight: 700;
+      font-size: 14px;
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+    }
+    .side-menu-select:focus { outline: none; border-color: var(--md-sys-color-primary); }
+
+    /* ===== Config Tabs ===== */
+    .config-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      margin-bottom: 16px;
+      gap: 4px;
+    }
+    .ct-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 10px 4px;
+      font-family: var(--md-font);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .ct-tab.active { color: var(--md-sys-color-primary); border-bottom-color: var(--md-sys-color-primary); }
+    .ct-panel { display: none; }
+    .ct-panel.active { display: block; }
+
+    /* ===== Shift Config ===== */
+    .shift-name-row { display: flex; gap: 10px; align-items: stretch; }
+    .shift-name-row input { flex: 1; }
+    .shift-preview {
+      width: 56px;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      border-radius: var(--md-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .color-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .color-wheel {
+      background: var(--md-sys-color-surface-dim);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--md-radius-full);
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .color-wheel:hover { background: var(--md-sys-color-outline-variant); }
+    .swatches { display: flex; gap: 6px; flex: 1; overflow-x: auto; padding-bottom: 4px; }
+    .swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--md-radius-full);
+      flex-shrink: 0;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .swatch:hover { transform: scale(1.05); }
+    .swatch.selected { border-color: var(--md-sys-color-primary); box-shadow: 0 0 0 2px var(--md-sys-color-primary-container); }
+    .size-row { display: flex; align-items: center; gap: 10px; }
+    .size-row input[type="range"] { flex: 1; accent-color: var(--md-sys-color-primary); }
+    .size-row span { min-width: 40px; text-align: center; font-weight: 700; }
+    .time-row { display: flex; gap: 10px; }
+    .time-row>div { flex: 1; }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface);
+      padding: 12px 24px;
+      border-radius: var(--md-radius);
+      box-shadow: var(--md-shadow-lg);
+      z-index: 500;
+      font-size: 14px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--md-sys-color-success); color: #fff; }
+    .toast.error { background: var(--md-sys-color-error); color: #fff; }
+
+    /* ===== Responsive ===== */
+    @media (max-width:480px) {
+      .tabs .tab { font-size: 11px; padding: 10px 2px; }
+      .month-nav h2 { font-size: 17px; }
+      .stats-head, .stats-row { grid-template-columns: 1.5fr 0.7fr 1fr 40px; font-size: 12px; }
+      .range-pickers { flex-direction: column; }
+      .leave-grid { grid-template-columns: repeat(2,1fr); }
+      .modal-content { padding: 16px; }
+      .time-row { flex-direction: column; }
+    }
+    @media (max-width:380px) {
+      .top-bar { padding: 6px 10px; gap: 6px; }
+      .company-select { padding: 4px 8px; }
+      .company-select select { font-size: 13px; }
+      .logo-tag { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <button class="logo" id="logoBtn" title="إدارة الشيفتات" type="button">
+      <span class="logo-tag">Shifter</span>
+      <span class="logo-grid">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </span>
+    </button>
+    <div class="company-select">
+      <span class="edit-icon" id="editCompanyBtn" title="تعديل اسم الشركة">✏️</span>
+      <select id="companySelect" aria-label="اختر الشركة"></select>
+      <span class="caret">▾</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="settingsBtn" title="الإعدادات">⚙️</button>
+      <button class="icon-btn" id="menuBtn" title="القائمة">☰</button>
+    </div>
+  </header>
+
+  <!-- Side Menu -->
+  <div class="side-menu-overlay" id="sideMenuOverlay">
+    <nav class="side-menu" id="sideMenu">
+      <button class="side-menu-close" id="closeSideMenu">✕</button>
+      <div class="side-menu-group">
+        <label class="side-menu-label">شكل التقويم</label>
+        <select id="calendarViewSelect" class="side-menu-select">
+          <option value="grid">شبكة (شهر)</option>
+          <option value="list">قائمة رأسية (أيام)</option>
+        </select>
+      </div>
+      <div class="side-menu-divider"></div>
+      <button class="side-menu-item" id="menuExport">📤 تصدير البيانات (JSON)</button>
+      <button class="side-menu-item" id="menuImport">📥 استيراد البيانات (JSON)</button>
+      <button class="side-menu-item warn" id="menuReset">⚠️ مسح كل البيانات</button>
+    </nav>
+  </div>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="month">شهر</button>
+    <button class="tab" data-tab="year" id="yearTab">2026</button>
+    <button class="tab" data-tab="summary">إحصائيات</button>
+    <button class="tab" data-tab="payroll">المرتب</button>
+  </nav>
+
+  <!-- Main -->
+  <main>
+    <!-- Month View -->
+    <section class="view active" id="view-month">
+      <div class="month-nav">
+        <button class="nav-arrow" id="prevMonth">›</button>
+        <h2 id="monthTitle">JULY 2026</h2>
+        <button class="nav-arrow" id="nextMonth">‹</button>
+      </div>
+      <div class="weekdays" id="weekdaysRow"></div>
+      <div class="calendar" id="calendar"></div>
+      <div class="calendar-list" id="calendarList"></div>
+      <div class="paint-bar" id="paintBar">
+        <div class="paint-fixed">
+          <button class="paint-toggle" id="paintToggle">⌃</button>
+          <button class="paint-btn erase" data-shift="">مسح</button>
+        </div>
+        <div class="paint-scroll" id="paintScroll"></div>
+      </div>
+    </section>
+
+    <!-- Year View -->
+    <section class="view" id="view-year">
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">
+        <button class="btn btn-outline year-btn" data-year="2025">2025</button>
+        <button class="btn year-btn active" data-year="2026">2026</button>
+        <button class="btn btn-outline year-btn" data-year="2027">2027</button>
+      </div>
+      <div class="year-grid" id="yearGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;"></div>
+    </section>
+
+    <!-- Summary View -->
+    <section class="view" id="view-summary">
+      <div class="card">
+        <div class="card-title">📊 الإحصائيات</div>
+        <div class="stats-tabs">
+          <button class="st-tab active" data-st="month">شهر</button>
+          <button class="st-tab" data-st="year">سنة</button>
+          <button class="st-tab" data-st="range">فترة</button>
+        </div>
+        <div class="stats-picker">
+          <button class="nav-arrow" id="prevPeriod">›</button>
+          <span id="periodLabel">JULY 2026</span>
+          <button class="nav-arrow" id="nextPeriod">‹</button>
+        </div>
+        <div class="range-pickers" id="rangePickers">
+          <div>
+            <label style="font-size:12px;color:var(--md-sys-color-on-surface-variant);">من</label>
+            <div class="date-field">
+              <input type="date" id="fromDate" />
+              <span class="date-display" id="fromDateDisplay">—</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--md-sys-color-on-surface-variant);">إلى</label>
+            <div class="date-field">
+              <input type="date" id="toDate" />
+              <span class="date-display" id="toDateDisplay">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="stats-table">
+          <div class="stats-head">
+            <span>الشيفتات</span><span>العدد</span><span>الوقت/الدخل</span><span>الكل</span>
+          </div>
+          <div id="statsBody"></div>
+          <div class="stats-global" id="statsGlobal"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏖️ رصيد الإجازات الاعتيادية</div>
+        <div class="leave-grid">
+          <div><label>رصيد سابق</label><input type="number" id="sumLeavePrev" step="0.5" /></div>
+          <div><label>رصيد حالي</label><input type="number" id="sumLeaveAccrued" step="0.5" /></div>
+          <div><label>مستنفذ</label><input type="text" id="sumLeaveUsed" readonly /></div>
+          <div><label>المتبقي</label><input type="text" id="sumLeaveRemaining" readonly /></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>🎉 رصيد بدل العطلات (تلقائي)</span>
+          <span id="sumHolidayCompBalance" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);margin-top:10px;">
+          تُخصم أيام الإجازة الاعتيادية تلقائياً من التقويم — أي يوم مجدول بوردية "اعتيادي" يُخصم من الرصيد.
+        </p>
+        <div class="collapse-toggle" id="leaveDatesToggle">
+          <span style="font-weight:600;">📅 تواريخ الأيام الاعتيادية</span>
+          <span class="collapse-arrow" id="leaveDatesArrow">▾</span>
+        </div>
+        <div id="leaveDatesList" class="mini-list" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">❌ أيام الغياب والجزاءات</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>عدد أيام الغياب (في الفترة المحددة)</span>
+          <span id="absenceTotalDays" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>عدد أيام الجزاء (التصاعدي)</span>
+          <span id="absencePenaltyDays" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span>إجمالي قيمة الخصم</span>
+          <span id="absenceTotalValue" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);margin:10px 0 8px;">
+          يتم احتساب أيام الغياب تلقائياً من التقويم — أي يوم مجدول بوردية "غياب" يُحسب. الجدول التصاعدي للجزاءات: 0.25، 0.5، 1، 2، 3، ثم 5 أيام جزاء عن كل يوم بدءاً من اليوم السادس.
+        </p>
+        <div style="font-weight:600;margin-bottom:6px;">فترات الغياب (مع تفاصيل الجزاء لكل يوم)</div>
+        <div id="absenceSpellsList" class="mini-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="collapse-toggle" id="holidaysToggle">
+          <span class="card-title" style="margin:0;">🎉 العطلات الرسمية</span>
+          <span class="collapse-arrow" id="holidaysArrow">▾</span>
+        </div>
+        <div id="holidaysList" class="mini-list" style="margin-top:8px;"></div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="newHolidayName" style="flex:1;min-width:120px;padding:10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+              <option value="">اختر اسم العطلة...</option>
+              <option value="رأس السنة الميلادية">رأس السنة الميلادية</option>
+              <option value="عيد الشرطة (ثورة 25 يناير)">عيد الشرطة (ثورة 25 يناير)</option>
+              <option value="عيد تحرير سيناء">عيد تحرير سيناء</option>
+              <option value="عيد شم النسيم">عيد شم النسيم</option>
+              <option value="عيد العمال">عيد العمال</option>
+              <option value="ثورة 30 يونيو">ثورة 30 يونيو</option>
+              <option value="ثورة 23 يوليو">ثورة 23 يوليو</option>
+              <option value="عيد الفطر">عيد الفطر</option>
+              <option value="عيد الأضحى">عيد الأضحى</option>
+              <option value="رأس السنة الهجرية">رأس السنة الهجرية</option>
+              <option value="المولد النبوي الشريف">المولد النبوي الشريف</option>
+              <option value="نصر أكتوبر (عيد القوات المسلحة)">نصر أكتوبر (عيد القوات المسلحة)</option>
+              <option value="__other__">أخرى (اسم مخصص)</option>
+            </select>
+            <input type="text" id="newHolidayNameCustom" placeholder="اسم العطلة المخصص" style="display:none;flex:1;min-width:120px;padding:10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);" />
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="date-field" style="flex:1;min-width:130px;">
+              <input type="date" id="newHolidayDate" />
+              <span class="date-display" id="newHolidayDateDisplay">—</span>
+            </div>
+            <input type="number" id="newHolidayDays" value="1" min="1" step="1" style="width:80px;padding:10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);" />
+            <button class="btn" id="addHoliday">➕ إضافة</button>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);margin-top:10px;">
+          الرصيد يُحسب تلقائياً: لو تم تسجيل وردية في نفس تاريخ العطلة فهذا يعني أن الموظف عمل بدل الراحة، فيُحسب له رصيد إجازة.
+        </p>
+      </div>
+    </section>
+
+    <!-- Payroll View -->
+    <section class="view" id="view-payroll">
+      <div class="card">
+        <div class="card-title">💰 حساب المرتب</div>
+        <p class="card-subtitle">احسب صافي المرتب بعد الإضافات والبدلات والخصومات</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:140px;">
+            <label style="font-size:12px;color:var(--md-sys-color-on-surface-variant);">من</label>
+            <div class="date-field">
+              <input type="date" id="payFrom" />
+              <span class="date-display" id="payFromDisplay">—</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label style="font-size:12px;color:var(--md-sys-color-on-surface-variant);">إلى</label>
+            <div class="date-field">
+              <input type="date" id="payTo" />
+              <span class="date-display" id="payToDisplay">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💵 الدخل</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>إجمالي أجر الأيام (محسوب تلقائياً)</span>
+          <span id="totalDaysIncome" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <div id="additionsIncomeRows"></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--md-sys-color-primary);font-weight:800;margin-top:4px;">
+          <span>إجمالي الدخل</span>
+          <span id="totalIncome" style="color:var(--md-sys-color-primary);">0.00 ج.م</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">➖ الخصومات</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>❌ خصم الغياب (تلقائي من التقويم)</span>
+          <span id="absenceDeduction" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <div id="deductionsRows"></div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--md-sys-color-error);font-weight:800;margin-top:4px;">
+          <span>إجمالي الخصومات</span>
+          <span id="totalDeductions" style="color:var(--md-sys-color-error);">0.00 ج.م</span>
+        </div>
+      </div>
+
+      <div class="card" style="border:2px solid var(--md-sys-color-primary);">
+        <div class="card-title" style="color:var(--md-sys-color-primary);">💰 صافي المرتب</div>
+        <div class="net-row"><span>إجمالي الدخل</span><span id="netIncome">0.00 ج.م</span></div>
+        <div class="net-row"><span>إجمالي الخصومات</span><span id="netDeductions">0.00 ج.م</span></div>
+        <div class="net-row big"><span>الصافي</span><span id="netSalary">0.00 ج.م</span></div>
+        <button class="btn" id="calcPayroll" style="width:100%;margin-top:12px;">احسب المرتب</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <div class="modal" id="shiftsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeShifts">⌃</button>
+      <h3>قائمة الشيفتات</h3>
+      <div class="modal-actions">
+        <button class="btn" id="createShift">➕ إنشاء شيفت جديد</button>
+        <button class="btn btn-outline" id="importShifts">📥 استيراد شيفتات</button>
+      </div>
+      <div id="shiftsList"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="settingsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeSettings">⌃</button>
+      <h3>الإعدادات</h3>
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>نوع الأرقام</span>
+          <select id="numeralType" style="padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+            <option value="ar">عربي (١٢٣)</option>
+            <option value="en">إنجليزي (123)</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>شكل الخط</span>
+          <select id="fontStyle" style="padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+            <option value="Cairo">Cairo (افتراضي)</option>
+            <option value="Tahoma">Tahoma (خط النظام)</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span>بداية الأسبوع</span>
+          <select id="weekStart" style="padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+            <option value="sat">السبت</option>
+            <option value="sun">الأحد</option>
+            <option value="mon">الإثنين</option>
+            <option value="tue">الثلاثاء</option>
+            <option value="wed">الأربعاء</option>
+            <option value="thu">الخميس</option>
+            <option value="fri">الجمعة</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-weight:700;">➕ الإضافات (تُضاف إلى الدخل)</span>
+          <button class="btn btn-outline" id="addAdditionType" style="padding:6px 12px;font-size:12px;">➕ إضافة</button>
+        </div>
+        <div id="additionTypesList"></div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:8px;">🎉 العطلات الرسمية (بدل العطلة)</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>طريقة حساب العطلة الرسمية</span>
+          <select id="holidayMode" style="padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+            <option value="1_0">يوم دخل</option>
+            <option value="2_0">يومين دخل</option>
+            <option value="3_0">ثلاثة أيام دخل</option>
+            <option value="0_1">يوم إجازة</option>
+            <option value="0_2">يومين إجازة</option>
+            <option value="0_3">ثلاثة أيام إجازة</option>
+            <option value="1_1">يوم إجازة + يوم دخل</option>
+            <option value="2_1">يوم إجازة + يومين دخل</option>
+            <option value="1_2">يومين إجازة + يوم دخل</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>عدد أيام العطلات في الفترة الحالية (محسوب)</span>
+          <span id="holidayCount" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span>قيمة بدل العطلة (محسوبة)</span>
+          <span id="holidayAllowance" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:8px;">❌ إعدادات الغياب والجزاءات</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>قيمة خصم يوم الغياب</span>
+          <input type="number" id="absenceDayValue" min="0" step="0.01" placeholder="مثال: 250" style="width:120px;padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);" />
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);">
+          <span>قيمة يوم الجزاء (يوم كامل)</span>
+          <input type="number" id="penaltyDayValue" min="0" step="0.01" placeholder="مثال: 250" style="width:120px;padding:6px 10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);" />
+        </div>
+        <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);margin:6px 0 10px;">الجدول التصاعدي: ¼، ½، 1، 2، 3، ثم 5 أيام عن كل يوم بدءاً من اليوم السادس.</p>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="absenceAutoApply" />
+          <span style="font-size:13px;">إضافة الخصم تلقائياً إلى صفحة المرتب</span>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;">
+        <div style="font-weight:700;margin-bottom:8px;">➖ بنود الخصومات (صفحة المرتب)</div>
+        <div id="deductionTypesList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);" />
+          <select id="newDedUnit" style="padding:10px;border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-radius-sm);font-family:var(--md-font);background:var(--md-sys-color-surface);">
+            <option value="amount">مبلغ (ج.م)</option>
+            <option value="hours">ساعات × متوسط أجر الساعة</option>
+          </select>
+          <button class="btn" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="shiftConfigModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeConfig">⌃</button>
+      <h3>إعداد الشيفت</h3>
+      <div class="input-field">
+        <label>اسم الشيفت</label>
+        <div class="shift-name-row">
+          <input type="text" id="shiftName" placeholder="اسم الشيفت" />
+          <div class="shift-preview" id="shiftPreview">1</div>
+        </div>
+      </div>
+      <div class="config-tabs">
+        <button class="ct-tab active" data-ct="appearance">المظهر</button>
+        <button class="ct-tab" data-ct="schedule">الجدول</button>
+        <button class="ct-tab" data-ct="actions">إجراءات</button>
+      </div>
+      <div class="ct-panel active" data-ct="appearance">
+        <div class="input-field"><label>الاختصار</label><input type="text" id="shiftAbbr" maxlength="6" /></div>
+        <div class="input-field">
+          <label>لون الخلفية</label>
+          <div class="color-row">
+            <button class="color-wheel" id="bgWheel" type="button">🎨</button>
+            <div class="swatches" id="bgSwatches"></div>
+          </div>
+        </div>
+        <div class="input-field">
+          <label>لون النص</label>
+          <div class="color-row">
+            <button class="color-wheel" id="txtWheel" type="button">🎨</button>
+            <div class="swatches" id="txtSwatches"></div>
+          </div>
+        </div>
+        <div class="input-field">
+          <label>حجم النص</label>
+          <div class="size-row">
+            <span id="sizeVal">36</span>
+            <input type="range" id="textSize" min="10" max="64" value="36" />
+          </div>
+        </div>
+      </div>
+      <div class="ct-panel" data-ct="schedule">
+        <div class="time-row">
+          <div class="input-field"><label>البداية</label><input type="time" id="startTime" value="08:00" /></div>
+          <div class="input-field"><label>النهاية</label><input type="time" id="endTime" value="16:00" /></div>
+        </div>
+        <div class="input-field"><label>الساعات</label><input type="number" id="hours" value="8" min="0" step="0.5" /></div>
+        <div style="font-weight:700;margin:12px 0 8px;font-size:13px;color:var(--md-sys-color-on-surface-variant);">الدخل</div>
+        <div class="input-field"><label>العملة</label><input type="text" id="currency" value="ج.م" maxlength="4" /></div>
+        <div class="input-field"><label>إجمالي أجر اليوم</label><input type="number" id="dayIncome" value="0" step="0.01" /></div>
+        <div class="input-field"><label>أجر الساعة المحسوب (معاينة)</label><input type="text" id="hourlyRate" readonly /></div>
+        <div class="input-field"><label>أجر/ساعة إضافية (Overtime)</label><input type="number" id="overtimeRate" value="0" step="0.01" /></div>
+        <div class="input-field"><label>🍽️ بدل وجبة / يوم</label><input type="number" id="mealAllowance" value="0" step="0.01" /></div>
+        <div class="input-field"><label>🌙 بدل وردية / يوم</label><input type="number" id="shiftAllowance" value="0" step="0.01" /></div>
+        <div id="customAdditionFields"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+          <input type="checkbox" id="isAnnualLeave" />
+          <label style="font-size:13px;">🏖️ تُحسب كإجازة اعتيادية (تُخصم تلقائياً من رصيد الإجازات)</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+          <input type="checkbox" id="isAbsence" />
+          <label style="font-size:13px;">❌ تُحسب كيوم غياب (تُطبق الجزاءات التصاعدية)</label>
+        </div>
+      </div>
+      <div class="ct-panel" data-ct="actions">
+        <p style="color:var(--md-sys-color-on-surface-variant);margin-bottom:12px;">حذف أو نسخ الشيفت</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-danger" id="deleteShift">🗑️ حذف الشيفت</button>
+          <button class="btn btn-outline" id="duplicateShift">⎘ نسخ الشيفت</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--md-sys-color-outline-variant);">
+        <button class="btn btn-danger btn-icon" id="deleteShiftIcon" title="حذف">🗑️</button>
+        <button class="btn btn-outline" id="cancelShift" style="flex:1;">إلغاء</button>
+        <button class="btn" id="saveShift" style="flex:1;">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="importFile" accept=".json" style="display:none" />
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== التطبيق الكامل (JavaScript) ====================
+    // البيانات الافتراضية
+    let shifts = [
+      { id: 'shift1', name: 'وردية أولى', abbr: 'أولى', bgColor: '#4f46e5', textColor: '#ffffff', textSize: 36, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 200, overtimeRate: 30, mealAllowance: 20, shiftAllowance: 15, isAnnualLeave: false, isAbsence: false, customAdditions: [] },
+      { id: 'shift2', name: 'وردية تانية', abbr: 'تانية', bgColor: '#22c55e', textColor: '#ffffff', textSize: 34, startTime: '16:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 220, overtimeRate: 35, mealAllowance: 25, shiftAllowance: 20, isAnnualLeave: false, isAbsence: false, customAdditions: [] },
+      { id: 'shift3', name: 'إجازة اعتيادية', abbr: 'إجازة', bgColor: '#f59e0b', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 0, currency: 'ج.م', dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, isAnnualLeave: true, isAbsence: false, customAdditions: [] },
+      { id: 'shift4', name: 'غياب', abbr: 'غياب', bgColor: '#ef4444', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 0, currency: 'ج.م', dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, isAnnualLeave: false, isAbsence: true, customAdditions: [] }
+    ];
+    let schedule = {};
+    let companies = ['الشركة الرئيسية'];
+    let currentCompany = 0;
+    let currentYear = 2026;
+    let currentMonth = 6;
+    let selectedShiftId = null;
+    let editingShiftId = null;
+    let additionTypes = [{ id: 'add1', label: 'بدل انتقال', value: 50 }];
+    let deductionTypes = [{ id: 'ded1', label: 'تأمينات', unit: 'amount', value: 100 }];
+    let holidays = [];
+    let leavePrev = 0;
+    let leaveAccrued = 0;
+    let absenceDayValue = 250;
+    let penaltyDayValue = 250;
+    let holidayMode = '1_0';
+    let absenceAutoApply = true;
+    let weekStart = 'sat';
+
+    // مساعدات
+    function formatDate(d) {
+      const dd = new Date(d);
+      return dd.getFullYear() + '-' + String(dd.getMonth()+1).padStart(2,'0') + '-' + String(dd.getDate()).padStart(2,'0');
+    }
+    function parseDate(str) {
+      const p = str.split('-');
+      return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+    }
+    function getMonthDays(y,m) { return new Date(y, m+1, 0).getDate(); }
+    function getFirstDayOfMonth(y,m) {
+      const map = {sat:0,sun:1,mon:2,tue:3,wed:4,thu:5,fri:6};
+      const start = map[weekStart] || 0;
+      return (new Date(y,m,1).getDay() - start + 7) % 7;
+    }
+    function getShift(id) { return shifts.find(s => s.id === id); }
+    function getShiftLabel(id) { const s=getShift(id); return s ? s.abbr || s.name : id; }
+    function getShiftColor(id) { const s=getShift(id); return s ? s.bgColor : '#64748b'; }
+    function getShiftTextColor(id) { const s=getShift(id); return s ? s.textColor : '#ffffff'; }
+    function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2,4); }
+    function toast(msg, type='') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast show ' + type;
+      clearTimeout(el._timeout);
+      el._timeout = setTimeout(() => { el.className = 'toast'; }, 2500);
+    }
+
+    // حفظ واسترجاع
+    function saveData() {
+      try {
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart };
+        localStorage.setItem('shifterData', JSON.stringify(data));
+      } catch(e) {}
+    }
+    function loadData() {
+      try {
+        const raw = localStorage.getItem('shifterData');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        shifts = data.shifts || shifts;
+        schedule = data.schedule || {};
+        companies = data.companies || companies;
+        currentCompany = data.currentCompany || 0;
+        additionTypes = data.additionTypes || additionTypes;
+        deductionTypes = data.deductionTypes || deductionTypes;
+        holidays = data.holidays || [];
+        leavePrev = data.leavePrev || 0;
+        leaveAccrued = data.leaveAccrued || 0;
+        absenceDayValue = data.absenceDayValue || 250;
+        penaltyDayValue = data.penaltyDayValue || 250;
+        holidayMode = data.holidayMode || '1_0';
+        absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
+        weekStart = data.weekStart || 'sat';
+        return true;
+      } catch(e) { return false; }
+    }
+
+    // عرض التقويم
+    function renderCalendar() {
+      const year = currentYear, month = currentMonth;
+      const days = getMonthDays(year, month);
+      const firstDay = getFirstDayOfMonth(year, month);
+      const title = new Date(year, month).toLocaleString('ar-EG', { month:'long', year:'numeric' });
+      document.getElementById('monthTitle').textContent = title;
+
+      const weekMap = ['sat','sun','mon','tue','wed','thu','fri'];
+      const weekNames = ['س','ح','ن','ث','ر','خ','ج'];
+      const startIdx = weekMap.indexOf(weekStart);
+      const ordered = weekNames.slice(startIdx).concat(weekNames.slice(0, startIdx));
+      document.getElementById('weekdaysRow').innerHTML = ordered.map(d => `<span>${d}</span>`).join('');
+
+      const cal = document.getElementById('calendar');
+      cal.innerHTML = '';
+      const list = document.getElementById('calendarList');
+      list.innerHTML = '';
+
+      const total = firstDay + days;
+      const rows = Math.ceil(total / 7);
+      for (let i=0; i<rows*7; i++) {
+        const dayNum = i - firstDay + 1;
+        const isOther = dayNum < 1 || dayNum > days;
+        const dateObj = isOther ? null : new Date(year, month, dayNum);
+        const dateStr = dateObj ? formatDate(dateObj) : '';
+        const shiftId = dateStr ? schedule[dateStr] : null;
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day' + (isOther ? ' other' : '');
+        if (!isOther) {
+          dayEl.dataset.date = dateStr;
+          dayEl.addEventListener('click', () => {
+            if (selectedShiftId) {
+              if (selectedShiftId) schedule[dateStr] = selectedShiftId;
+              else delete schedule[dateStr];
+              saveData();
+              renderCalendar();
+              toast('تم تحديث اليوم: ' + dateStr);
+            }
+          });
+        }
+        if (!isOther) {
+          const num = document.createElement('span');
+          num.className = 'num-top';
+          num.textContent = dayNum;
+          dayEl.appendChild(num);
+          if (shiftId) {
+            const label = document.createElement('span');
+            label.className = 'label';
+            label.textContent = getShiftLabel(shiftId);
+            label.style.color = getShiftTextColor(shiftId);
+            label.style.fontSize = (getShift(shiftId)?.textSize || 36) + '%';
+            dayEl.style.background = getShiftColor(shiftId);
+            dayEl.appendChild(label);
+          } else {
+            dayEl.style.background = 'var(--md-sys-color-surface-container)';
+          }
+        }
+        cal.appendChild(dayEl);
+
+        if (!isOther) {
+          const row = document.createElement('div');
+          row.className = 'day-row';
+          const weekday = new Date(year, month, dayNum).toLocaleString('ar-EG', { weekday:'short' });
+          row.innerHTML = `
+            <div class="dr-date"><span class="dr-num">${dayNum}</span><span class="dr-wd">${weekday}</span></div>
+            ${shiftId ? `<span class="dr-shift" style="background:${getShiftColor(shiftId)};color:${getShiftTextColor(shiftId)}">${getShiftLabel(shiftId)}</span>` : '<span class="dr-empty">—</span>'}
+          `;
+          row.addEventListener('click', () => {
+            if (selectedShiftId) {
+              if (selectedShiftId) schedule[dateStr] = selectedShiftId;
+              else delete schedule[dateStr];
+              saveData();
+              renderCalendar();
+              toast('تم تحديث اليوم: ' + dateStr);
+            }
+          });
+          list.appendChild(row);
+        }
+      }
+      renderPaintBar();
+    }
+
+    function renderPaintBar() {
+      const container = document.getElementById('paintScroll');
+      container.innerHTML = '';
+      shifts.forEach(shift => {
+        const btn = document.createElement('button');
+        btn.className = 'paint-btn' + (selectedShiftId === shift.id ? ' active' : '');
+        btn.textContent = shift.abbr || shift.name;
+        btn.style.background = shift.bgColor;
+        btn.style.color = shift.textColor;
+        btn.dataset.shift = shift.id;
+        btn.addEventListener('click', () => {
+          selectedShiftId = selectedShiftId === shift.id ? null : shift.id;
+          renderPaintBar();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    // عرض السنة
+    function renderYear() {
+      const grid = document.getElementById('yearGrid');
+      grid.innerHTML = '';
+      const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      for (let m=0; m<12; m++) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.padding = '12px';
+        const days = getMonthDays(currentYear, m);
+        const firstDay = getFirstDayOfMonth(currentYear, m);
+        const weekNames = ['س','ح','ن','ث','ر','خ','ج'];
+        const startIdx = ['sat','sun','mon','tue','wed','thu','fri'].indexOf(weekStart);
+        const ordered = weekNames.slice(startIdx).concat(weekNames.slice(0, startIdx));
+        let calHTML = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;font-size:10px;">';
+        ordered.forEach(w => { calHTML += `<div style="text-align:center;color:var(--md-sys-color-on-surface-variant);font-weight:600;">${w}</div>`; });
+        for (let i=0; i<firstDay; i++) calHTML += '<div></div>';
+        for (let d=1; d<=days; d++) {
+          const dateStr = `${currentYear}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const shiftId = schedule[dateStr];
+          const color = shiftId ? getShiftColor(shiftId) : 'transparent';
+          calHTML += `<div style="text-align:center;padding:2px;border-radius:2px;background:${color};color:${shiftId ? getShiftTextColor(shiftId) : 'var(--md-sys-color-on-surface)'};font-weight:700;font-size:11px;">${d}</div>`;
+        }
+        calHTML += '</div>';
+        div.innerHTML = `<div style="font-weight:700;text-align:center;margin-bottom:6px;font-size:13px;">${months[m]}</div>${calHTML}`;
+        grid.appendChild(div);
+      }
+    }
+
+    // الإحصائيات
+    function getPeriodDates(mode, year, month) {
+      let start, end;
+      if (mode === 'month') { start = new Date(year, month, 1); end = new Date(year, month+1, 0); }
+      else if (mode === 'year') { start = new Date(year, 0, 1); end = new Date(year, 11, 31); }
+      return { start, end };
+    }
+    function calculateStats(mode, year, month, fromDate, toDate) {
+      let start, end;
+      if (mode === 'range' && fromDate && toDate) { start = parseDate(fromDate); end = parseDate(toDate); }
+      else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
+      const shiftCounts = {};
+      let totalDays = 0, totalIncome = 0;
+      const current = new Date(start);
+      while (current <= end) {
+        const key = formatDate(current);
+        const shiftId = schedule[key];
+        if (shiftId) {
+          shiftCounts[shiftId] = (shiftCounts[shiftId] || 0) + 1;
+          totalDays++;
+          const shift = getShift(shiftId);
+          if (shift) totalIncome += shift.dayIncome || 0;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      return { shiftCounts, totalDays, totalIncome };
+    }
+
+    function renderStats() {
+      const mode = document.querySelector('.st-tab.active')?.dataset.st || 'month';
+      const year = currentYear, month = currentMonth;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const stats = calculateStats(mode, year, month, fromDate, toDate);
+      const body = document.getElementById('statsBody');
+      body.innerHTML = '';
+      let totalShifts = 0, totalIncomeAll = 0;
+      Object.entries(stats.shiftCounts).forEach(([id, count]) => {
+        const shift = getShift(id);
+        const income = shift ? (shift.dayIncome || 0) * count : 0;
+        totalShifts += count;
+        totalIncomeAll += income;
+        const row = document.createElement('div');
+        row.className = 'stats-row';
+        row.innerHTML = `<span>${shift ? shift.name : id}</span><span>${count}</span><span>${shift ? (shift.hours || 0) * count + ' ساعة' : ''}</span><span style="text-align:center;font-weight:700;">${income.toFixed(2)}</span>`;
+        body.appendChild(row);
+      });
+      document.getElementById('statsGlobal').textContent = `إجمالي الأيام: ${stats.totalDays} | إجمالي الدخل: ${totalIncomeAll.toFixed(2)} ج.م`;
+      calculateLeaveAndAbsence(mode, year, month, fromDate, toDate);
+    }
+
+    function calculateLeaveAndAbsence(mode, year, month, fromDate, toDate) {
+      let start, end;
+      if (mode === 'range' && fromDate && toDate) { start = parseDate(fromDate); end = parseDate(toDate); }
+      else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
+      let leaveDays = 0, absenceDays = 0;
+      const leaveDates = [], absenceSpells = [];
+      const current = new Date(start);
+      while (current <= end) {
+        const key = formatDate(current);
+        const shiftId = schedule[key];
+        if (shiftId) {
+          const shift = getShift(shiftId);
+          if (shift) {
+            if (shift.isAnnualLeave) { leaveDays++; leaveDates.push(key); }
+            if (shift.isAbsence) { absenceDays++; absenceSpells.push({ date: key, shift: shift.name }); }
+          }
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      const prev = parseFloat(document.getElementById('sumLeavePrev').value) || 0;
+      const accrued = parseFloat(document.getElementById('sumLeaveAccrued').value) || 0;
+      const used = leaveDays;
+      const remaining = prev + accrued - used;
+      document.getElementById('sumLeaveUsed').value = used.toFixed(1);
+      document.getElementById('sumLeaveRemaining').value = remaining.toFixed(1);
+
+      const list = document.getElementById('leaveDatesList');
+      if (leaveDates.length === 0) list.innerHTML = '<div class="mini-list-empty">لا توجد أيام إجازة اعتيادية في هذه الفترة</div>';
+      else list.innerHTML = leaveDates.map(d => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d}</span></span></div>`).join('');
+
+      document.getElementById('absenceTotalDays').textContent = absenceDays;
+      let penaltyDays = 0;
+      if (absenceDays > 0) {
+        const penalties = [0.25, 0.5, 1, 2, 3];
+        let remainingAbsence = absenceDays;
+        for (let i=0; i<penalties.length && remainingAbsence > 0; i++) {
+          const take = Math.min(remainingAbsence, 1);
+          penaltyDays += penalties[i] * take;
+          remainingAbsence -= take;
+        }
+        if (remainingAbsence > 0) penaltyDays += remainingAbsence * 5;
+      }
+      document.getElementById('absencePenaltyDays').textContent = penaltyDays.toFixed(2);
+      const absVal = parseFloat(document.getElementById('absenceDayValue').value) || 0;
+      const penVal = parseFloat(document.getElementById('penaltyDayValue').value) || 0;
+      const totalValue = (absenceDays * absVal) + (penaltyDays * penVal);
+      document.getElementById('absenceTotalValue').textContent = totalValue.toFixed(2) + ' ج.م';
+
+      const spellsList = document.getElementById('absenceSpellsList');
+      if (absenceSpells.length === 0) spellsList.innerHTML = '<div class="mini-list-empty">لا توجد أيام غياب في هذه الفترة</div>';
+      else spellsList.innerHTML = absenceSpells.map((s,idx) => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${s.date}</span><span class="mli-sub">${s.shift}</span></span></div>`).join('');
+
+      const holidayCount = holidays.filter(h => { const d = parseDate(h.date); return d >= start && d <= end; }).length;
+      document.getElementById('holidayCount').textContent = holidayCount;
+      const holidayComp = holidayCount * 100;
+      document.getElementById('holidayAllowance').textContent = holidayComp.toFixed(2) + ' ج.م';
+      document.getElementById('sumHolidayCompBalance').textContent = holidayComp.toFixed(2) + ' ج.م';
+    }
+
+    // حساب المرتب
+    function calculatePayroll() {
+      const from = document.getElementById('payFrom').value;
+      const to = document.getElementById('payTo').value;
+      if (!from || !to) { toast('يرجى تحديد الفترة', 'error'); return; }
+      const start = parseDate(from), end = parseDate(to);
+      let totalIncome = 0, totalDeductions = 0, daysWorked = 0;
+      const current = new Date(start);
+      while (current <= end) {
+        const key = formatDate(current);
+        const shiftId = schedule[key];
+        if (shiftId) {
+          const shift = getShift(shiftId);
+          if (shift && !shift.isAnnualLeave && !shift.isAbsence) {
+            totalIncome += shift.dayIncome || 0;
+            daysWorked++;
+          }
+          if (shift && shift.isAbsence) {
+            const absVal = parseFloat(document.getElementById('absenceDayValue').value) || 0;
+            totalDeductions += absVal;
+          }
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      let additionsTotal = 0;
+      additionTypes.forEach(add => { additionsTotal += add.value || 0; });
+      totalIncome += additionsTotal;
+      let deductionsTotal = 0;
+      deductionTypes.forEach(ded => {
+        if (ded.unit === 'amount') deductionsTotal += ded.value || 0;
+        else if (ded.unit === 'hours') {
+          const avgHourly = daysWorked > 0 ? (totalIncome / (daysWorked * 8)) : 0;
+          deductionsTotal += (ded.value || 0) * avgHourly;
+        }
+      });
+      totalDeductions += deductionsTotal;
+      document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
+      document.getElementById('absenceDeduction').textContent = (totalDeductions > 0 ? totalDeductions.toFixed(2) : '0.00') + ' ج.م';
+
+      const addRows = document.getElementById('additionsIncomeRows');
+      if (additionTypes.length === 0) addRows.innerHTML = '';
+      else addRows.innerHTML = additionTypes.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);font-size:13px;"><span>${a.label}</span><span>${(a.value || 0).toFixed(2)} ج.م</span></div>`).join('');
+
+      const dedRows = document.getElementById('deductionsRows');
+      if (deductionTypes.length === 0) dedRows.innerHTML = '';
+      else dedRows.innerHTML = deductionTypes.map(d => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--md-sys-color-outline-variant);font-size:13px;"><span>${d.label}</span><span>${(d.value || 0).toFixed(2)} ج.م</span></div>`).join('');
+
+      document.getElementById('totalIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
+      document.getElementById('totalDeductions').textContent = totalDeductions.toFixed(2) + ' ج.م';
+      const net = totalIncome - totalDeductions;
+      document.getElementById('netIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
+      document.getElementById('netDeductions').textContent = totalDeductions.toFixed(2) + ' ج.م';
+      document.getElementById('netSalary').textContent = net.toFixed(2) + ' ج.م';
+    }
+
+    // إدارة الشيفتات
+    function renderShiftsList() {
+      const list = document.getElementById('shiftsList');
+      if (shifts.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد شيفتات. أنشئ شيفتاً جديداً!</div>'; return; }
+      list.innerHTML = shifts.map((s, idx) =>
+        `<div class="shift-item" style="display:flex;align-items:center;padding:10px;background:var(--md-sys-color-surface-dim);border-radius:var(--md-radius-sm);gap:12px;margin-bottom:6px;">
+          <div class="chip" style="width:50px;height:50px;border-radius:var(--md-radius-sm);display:flex;align-items:center;justify-content:center;font-weight:800;text-align:center;background:${s.bgColor};color:${s.textColor};flex-shrink:0;font-size:14px;">${s.abbr || s.name}</div>
+          <div class="info" style="flex:1;min-width:0;">
+            <div style="font-weight:700;">${s.name}</div>
+            <div style="color:var(--md-sys-color-on-surface-variant);font-size:12px;">${s.hours} ساعة • ${s.dayIncome} ج.م/يوم</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="btn btn-outline" style="padding:4px 10px;font-size:12px;" data-edit="${s.id}">✏️</button>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" data-del="${s.id}">🗑️</button>
+          </div>
+        </div>`
+      ).join('');
+      list.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => openShiftConfig(el.dataset.edit)));
+      list.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+        if (confirm('هل أنت متأكد من حذف هذا الشيفت؟')) {
+          shifts = shifts.filter(s => s.id !== el.dataset.del);
+          saveData();
+          renderShiftsList();
+          renderCalendar();
+          toast('تم حذف الشيفت');
+        }
+      }));
+    }
+
+    function openShiftConfig(shiftId = null) {
+      const modal = document.getElementById('shiftConfigModal');
+      modal.classList.add('open');
+      editingShiftId = shiftId;
+      const shift = shiftId ? getShift(shiftId) : null;
+      if (shift) {
+        document.getElementById('shiftName').value = shift.name || '';
+        document.getElementById('shiftAbbr').value = shift.abbr || '';
+        document.getElementById('shiftPreview').textContent = shift.abbr || shift.name?.charAt(0) || '?';
+        document.getElementById('bgWheel').style.background = shift.bgColor || '#4f46e5';
+        document.getElementById('txtWheel').style.background = shift.textColor || '#ffffff';
+        document.getElementById('textSize').value = shift.textSize || 36;
+        document.getElementById('sizeVal').textContent = shift.textSize || 36;
+        document.getElementById('startTime').value = shift.startTime || '08:00';
+        document.getElementById('endTime').value = shift.endTime || '16:00';
+        document.getElementById('hours').value = shift.hours || 8;
+        document.getElementById('currency').value = shift.currency || 'ج.م';
+        document.getElementById('dayIncome').value = shift.dayIncome || 0;
+        document.getElementById('overtimeRate').value = shift.overtimeRate || 0;
+        document.getElementById('mealAllowance').value = shift.mealAllowance || 0;
+        document.getElementById('shiftAllowance').value = shift.shiftAllowance || 0;
+        document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
+        document.getElementById('isAbsence').checked = shift.isAbsence || false;
+        document.getElementById('hourlyRate').value = shift.hours > 0 ? ((shift.dayIncome || 0) / shift.hours).toFixed(2) : '0.00';
+        renderSwatches('bgSwatches', shift.bgColor || '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
+        renderSwatches('txtSwatches', shift.textColor || '#ffffff', (c) => { document.getElementById('txtWheel').style.background = c; });
+      } else {
+        document.getElementById('shiftName').value = '';
+        document.getElementById('shiftAbbr').value = '';
+        document.getElementById('shiftPreview').textContent = '?';
+        document.getElementById('bgWheel').style.background = '#4f46e5';
+        document.getElementById('txtWheel').style.background = '#ffffff';
+        document.getElementById('textSize').value = 36;
+        document.getElementById('sizeVal').textContent = '36';
+        document.getElementById('startTime').value = '08:00';
+        document.getElementById('endTime').value = '16:00';
+        document.getElementById('hours').value = 8;
+        document.getElementById('currency').value = 'ج.م';
+        document.getElementById('dayIncome').value = 0;
+        document.getElementById('overtimeRate').value = 0;
+        document.getElementById('mealAllowance').value = 0;
+        document.getElementById('shiftAllowance').value = 0;
+        document.getElementById('isAnnualLeave').checked = false;
+        document.getElementById('isAbsence').checked = false;
+        document.getElementById('hourlyRate').value = '0.00';
+        renderSwatches('bgSwatches', '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
+        renderSwatches('txtSwatches', '#ffffff', (c) => { document.getElementById('txtWheel').style.background = c; });
+      }
+    }
+
+    function renderSwatches(containerId, selected, onSelect) {
+      const colors = ['#4f46e5','#22c55e','#ef4444','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#6b7280','#ffffff','#000000'];
+      const container = document.getElementById(containerId);
+      container.innerHTML = colors.map(c => `<div class="swatch ${c === selected ? 'selected' : ''}" style="background:${c};" data-color="${c}"></div>`).join('');
+      container.querySelectorAll('.swatch').forEach(el => {
+        el.addEventListener('click', () => {
+          container.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+          el.classList.add('selected');
+          onSelect(el.dataset.color);
+        });
+      });
+    }
+
+    function saveShiftConfig() {
+      const name = document.getElementById('shiftName').value.trim();
+      if (!name) { toast('يرجى إدخال اسم الشيفت', 'error'); return; }
+      const shiftData = {
+        name, abbr: document.getElementById('shiftAbbr').value.trim() || name.substring(0,3),
+        bgColor: document.getElementById('bgWheel').style.background || '#4f46e5',
+        textColor: document.getElementById('txtWheel').style.background || '#ffffff',
+        textSize: parseInt(document.getElementById('textSize').value) || 36,
+        startTime: document.getElementById('startTime').value || '08:00',
+        endTime: document.getElementById('endTime').value || '16:00',
+        hours: parseFloat(document.getElementById('hours').value) || 0,
+        currency: document.getElementById('currency').value || 'ج.م',
+        dayIncome: parseFloat(document.getElementById('dayIncome').value) || 0,
+        overtimeRate: parseFloat(document.getElementById('overtimeRate').value) || 0,
+        mealAllowance: parseFloat(document.getElementById('mealAllowance').value) || 0,
+        shiftAllowance: parseFloat(document.getElementById('shiftAllowance').value) || 0,
+        isAnnualLeave: document.getElementById('isAnnualLeave').checked,
+        isAbsence: document.getElementById('isAbsence').checked,
+        customAdditions: []
+      };
+      if (editingShiftId) {
+        const idx = shifts.findIndex(s => s.id === editingShiftId);
+        if (idx !== -1) shifts[idx] = { ...shifts[idx], ...shiftData };
+      } else {
+        shiftData.id = generateId();
+        shifts.push(shiftData);
+      }
+      saveData();
+      document.getElementById('shiftConfigModal').classList.remove('open');
+      renderShiftsList();
+      renderCalendar();
+      toast('تم حفظ الشيفت بنجاح');
+    }
+
+    // العطلات
+    function renderHolidays() {
+      const list = document.getElementById('holidaysList');
+      if (holidays.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد عطلات مسجلة</div>'; return; }
+      list.innerHTML = holidays.map((h, idx) =>
+        `<div class="mini-list-item holiday-item">
+          <div class="mli-row">
+            <span class="mli-info"><span class="mli-name">${h.name}</span><span class="mli-sub">${h.date} (${h.days} يوم)</span></span>
+            <button class="mli-del" data-holiday="${idx}">✕</button>
+          </div>
+        </div>`
+      ).join('');
+      list.querySelectorAll('.mli-del').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.dataset.holiday);
+          holidays.splice(idx, 1);
+          saveData();
+          renderHolidays();
+          toast('تم حذف العطلة');
+        });
+      });
+    }
+
+    // ==================== ربط الأحداث ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      // تعيين القيم الافتراضية
+      document.getElementById('absenceDayValue').value = absenceDayValue;
+      document.getElementById('penaltyDayValue').value = penaltyDayValue;
+      document.getElementById('sumLeavePrev').value = leavePrev;
+      document.getElementById('sumLeaveAccrued').value = leaveAccrued;
+      document.getElementById('absenceAutoApply').checked = absenceAutoApply;
+      document.getElementById('weekStart').value = weekStart;
+
+      // تحديث التواريخ
+      const now = new Date();
+      const defFrom = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      const defTo = formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
+      document.getElementById('payFrom').value = defFrom;
+      document.getElementById('payFromDisplay').textContent = defFrom;
+      document.getElementById('payTo').value = defTo;
+      document.getElementById('payToDisplay').textContent = defTo;
+      document.getElementById('fromDate').value = defFrom;
+      document.getElementById('fromDateDisplay').textContent = defFrom;
+      document.getElementById('toDate').value = defTo;
+      document.getElementById('toDateDisplay').textContent = defTo;
+      document.getElementById('newHolidayDate').value = defFrom;
+      document.getElementById('newHolidayDateDisplay').textContent = defFrom;
+
+      renderCalendar();
+      renderYear();
+      renderStats();
+      renderShiftsList();
+      renderHolidays();
+
+      // التنقل بين الشهور
+      document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); renderStats(); });
+      document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); renderStats(); });
+
+      // السنوات
+      document.querySelectorAll('.year-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentYear = parseInt(btn.dataset.year);
+          renderYear();
+        });
+      });
+
+      // علامة التبويب السنة
+      document.getElementById('yearTab').addEventListener('click', () => { document.getElementById('yearTab').textContent = currentYear; });
+
+      // التبويبات
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+          document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+          if (tab.dataset.tab === 'summary') renderStats();
+        });
+      });
+
+      // إحصائيات
+      document.querySelectorAll('.st-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.st-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('rangePickers').classList.toggle('visible', tab.dataset.st === 'range');
+          renderStats();
+        });
+      });
+      document.getElementById('prevPeriod').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderStats(); });
+      document.getElementById('nextPeriod').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderStats(); });
+      document.getElementById('fromDate').addEventListener('change', function() { document.getElementById('fromDateDisplay').textContent = this.value || '—'; renderStats(); });
+      document.getElementById('toDate').addEventListener('change', function() { document.getElementById('toDateDisplay').textContent = this.value || '—'; renderStats(); });
+
+      // القائمة الجانبية
+      document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.toggle('open'); });
+      document.getElementById('closeSideMenu').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.remove('open'); });
+      document.getElementById('sideMenuOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('sideMenuOverlay').classList.remove('open'); });
+
+      // عرض التقويم (قائمة/شبكة)
+      document.getElementById('calendarViewSelect').addEventListener('change', function() {
+        document.getElementById('view-month').classList.toggle('list-mode', this.value === 'list');
+      });
+
+      // شريط الطلاء
+      document.getElementById('paintToggle').addEventListener('click', function() {
+        document.getElementById('paintBar').classList.toggle('collapsed');
+      });
+
+      // شيفتات
+      document.getElementById('logoBtn').addEventListener('click', () => { document.getElementById('shiftsModal').classList.add('open'); });
+      document.getElementById('closeShifts').addEventListener('click', () => { document.getElementById('shiftsModal').classList.remove('open'); });
+      document.getElementById('createShift').addEventListener('click', () => { document.getElementById('shiftsModal').classList.remove('open'); openShiftConfig(); });
+      document.getElementById('importShifts').addEventListener('click', () => { document.getElementById('importFile').click(); });
+
+      // إعدادات
+      document.getElementById('settingsBtn').addEventListener('click', () => { document.getElementById('settingsModal').classList.add('open'); });
+      document.getElementById('closeSettings').addEventListener('click', () => { document.getElementById('settingsModal').classList.remove('open'); });
+
+      // إعدادات الشيفت
+      document.getElementById('closeConfig').addEventListener('click', () => { document.getElementById('shiftConfigModal').classList.remove('open'); });
+      document.getElementById('cancelShift').addEventListener('click', () => { document.getElementById('shiftConfigModal').classList.remove('open'); });
+      document.getElementById('saveShift').addEventListener('click', saveShiftConfig);
+      document.getElementById('deleteShift').addEventListener('click', () => {
+        if (editingShiftId && confirm('حذف الشيفت نهائياً؟')) {
+          shifts = shifts.filter(s => s.id !== editingShiftId);
+          saveData();
+          document.getElementById('shiftConfigModal').classList.remove('open');
+          renderShiftsList();
+          renderCalendar();
+          toast('تم حذف الشيفت');
+        }
+      });
+      document.getElementById('deleteShiftIcon').addEventListener('click', () => { document.getElementById('deleteShift').click(); });
+      document.getElementById('duplicateShift').addEventListener('click', () => {
+        if (editingShiftId) {
+          const orig = getShift(editingShiftId);
+          if (orig) {
+            const copy = { ...orig, id: generateId(), name: orig.name + ' (نسخة)' };
+            shifts.push(copy);
+            saveData();
+            document.getElementById('shiftConfigModal').classList.remove('open');
+            renderShiftsList();
+            renderCalendar();
+            toast('تم نسخ الشيفت');
+          }
+        }
+      });
+
+      // حجم النص
+      document.getElementById('textSize').addEventListener('input', function() {
+        document.getElementById('sizeVal').textContent = this.value;
+      });
+      // احتساب أجر الساعة
+      document.getElementById('dayIncome').addEventListener('input', function() {
+        const hours = parseFloat(document.getElementById('hours').value) || 1;
+        document.getElementById('hourlyRate').value = (parseFloat(this.value) / hours).toFixed(2);
+      });
+      document.getElementById('hours').addEventListener('input', function() {
+        const income = parseFloat(document.getElementById('dayIncome').value) || 0;
+        document.getElementById('hourlyRate').value = (income / (parseFloat(this.value) || 1)).toFixed(2);
+      });
+
+      // الإضافات
+      document.getElementById('addAdditionType').addEventListener('click', () => {
+        const label = prompt('اسم البند الإضافي:');
+        if (label) {
+          const val = prompt('قيمة البند (ج.م):', '0');
+          if (val !== null) {
+            additionTypes.push({ id: generateId(), label, value: parseFloat(val) || 0 });
+            saveData();
+            renderAdditionTypes();
+          }
+        }
+      });
+      function renderAdditionTypes() {
+        const list = document.getElementById('additionTypesList');
+        if (additionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد إضافات</div>'; return; }
+        list.innerHTML = additionTypes.map((a, idx) =>
+          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${a.label}</span><span class="mli-sub">${a.value} ج.م</span></span><button class="mli-del" data-add="${idx}">✕</button></div>`
+        ).join('');
+        list.querySelectorAll('.mli-del').forEach(el => {
+          el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.add);
+            additionTypes.splice(idx, 1);
+            saveData();
+            renderAdditionTypes();
+          });
+        });
+      }
+      renderAdditionTypes();
+
+      // الخصومات
+      document.getElementById('addDedType').addEventListener('click', () => {
+        const label = document.getElementById('newDedLabel').value.trim();
+        const unit = document.getElementById('newDedUnit').value;
+        if (!label) { toast('أدخل اسم البند', 'error'); return; }
+        const val = prompt('قيمة البند:', '0');
+        if (val !== null) {
+          deductionTypes.push({ id: generateId(), label, unit, value: parseFloat(val) || 0 });
+          document.getElementById('newDedLabel').value = '';
+          saveData();
+          renderDeductionTypes();
+          toast('تم إضافة البند');
+        }
+      });
+      function renderDeductionTypes() {
+        const list = document.getElementById('deductionTypesList');
+        if (deductionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد خصومات</div>'; return; }
+        list.innerHTML = deductionTypes.map((d, idx) =>
+          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span><span class="mli-sub">${d.unit === 'amount' ? d.value + ' ج.م' : d.value + ' ساعة'}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
+        ).join('');
+        list.querySelectorAll('.mli-del').forEach(el => {
+          el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.ded);
+            deductionTypes.splice(idx, 1);
+            saveData();
+            renderDeductionTypes();
+          });
+        });
+      }
+      renderDeductionTypes();
+
+      // العطلات
+      document.getElementById('newHolidayName').addEventListener('change', function() {
+        document.getElementById('newHolidayNameCustom').style.display = this.value === '__other__' ? 'inline-block' : 'none';
+      });
+      document.getElementById('newHolidayDate').addEventListener('change', function() {
+        document.getElementById('newHolidayDateDisplay').textContent = this.value || '—';
+      });
+      document.getElementById('addHoliday').addEventListener('click', () => {
+        let name = document.getElementById('newHolidayName').value;
+        if (name === '__other__') name = document.getElementById('newHolidayNameCustom').value.trim();
+        if (!name) { toast('أدخل اسم العطلة', 'error'); return; }
+        const date = document.getElementById('newHolidayDate').value;
+        if (!date) { toast('اختر تاريخ العطلة', 'error'); return; }
+        const days = parseInt(document.getElementById('newHolidayDays').value) || 1;
+        holidays.push({ name, date, days });
+        saveData();
+        renderHolidays();
+        toast('تم إضافة العطلة');
+      });
+
+      // المرتب
+      document.getElementById('calcPayroll').addEventListener('click', calculatePayroll);
+      document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; });
+      document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; });
+
+      // إعدادات
+      document.getElementById('absenceDayValue').addEventListener('change', function() { absenceDayValue = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('penaltyDayValue').addEventListener('change', function() { penaltyDayValue = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('sumLeavePrev').addEventListener('change', function() { leavePrev = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
+      document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
+
+      // تصدير/استيراد
+      document.getElementById('menuExport').addEventListener('click', () => {
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'shifter_data.json';
+        a.click();
+        toast('تم تصدير البيانات');
+      });
+      document.getElementById('menuImport').addEventListener('click', () => { document.getElementById('importFile').click(); });
+      document.getElementById('importFile').addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            shifts = data.shifts || shifts;
+            schedule = data.schedule || {};
+            companies = data.companies || companies;
+            currentCompany = data.currentCompany || 0;
+            additionTypes = data.additionTypes || additionTypes;
+            deductionTypes = data.deductionTypes || deductionTypes;
+            holidays = data.holidays || [];
+            leavePrev = data.leavePrev || 0;
+            leaveAccrued = data.leaveAccrued || 0;
+            absenceDayValue = data.absenceDayValue || 250;
+            penaltyDayValue = data.penaltyDayValue || 250;
+            holidayMode = data.holidayMode || '1_0';
+            absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
+            weekStart = data.weekStart || 'sat';
+            saveData();
+            renderCalendar();
+            renderYear();
+            renderStats();
+            renderShiftsList();
+            renderHolidays();
+            renderAdditionTypes();
+            renderDeductionTypes();
+            toast('تم استيراد البيانات بنجاح');
+          } catch(err) { toast('خطأ في الملف', 'error'); }
+        };
+        reader.readAsText(file);
+        this.value = '';
+      });
+
+      // مسح البيانات
+      document.getElementById('menuReset').addEventListener('click', () => {
+        if (confirm('هل أنت متأكد من مسح كل البيانات؟ لا يمكن التراجع!')) {
+          localStorage.removeItem('shifterData');
+          location.reload();
+        }
+      });
+
+      // انهيار الأقسام
+      document.querySelectorAll('.collapse-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+          const arrow = this.querySelector('.collapse-arrow');
+          if (arrow) arrow.classList.toggle('collapsed');
+          const list = this.nextElementSibling;
+          if (list && list.classList.contains('mini-list')) {
+            list.style.display = list.style.display === 'none' ? 'flex' : 'none';
+          }
+        });
+      });
+      // افتراضي: إظهار القوائم
+      document.querySelectorAll('.collapse-toggle + .mini-list').forEach(el => el.style.display = 'flex');
+
+      // إغلاق المودالات بالضغط خارج المحتوى
+      document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) this.classList.remove('open');
+        });
+      });
+
+      // تحديث عرض الإحصائيات عند تغيير الفترة
+      document.getElementById('fromDate').addEventListener('change', renderStats);
+      document.getElementById('toDate').addEventListener('change', renderStats);
+    });
+  </script>
+</body>
+</html>
