@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <meta name="theme-color" content="#e0e5ec" id="themeColorMeta" />
+  <meta name="theme-color" content="#e6ebf1" id="themeColorMeta" />
   <title>Shifter Payroll - Neumorphism</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
@@ -33,9 +33,9 @@
     }
 
     :root {
-      --nm-bg: #e0e5ec;
+      --nm-bg: #e6ebf1;
       --nm-shadow-light: #ffffff;
-      --nm-shadow-dark: #a3b1c6;
+      --nm-shadow-dark: #a9b5c7;
       --nm-shadow: 8px 8px 16px var(--nm-shadow-dark), -8px -8px 16px var(--nm-shadow-light);
       --nm-shadow-inset: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
       --nm-shadow-sm: 4px 4px 8px var(--nm-shadow-dark), -4px -4px 8px var(--nm-shadow-light);
@@ -44,34 +44,34 @@
       --nm-radius-sm: 10px;
       --nm-radius-full: 9999px;
       --nm-font: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-      --nm-text: #2d4059;
-      --nm-text-muted: #6b7a8f;
-      --nm-primary: #4f46e5;
-      --nm-primary-light: #818cf8;
-      --nm-primary-dark: #3730a3;
+      --nm-text: #273449;
+      --nm-text-muted: #7c8798;
+      --nm-primary: #50b5d3;
+      --nm-primary-light: #7cc9df;
+      --nm-primary-dark: #3a828e;
       --nm-success: #22c55e;
       --nm-danger: #ef4444;
       --nm-warning: #f59e0b;
-      --nm-bg-card: #e0e5ec;
+      --nm-bg-card: #e6ebf1;
     }
 
     :root.dark-mode {
-      --nm-bg: #262c3a;
-      --nm-shadow-light: #313848;
-      --nm-shadow-dark: #14171f;
+      --nm-bg: #4e5862;
+      --nm-shadow-light: #616d79;
+      --nm-shadow-dark: #383f47;
       --nm-shadow: 8px 8px 16px var(--nm-shadow-dark), -8px -8px 16px var(--nm-shadow-light);
       --nm-shadow-inset: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
       --nm-shadow-sm: 4px 4px 8px var(--nm-shadow-dark), -4px -4px 8px var(--nm-shadow-light);
       --nm-shadow-sm-inset: inset 2px 2px 4px var(--nm-shadow-dark), inset -2px -2px 4px var(--nm-shadow-light);
-      --nm-text: #e7ebf3;
-      --nm-text-muted: #93a0b8;
-      --nm-primary: #818cf8;
-      --nm-primary-light: #a5b4fc;
-      --nm-primary-dark: #6366f1;
+      --nm-text: #f5f7fa;
+      --nm-text-muted: #a9b7c4;
+      --nm-primary: #89a4b9;
+      --nm-primary-light: #b0c3d2;
+      --nm-primary-dark: #30a5af;
       --nm-success: #34d399;
       --nm-danger: #f87171;
       --nm-warning: #fbbf24;
-      --nm-bg-card: #262c3a;
+      --nm-bg-card: #4e5862;
     }
 
     html,
@@ -1832,7 +1832,7 @@
       const btn = document.getElementById('themeToggleBtn');
       if (btn) { btn.textContent = darkMode ? '☀️' : '🌙'; btn.title = translations[uiLang][darkMode ? 'themeToggleLight' : 'themeToggleDark']; }
       const meta = document.getElementById('themeColorMeta');
-      if (meta) meta.setAttribute('content', darkMode ? '#262c3a' : '#e0e5ec');
+      if (meta) meta.setAttribute('content', darkMode ? '#4e5862' : '#e6ebf1');
     }
 
     // الترجمة
