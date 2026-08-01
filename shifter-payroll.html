@@ -1347,7 +1347,7 @@
       <div class="paint-bar" id="paintBar">
         <div class="paint-fixed">
           <button class="paint-toggle" id="paintToggle">⌃</button>
-          <button class="paint-btn erase" data-shift="">مسح</button>
+          <button class="paint-btn erase" id="paintErase" data-shift="">مسح</button>
         </div>
         <div class="paint-scroll" id="paintScroll"></div>
       </div>
@@ -1761,6 +1761,7 @@
     let currentYear = 2026;
     let currentMonth = 6;
     let selectedShiftId = null;
+    const ERASE_ID = '__erase__';
     let editingShiftId = null;
     let additionTypes = [{ id: 'add1', label: 'بدل انتقال', value: 50 }];
     let deductionTypes = [{ id: 'ded1', label: 'تأمينات', unit: 'amount', value: 100 }];
@@ -1788,7 +1789,7 @@
     }
     function getMonthDays(y,m) { return new Date(y, m+1, 0).getDate(); }
     function getFirstDayOfMonth(y,m) {
-      const map = {sat:0,sun:1,mon:2,tue:3,wed:4,thu:5,fri:6};
+      const map = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
       const start = map[weekStart] || 0;
       return (new Date(y,m,1).getDay() - start + 7) % 7;
     }
@@ -1973,11 +1974,11 @@
           dayEl.dataset.date = dateStr;
           dayEl.addEventListener('click', () => {
             if (selectedShiftId) {
-              if (selectedShiftId) schedule[dateStr] = selectedShiftId;
-              else delete schedule[dateStr];
+              if (selectedShiftId === ERASE_ID) delete schedule[dateStr];
+              else schedule[dateStr] = selectedShiftId;
               saveData();
               renderCalendar();
-              toast('تم تحديث اليوم: ' + dateStr);
+              toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
             }
           });
         }
@@ -2010,11 +2011,11 @@
           `;
           row.addEventListener('click', () => {
             if (selectedShiftId) {
-              if (selectedShiftId) schedule[dateStr] = selectedShiftId;
-              else delete schedule[dateStr];
+              if (selectedShiftId === ERASE_ID) delete schedule[dateStr];
+              else schedule[dateStr] = selectedShiftId;
               saveData();
               renderCalendar();
-              toast('تم تحديث اليوم: ' + dateStr);
+              toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
             }
           });
           list.appendChild(row);
@@ -2024,6 +2025,8 @@
     }
 
     function renderPaintBar() {
+      const eraseBtn = document.getElementById('paintErase');
+      if (eraseBtn) eraseBtn.classList.toggle('active', selectedShiftId === ERASE_ID);
       const container = document.getElementById('paintScroll');
       container.innerHTML = '';
       shifts.forEach(shift => {
@@ -2468,6 +2471,10 @@
 
       document.getElementById('paintToggle').addEventListener('click', function() {
         document.getElementById('paintBar').classList.toggle('collapsed');
+      });
+      document.getElementById('paintErase').addEventListener('click', function() {
+        selectedShiftId = selectedShiftId === ERASE_ID ? null : ERASE_ID;
+        renderPaintBar();
       });
 
       document.getElementById('logoBtn').addEventListener('click', () => { document.getElementById('shiftsModal').classList.add('open'); });
