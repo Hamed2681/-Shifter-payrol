@@ -1623,9 +1623,13 @@
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span style="font-weight:700;">➕ الإضافات (تُضاف إلى الدخل)</span>
-          <button class="btn btn-outline" id="addAdditionType" style="padding:6px 12px;font-size:12px;">➕ إضافة</button>
         </div>
         <div id="additionTypesList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <input type="text" id="newAddLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <input type="number" id="newAddValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <button class="btn btn-primary" id="addAdditionType" style="padding:10px 16px;">➕ إضافة</button>
+        </div>
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
@@ -1657,7 +1661,7 @@
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="font-weight:700;margin-bottom:8px;">❌ إعدادات الغياب والجزاءات</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>قيمة خصم يوم الغياب</span>
+          <span>قيمة خصم يوم الغياب (افتراضية لو الشيفت من غير مبلغ خصم)</span>
           <input type="number" id="absenceDayValue" min="0" step="0.01" placeholder="مثال: 250" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
@@ -1676,6 +1680,7 @@
         <div id="deductionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <input type="number" id="newDedValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           <select id="newDedUnit" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
             <option value="amount">مبلغ (ج.م)</option>
             <option value="hours">ساعات × متوسط أجر الساعة</option>
@@ -1734,12 +1739,14 @@
         <div class="input-field"><label>الساعات</label><input type="number" id="hours" value="8" min="0" step="0.5" /></div>
         <div style="font-weight:700;margin:12px 0 8px;font-size:13px;color:var(--nm-text-muted);">الدخل</div>
         <div class="input-field"><label>العملة</label><input type="text" id="currency" value="ج.م" maxlength="4" /></div>
-        <div class="input-field"><label>إجمالي أجر اليوم</label><input type="number" id="dayIncome" value="0" step="0.01" /></div>
-        <div class="input-field"><label>أجر الساعة المحسوب (معاينة)</label><input type="text" id="hourlyRate" readonly /></div>
+        <div class="input-field"><label id="dayIncomeLabel">إجمالي أجر اليوم</label><input type="number" id="dayIncome" value="0" step="0.01" /></div>
+        <div class="input-field" id="hourlyRateField"><label>أجر الساعة المحسوب (معاينة)</label><input type="text" id="hourlyRate" readonly /></div>
+        <div id="incomeExtraFields">
         <div class="input-field"><label>أجر/ساعة إضافية (Overtime)</label><input type="number" id="overtimeRate" value="0" step="0.01" /></div>
         <div class="input-field"><label>🍽️ بدل وجبة / يوم</label><input type="number" id="mealAllowance" value="0" step="0.01" /></div>
         <div class="input-field"><label>🌙 بدل وردية / يوم</label><input type="number" id="shiftAllowance" value="0" step="0.01" /></div>
         <div id="customAdditionFields"></div>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
           <input type="checkbox" id="isAnnualLeave" style="accent-color:var(--nm-primary);" />
           <label style="font-size:13px;">🏖️ تُحسب كإجازة اعتيادية (تُخصم تلقائياً من رصيد الإجازات)</label>
@@ -2223,8 +2230,8 @@
             daysWorked++;
           }
           if (shift && shift.isAbsence) {
-            const absVal = parseFloat(document.getElementById('absenceDayValue').value) || 0;
-            totalDeductions += absVal;
+            const fallback = parseFloat(document.getElementById('absenceDayValue').value) || 0;
+            totalDeductions += (shift.dayIncome && shift.dayIncome > 0) ? shift.dayIncome : fallback;
           }
         }
         current.setDate(current.getDate() + 1);
@@ -2277,6 +2284,16 @@
       list.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => openShiftConfig(el.dataset.edit)));
     }
 
+    function updateAbsenceFieldUI() {
+      const isAbs = document.getElementById('isAbsence').checked;
+      const label = document.getElementById('dayIncomeLabel');
+      const hourlyField = document.getElementById('hourlyRateField');
+      const extraFields = document.getElementById('incomeExtraFields');
+      if (label) label.textContent = isAbs ? '💸 مبلغ الخصم عن يوم الغياب' : 'إجمالي أجر اليوم';
+      if (hourlyField) hourlyField.style.display = isAbs ? 'none' : '';
+      if (extraFields) extraFields.style.display = isAbs ? 'none' : '';
+    }
+
     function openShiftConfig(shiftId = null) {
       const modal = document.getElementById('shiftConfigModal');
       modal.classList.add('open');
@@ -2304,6 +2321,7 @@
         document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
         document.getElementById('isAbsence').checked = shift.isAbsence || false;
         document.getElementById('hourlyRate').value = shift.hours > 0 ? ((shift.dayIncome || 0) / shift.hours).toFixed(2) : '0.00';
+        updateAbsenceFieldUI();
         renderSwatches('bgSwatches', shift.bgColor || '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
         renderSwatches('txtSwatches', shift.textColor || '#ffffff', (c) => { document.getElementById('txtWheel').style.background = c; });
       } else {
@@ -2326,6 +2344,7 @@
         document.getElementById('isAnnualLeave').checked = false;
         document.getElementById('isAbsence').checked = false;
         document.getElementById('hourlyRate').value = '0.00';
+        updateAbsenceFieldUI();
         renderSwatches('bgSwatches', '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
         renderSwatches('txtSwatches', '#ffffff', (c) => { document.getElementById('txtWheel').style.background = c; });
       }
@@ -2503,6 +2522,8 @@
         });
       });
 
+      document.getElementById('isAbsence').addEventListener('change', updateAbsenceFieldUI);
+
       document.getElementById('paintToggle').addEventListener('click', function() {
         document.getElementById('paintBar').classList.toggle('collapsed');
       });
@@ -2562,15 +2583,17 @@
       });
 
       document.getElementById('addAdditionType').addEventListener('click', () => {
-        const label = prompt('اسم البند الإضافي:');
-        if (label) {
-          const val = prompt('قيمة البند (ج.م):', '0');
-          if (val !== null) {
-            additionTypes.push({ id: generateId(), label, value: parseFloat(val) || 0 });
-            saveData();
-            renderAdditionTypes();
-          }
-        }
+        const labelInput = document.getElementById('newAddLabel');
+        const valInput = document.getElementById('newAddValue');
+        const label = labelInput.value.trim();
+        if (!label) { toast('أدخل اسم البند', 'error'); return; }
+        if (valInput.value === '') { toast('أدخل قيمة البند', 'error'); return; }
+        additionTypes.push({ id: generateId(), label, value: parseFloat(valInput.value) || 0 });
+        labelInput.value = '';
+        valInput.value = '';
+        saveData();
+        renderAdditionTypes();
+        toast('تم إضافة البند');
       });
       function renderAdditionTypes() {
         const list = document.getElementById('additionTypesList');
@@ -2592,15 +2615,16 @@
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
         const unit = document.getElementById('newDedUnit').value;
+        const valInput = document.getElementById('newDedValue');
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        const val = prompt('قيمة البند:', '0');
-        if (val !== null) {
-          deductionTypes.push({ id: generateId(), label, unit, value: parseFloat(val) || 0 });
-          document.getElementById('newDedLabel').value = '';
-          saveData();
-          renderDeductionTypes();
-          toast('تم إضافة البند');
-        }
+        const val = valInput.value;
+        if (val === '') { toast('أدخل قيمة البند', 'error'); return; }
+        deductionTypes.push({ id: generateId(), label, unit, value: parseFloat(val) || 0 });
+        document.getElementById('newDedLabel').value = '';
+        valInput.value = '';
+        saveData();
+        renderDeductionTypes();
+        toast('تم إضافة البند');
       });
       function renderDeductionTypes() {
         const list = document.getElementById('deductionTypesList');
