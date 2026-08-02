@@ -1538,17 +1538,11 @@
           <span id="totalDaysIncome" style="font-weight:700;">0.00 ج.م</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" id="mealAllowanceToggle" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🍽️ بدل الوجبة (تلقائي من الأيام الفعلية)</span>
-          </label>
+          <span id="mealAllowanceLabel">🍽️ بدل الوجبة (تلقائي)</span>
           <span id="mealAllowanceTotal" style="font-weight:700;flex-shrink:0;">0.00 ج.م</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" id="shiftAllowanceToggle" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌙 بدل الوردية (تلقائي من الأيام الفعلية)</span>
-          </label>
+          <span id="shiftAllowanceLabel">🌙 بدل الوردية (تلقائي)</span>
           <span id="shiftAllowanceTotal" style="font-weight:700;flex-shrink:0;">0.00 ج.م</span>
         </div>
         <div id="additionsIncomeRows"></div>
@@ -1635,8 +1629,25 @@
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:8px;">🔄 بنود تلقائية (تُحسب من الشيفتات وأيام الحضور الفعلي)</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
+          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+            <input type="checkbox" id="mealAllowanceEnabledCb" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🍽️ بدل الوجبة</span>
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+            <input type="checkbox" id="shiftAllowanceEnabledCb" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌙 بدل الوردية</span>
+          </label>
+        </div>
+        <p style="font-size:12px;color:var(--nm-text-muted);margin:6px 0 0;">قيمة كل بدل تُضبط من إعدادات كل شيفت، وتُجمع تلقائياً حسب أيام الحضور الفعلية في الفترة المحسوبة.</p>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-weight:700;">➕ الإضافات (تُضاف إلى الدخل)</span>
+          <span style="font-weight:700;">✍️ بنود إجمالية (تُضاف يدوياً للمرتب)</span>
         </div>
         <div id="additionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
@@ -1972,6 +1983,7 @@
         companies = data.companies || companies;
         currentCompany = data.currentCompany || 0;
         additionTypes = data.additionTypes || additionTypes;
+        additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
         deductionTypes = data.deductionTypes || deductionTypes;
         holidays = data.holidays || [];
         leavePrev = data.leavePrev || 0;
@@ -2259,14 +2271,16 @@
       }
       document.getElementById('mealAllowanceTotal').textContent = totalMealAllowance.toFixed(2) + ' ج.م';
       document.getElementById('shiftAllowanceTotal').textContent = totalShiftAllowance.toFixed(2) + ' ج.م';
-      const mealToggle = document.getElementById('mealAllowanceToggle');
-      const shiftToggle = document.getElementById('shiftAllowanceToggle');
-      mealToggle.checked = mealAllowanceEnabled;
-      shiftToggle.checked = shiftAllowanceEnabled;
+      const mealLabel = document.getElementById('mealAllowanceLabel');
+      const shiftLabel = document.getElementById('shiftAllowanceLabel');
+      mealLabel.textContent = mealAllowanceEnabled ? '🍽️ بدل الوجبة (تلقائي)' : '🍽️ بدل الوجبة (غير مفعّل من الإعدادات)';
+      mealLabel.style.opacity = mealAllowanceEnabled ? '1' : '0.5';
+      shiftLabel.textContent = shiftAllowanceEnabled ? '🌙 بدل الوردية (تلقائي)' : '🌙 بدل الوردية (غير مفعّل من الإعدادات)';
+      shiftLabel.style.opacity = shiftAllowanceEnabled ? '1' : '0.5';
       if (mealAllowanceEnabled) totalIncome += totalMealAllowance;
       if (shiftAllowanceEnabled) totalIncome += totalShiftAllowance;
       let additionsTotal = 0;
-      additionTypes.forEach(add => { additionsTotal += add.value || 0; });
+      additionTypes.forEach(add => { if (add.enabled !== false) additionsTotal += add.value || 0; });
       totalIncome += additionsTotal;
       let deductionsTotal = 0;
       deductionTypes.forEach(ded => {
@@ -2282,8 +2296,9 @@
       document.getElementById('absenceDeduction').textContent = (totalDeductions > 0 ? totalDeductions.toFixed(2) : '0.00') + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
-      if (additionTypes.length === 0) addRows.innerHTML = '';
-      else addRows.innerHTML = additionTypes.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>${a.label}</span><span>${(a.value || 0).toFixed(2)} ج.م</span></div>`).join('');
+      const activeAdds = additionTypes.filter(a => a.enabled !== false);
+      if (activeAdds.length === 0) addRows.innerHTML = '';
+      else addRows.innerHTML = activeAdds.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>${a.label}</span><span>${(a.value || 0).toFixed(2)} ج.م</span></div>`).join('');
 
       const dedRows = document.getElementById('deductionsRows');
       if (deductionTypes.length === 0) dedRows.innerHTML = '';
@@ -2644,7 +2659,7 @@
         const label = labelInput.value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
         if (valInput.value === '') { toast('أدخل قيمة البند', 'error'); return; }
-        additionTypes.push({ id: generateId(), label, value: parseFloat(valInput.value) || 0 });
+        additionTypes.push({ id: generateId(), label, value: parseFloat(valInput.value) || 0, enabled: true });
         labelInput.value = '';
         valInput.value = '';
         saveData();
@@ -2654,9 +2669,16 @@
       function renderAdditionTypes() {
         const list = document.getElementById('additionTypesList');
         if (additionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد إضافات</div>'; return; }
-        list.innerHTML = additionTypes.map((a, idx) =>
-          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${a.label}</span><span class="mli-sub">${a.value} ج.م</span></span><button class="mli-del" data-add="${idx}">✕</button></div>`
-        ).join('');
+        list.innerHTML = additionTypes.map((a, idx) => {
+          const enabled = a.enabled !== false;
+          return `<div class="mini-list-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;"><input type="checkbox" class="add-enable-toggle" data-add-cb="${idx}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" /><span class="mli-info" style="${enabled ? '' : 'opacity:0.5;'}"><span class="mli-name">${a.label}</span><span class="mli-sub">${a.value} ج.م</span></span></label><button class="mli-del" data-add="${idx}">✕</button></div>`;
+        }).join('');
+        list.querySelectorAll('.add-enable-toggle').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = parseInt(cb.dataset.addCb);
+            if (additionTypes[idx]) { additionTypes[idx].enabled = cb.checked; saveData(); renderAdditionTypes(); }
+          });
+        });
         list.querySelectorAll('.mli-del').forEach(el => {
           el.addEventListener('click', () => {
             const idx = parseInt(el.dataset.add);
@@ -2667,6 +2689,11 @@
         });
       }
       renderAdditionTypes();
+
+      document.getElementById('mealAllowanceEnabledCb').checked = mealAllowanceEnabled;
+      document.getElementById('shiftAllowanceEnabledCb').checked = shiftAllowanceEnabled;
+      document.getElementById('mealAllowanceEnabledCb').addEventListener('change', function() { mealAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
+      document.getElementById('shiftAllowanceEnabledCb').addEventListener('change', function() { shiftAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
 
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
@@ -2719,8 +2746,6 @@
       });
 
       document.getElementById('calcPayroll').addEventListener('click', calculatePayroll);
-      document.getElementById('mealAllowanceToggle').addEventListener('change', function() { mealAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
-      document.getElementById('shiftAllowanceToggle').addEventListener('change', function() { shiftAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
       document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; });
       document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; });
 
@@ -2753,6 +2778,7 @@
             companies = data.companies || companies;
             currentCompany = data.currentCompany || 0;
             additionTypes = data.additionTypes || additionTypes;
+            additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
             deductionTypes = data.deductionTypes || deductionTypes;
             holidays = data.holidays || [];
             leavePrev = data.leavePrev || 0;
@@ -2762,6 +2788,8 @@
             holidayMode = data.holidayMode || '1_0';
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
             weekStart = data.weekStart || 'sat';
+            mealAllowanceEnabled = data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false;
+            shiftAllowanceEnabled = data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false;
             saveData();
             renderCalendar();
             renderYear();
@@ -2770,6 +2798,8 @@
             renderHolidays();
             renderAdditionTypes();
             renderDeductionTypes();
+            document.getElementById('mealAllowanceEnabledCb').checked = mealAllowanceEnabled;
+            document.getElementById('shiftAllowanceEnabledCb').checked = shiftAllowanceEnabled;
             toast('تم استيراد البيانات بنجاح');
           } catch(err) { toast('خطأ في الملف', 'error'); }
         };
