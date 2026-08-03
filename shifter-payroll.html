@@ -2256,11 +2256,13 @@
         const shiftId = schedule[key];
         if (shiftId) {
           const shift = getShift(shiftId);
-          if (shift && !shift.isAnnualLeave && !shift.isAbsence) {
+          if (shift && !shift.isAbsence) {
             totalIncome += shift.dayIncome || 0;
-            daysWorked++;
-            totalMealAllowance += shift.mealAllowance || 0;
-            totalShiftAllowance += shift.shiftAllowance || 0;
+            if (!shift.isAnnualLeave) {
+              daysWorked++;
+              totalMealAllowance += shift.mealAllowance || 0;
+              totalShiftAllowance += shift.shiftAllowance || 0;
+            }
           }
           if (shift && shift.isAbsence) {
             const fallback = parseFloat(document.getElementById('absenceDayValue').value) || 0;
