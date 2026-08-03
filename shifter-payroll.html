@@ -1572,6 +1572,27 @@
         <div class="net-row big"><span>الصافي</span><span id="netSalary">0.00 ج.م</span></div>
         <button class="btn btn-primary" id="calcPayroll" style="width:100%;margin-top:12px;">احسب المرتب</button>
       </div>
+
+      <div class="card">
+        <div class="card-title">📩 قراءة رسالة القبض</div>
+        <p class="card-subtitle">الصق رسالة القبض بالصيغة: وجبة/وردى/مرضى/غياب/تأخير/ت حافز/صافى، وهيتم استخراج أجر اليوم الأساسي منها</p>
+        <textarea id="payslipMsgInput" placeholder="مثال: وجبة640/ورادى0/مرضى0/غياب592/تاخير0/ت حافز371/صافى4516" style="width:100%;min-height:70px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);resize:vertical;"></textarea>
+        <button class="btn btn-primary" id="parsePayslipMsg" style="width:100%;margin-top:10px;">🔍 احسب أجر اليوم الأساسي</button>
+        <div id="payslipMsgResult" style="display:none;margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🍽️ وجبة</span><span id="pmMeal" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🌙 وردى</span><span id="pmShift" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🤒 مرضى</span><span id="pmSick" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>❌ غياب</span><span id="pmAbsence" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>⏰ تأخير</span><span id="pmDelay" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>⭐ ت حافز</span><span id="pmIncentive" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>💰 صافى (من الرسالة)</span><span id="pmNet" style="font-weight:700;">0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-primary);font-weight:800;margin-top:4px;">
+            <span>أجر اليوم الأساسي (بدون بدلات)</span>
+            <span id="pmBaseWage" style="color:var(--nm-primary);">0.00 ج.م</span>
+          </div>
+          <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: الحساب مبني على البنود المذكورة في الرسالة فقط. لو فيه خصومات أخرى غير مذكورة في الرسالة (مثل سلفة)، النتيجة هتحتاج مراجعة يدوية لأنها غير مدرجة أصلاً في الرسالة.</p>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -2748,6 +2769,28 @@
       });
 
       document.getElementById('calcPayroll').addEventListener('click', calculatePayroll);
+
+      document.getElementById('parsePayslipMsg').addEventListener('click', () => {
+        const raw = document.getElementById('payslipMsgInput').value.trim();
+        if (!raw) { toast('الصق نص الرسالة أولاً', 'error'); return; }
+        const parts = raw.split('/').map(p => p.trim()).filter(p => p !== '');
+        if (parts.length < 7) { toast('صيغة الرسالة غير مكتملة، المطلوب 7 بنود', 'error'); return; }
+        const nums = parts.slice(0, 7).map(p => {
+          const m = p.match(/-?\d+(?:\.\d+)?/);
+          return m ? parseFloat(m[0]) : 0;
+        });
+        const [meal, shiftAllow, sick, absence, delay, incentive, net] = nums;
+        const baseWage = net - meal - shiftAllow - incentive + sick + absence + delay;
+        document.getElementById('pmMeal').textContent = meal.toFixed(2);
+        document.getElementById('pmShift').textContent = shiftAllow.toFixed(2);
+        document.getElementById('pmSick').textContent = sick.toFixed(2);
+        document.getElementById('pmAbsence').textContent = absence.toFixed(2);
+        document.getElementById('pmDelay').textContent = delay.toFixed(2);
+        document.getElementById('pmIncentive').textContent = incentive.toFixed(2);
+        document.getElementById('pmNet').textContent = net.toFixed(2);
+        document.getElementById('pmBaseWage').textContent = baseWage.toFixed(2) + ' ج.م';
+        document.getElementById('payslipMsgResult').style.display = 'block';
+      });
       document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; });
       document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; });
 
