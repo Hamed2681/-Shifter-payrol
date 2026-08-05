@@ -1377,11 +1377,7 @@
 
     <!-- Year View -->
     <section class="view" id="view-year">
-      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">
-        <button class="btn btn-outline year-btn" data-year="2025">2025</button>
-        <button class="btn btn-primary year-btn active" data-year="2026">2026</button>
-        <button class="btn btn-outline year-btn" data-year="2027">2027</button>
-      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;" id="yearBtnRow"></div>
       <div class="year-grid" id="yearGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;"></div>
     </section>
 
@@ -1449,28 +1445,6 @@
         </div>
         <div id="leaveDatesList" class="mini-list" style="margin-top:8px;"></div>
       </div>
-
-      <div class="card">
-        <div class="card-title">❌ أيام الغياب والجزاءات</div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>عدد أيام الغياب (في الفترة المحددة)</span>
-          <span id="absenceTotalDays" style="font-weight:700;">0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>عدد أيام الجزاء (التصاعدي)</span>
-          <span id="absencePenaltyDays" style="font-weight:700;">0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;">
-          <span>إجمالي قيمة الخصم</span>
-          <span id="absenceTotalValue" style="font-weight:700;">0.00 ج.م</span>
-        </div>
-        <p style="font-size:12px;color:var(--nm-text-muted);margin:10px 0 8px;">
-          يتم احتساب أيام الغياب تلقائياً من التقويم — أي يوم مجدول بوردية "غياب" يُحسب. الجدول التصاعدي للجزاءات: 0.25، 0.5، 1، 2، 3، ثم 5 أيام جزاء عن كل يوم بدءاً من اليوم السادس.
-        </p>
-        <div style="font-weight:600;margin-bottom:6px;">فترات الغياب (مع تفاصيل الجزاء لكل يوم)</div>
-        <div id="absenceSpellsList" class="mini-list"></div>
-      </div>
-
       <div class="card">
         <div class="collapse-toggle" id="holidaysToggle">
           <span class="card-title" style="margin:0;">🎉 العطلات الرسمية</span>
@@ -1510,6 +1484,29 @@
           الرصيد يُحسب تلقائياً: لو تم تسجيل وردية في نفس تاريخ العطلة فهذا يعني أن الموظف عمل بدل الراحة، فيُحسب له رصيد إجازة.
         </p>
       </div>
+
+
+      <div class="card">
+        <div class="card-title">❌ أيام الغياب والجزاءات</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>عدد أيام الغياب (في الفترة المحددة)</span>
+          <span id="absenceTotalDays" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>عدد أيام الجزاء (التصاعدي)</span>
+          <span id="absencePenaltyDays" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span>إجمالي قيمة الخصم</span>
+          <span id="absenceTotalValue" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <p style="font-size:12px;color:var(--nm-text-muted);margin:10px 0 8px;">
+          يتم احتساب أيام الغياب تلقائياً من التقويم — أي يوم مجدول بوردية "غياب" يُحسب. الجدول التصاعدي للجزاءات: 0.25، 0.5، 1، 2، 3، ثم 5 أيام جزاء عن كل يوم بدءاً من اليوم السادس.
+        </p>
+        <div style="font-weight:600;margin-bottom:6px;">فترات الغياب (مع تفاصيل الجزاء لكل يوم)</div>
+        <div id="absenceSpellsList" class="mini-list"></div>
+      </div>
+
     </section>
 
     <!-- Payroll View -->
@@ -1583,8 +1580,8 @@
         <textarea id="payslipMsgInput" placeholder="مثال: وجبة640/ورادى0/مرضى0/غياب592/تاخير0/ت حافز371/صافى4516" style="width:100%;min-height:70px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);resize:vertical;"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:140px;">
-            <label style="font-size:12px;color:var(--nm-text-muted);">عدد أيام الفترة (تلقائي من فترة المرتب فوق)</label>
-            <input type="number" id="pmDaysInput" min="1" step="1" placeholder="مثال: 30" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+            <label style="font-size:12px;color:var(--nm-text-muted);">عدد أيام الفترة (أساس الشهر 30 يوم)</label>
+            <input type="number" id="pmDaysInput" min="1" step="1" value="30" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           </div>
           <div style="flex:1;min-width:140px;">
             <label style="font-size:12px;color:var(--nm-text-muted);">قيمة السلفة (لو غير مذكورة في الرسالة)</label>
@@ -1593,23 +1590,46 @@
         </div>
         <button class="btn btn-primary" id="parsePayslipMsg" style="width:100%;margin-top:10px;">🔍 احسب أجر اليوم الأساسي</button>
         <div id="payslipMsgResult" style="display:none;margin-top:12px;">
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🍽️ وجبة</span><span id="pmMeal" style="font-weight:700;">0.00</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🌙 وردى</span><span id="pmShift" style="font-weight:700;">0.00</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>🤒 مرضى</span><span id="pmSick" style="font-weight:700;">0.00</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>❌ غياب</span><span id="pmAbsence" style="font-weight:700;">0.00</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>⏰ تأخير</span><span id="pmDelay" style="font-weight:700;">0.00</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>⭐ ت حافز</span><span id="pmIncentive" style="font-weight:700;">0.00</span></div>
+          <p style="font-size:11px;color:var(--nm-text-muted);margin-bottom:6px;">دوس على ➕/➖ جنب أي بند لو مش متأكد هل هو إضافة ولا خصم في حساب الصافي، والنتيجة هتتحدث فوراً</p>
+          <div class="pm-row" data-field="meal" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="meal" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">−</button>
+            <span style="flex:1;">🍽️ وجبة</span><span id="pmMeal" style="font-weight:700;">0.00</span>
+          </div>
+          <div class="pm-row" data-field="shiftAllow" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="shiftAllow" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">−</button>
+            <span style="flex:1;">🌙 وردى</span><span id="pmShift" style="font-weight:700;">0.00</span>
+          </div>
+          <div class="pm-row" data-field="sick" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="sick" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">+</button>
+            <span style="flex:1;">🤒 مرضى</span><span id="pmSick" style="font-weight:700;">0.00</span>
+          </div>
+          <div class="pm-row" data-field="absence" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="absence" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">+</button>
+            <span style="flex:1;">❌ غياب</span><span id="pmAbsence" style="font-weight:700;">0.00</span>
+          </div>
+          <div class="pm-row" data-field="delay" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="delay" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">+</button>
+            <span style="flex:1;">⏰ تأخير</span><span id="pmDelay" style="font-weight:700;">0.00</span>
+          </div>
+          <div class="pm-row" data-field="incentive" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+            <button class="pm-sign-btn" data-field="incentive" style="border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;">−</button>
+            <span style="flex:1;">⭐ ت حافز / جزاء</span><span id="pmIncentive" style="font-weight:700;">0.00</span>
+          </div>
           <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>💰 صافى (من الرسالة)</span><span id="pmNet" style="font-weight:700;">0.00</span></div>
-          <div id="pmAdvanceRow" style="display:none;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>💳 سلفة (خصم إضافي غير مذكور بالرسالة)</span><span id="pmAdvance" style="font-weight:700;">0.00</span></div>
+          <div id="pmAdvanceRow" style="display:none;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>💳 سلفة (تُضاف دايماً كخصم غير مذكور)</span><span id="pmAdvance" style="font-weight:700;">0.00</span></div>
           <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-primary);font-weight:800;margin-top:4px;">
             <span>أجر الفترة الأساسي (بدون بدلات)</span>
             <span id="pmBaseWage" style="color:var(--nm-primary);">0.00 ج.م</span>
           </div>
           <div id="pmDailyRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-primary);font-weight:800;">
-            <span>أجر اليوم الواحد</span>
+            <span>أجر اليوم الواحد (تقدير من الرسالة)</span>
             <span id="pmDailyWage" style="color:var(--nm-primary);">0.00 ج.م</span>
           </div>
-          <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: لو الرسالة فيها خصومات تانية مش مذكورة غير السلفة، النتيجة هتحتاج مراجعة يدوية لأنها غير مدرجة أصلاً في الرسالة.</p>
+          <div id="pmRealRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid #4ade80;font-weight:800;">
+            <span>🎯 أجر اليوم الفعلي (من جدول الشيفتات للفترة)</span>
+            <span id="pmRealDailyWage" style="color:#4ade80;">0.00 ج.م</span>
+          </div>
+          <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: علامة (−) يعني البند بيتخصم من "أجر الفترة الأساسي"، وعلامة (+) يعني بيتضاف. جرب الاحتمالات المختلفة لحد ما توصل لنفس رقم "أجر اليوم الفعلي" الأخضر تحت، وده معناه لقيت المعادلة الصح لرسايل الشركة دي.</p>
         </div>
       </div>
     </section>
@@ -1869,6 +1889,10 @@
     let weekStart = 'sat';
     let mealAllowanceEnabled = false;
     let shiftAllowanceEnabled = false;
+    let savedPayFrom = null;
+    let savedPayTo = null;
+    let savedStatsFrom = null;
+    let savedStatsTo = null;
     let darkMode = false;
     try { darkMode = localStorage.getItem('shifterTheme') === 'dark'; } catch(e) {}
     let uiLang = 'ar';
@@ -2009,7 +2033,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2035,6 +2059,10 @@
         weekStart = data.weekStart || 'sat';
         mealAllowanceEnabled = data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false;
         shiftAllowanceEnabled = data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false;
+        savedPayFrom = data.savedPayFrom || null;
+        savedPayTo = data.savedPayTo || null;
+        savedStatsFrom = data.savedStatsFrom || null;
+        savedStatsTo = data.savedStatsTo || null;
         return true;
       } catch(e) { return false; }
     }
@@ -2144,7 +2172,23 @@
     }
 
     // عرض السنة
+    function renderYearButtons() {
+      const row = document.getElementById('yearBtnRow');
+      if (!row) return;
+      const yrs = [currentYear - 1, currentYear, currentYear + 1];
+      row.innerHTML = yrs.map(y => `<button class="btn ${y === currentYear ? 'btn-primary active' : 'btn-outline'} year-btn" data-year="${y}">${y}</button>`).join('');
+      row.querySelectorAll('.year-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentYear = parseInt(btn.dataset.year);
+          renderYear();
+        });
+      });
+    }
+
     function renderYear() {
+      renderYearButtons();
+      const yearTabEl = document.getElementById('yearTab');
+      if (yearTabEl) yearTabEl.textContent = currentYear;
       const grid = document.getElementById('yearGrid');
       grid.innerHTML = '';
       const months = translations[uiLang].months;
@@ -2206,6 +2250,14 @@
     function renderStats() {
       const mode = document.querySelector('.st-tab.active')?.dataset.st || 'month';
       const year = currentYear, month = currentMonth;
+      const periodLabelEl = document.getElementById('periodLabel');
+      if (periodLabelEl) {
+        if (mode === 'month') {
+          periodLabelEl.textContent = new Date(year, month).toLocaleString(translations[uiLang].locale, { month: 'long', year: 'numeric' }).toUpperCase();
+        } else if (mode === 'year') {
+          periodLabelEl.textContent = String(year);
+        }
+      }
       const fromDate = document.getElementById('fromDate').value;
       const toDate = document.getElementById('toDate').value;
       const stats = calculateStats(mode, year, month, fromDate, toDate);
@@ -2294,22 +2346,7 @@
     function updatePmDaysFromPeriod() {
       const daysInput = document.getElementById('pmDaysInput');
       if (!daysInput) return;
-      const from = document.getElementById('payFrom').value;
-      const to = document.getElementById('payTo').value;
-      if (!from || !to) return;
-      const start = parseDate(from), end = parseDate(to);
-      let count = 0;
-      const current = new Date(start);
-      while (current <= end) {
-        const key = formatDate(current);
-        const shiftId = schedule[key];
-        if (shiftId) {
-          const shift = getShift(shiftId);
-          if (shift && !shift.isAnnualLeave && !shift.isAbsence) count++;
-        }
-        current.setDate(current.getDate() + 1);
-      }
-      daysInput.value = count;
+      if (!daysInput.value) daysInput.value = 30;
     }
 
     function calculatePayroll() {
@@ -2590,16 +2627,18 @@
       document.getElementById('weekStart').value = weekStart;
 
       const now = new Date();
-      const defFrom = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
-      const defTo = formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
+      const defFrom = savedPayFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      const defTo = savedPayTo || formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
       document.getElementById('payFrom').value = defFrom;
       document.getElementById('payFromDisplay').textContent = defFrom;
       document.getElementById('payTo').value = defTo;
       document.getElementById('payToDisplay').textContent = defTo;
       updatePmDaysFromPeriod();
-      document.getElementById('fromDate').value = defFrom;
-      document.getElementById('fromDateDisplay').textContent = defFrom;
-      document.getElementById('toDate').value = defTo;      document.getElementById('toDateDisplay').textContent = defTo;
+      const statsDefFrom = savedStatsFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      const statsDefTo = savedStatsTo || formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
+      document.getElementById('fromDate').value = statsDefFrom;
+      document.getElementById('fromDateDisplay').textContent = statsDefFrom;
+      document.getElementById('toDate').value = statsDefTo;      document.getElementById('toDateDisplay').textContent = statsDefTo;
       document.getElementById('newHolidayDate').value = defFrom;
       document.getElementById('newHolidayDateDisplay').textContent = defFrom;
 
@@ -2611,17 +2650,6 @@
 
       document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); renderStats(); });
       document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); renderStats(); });
-
-      document.querySelectorAll('.year-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentYear = parseInt(btn.dataset.year);
-          renderYear();
-        });
-      });
-
-      document.getElementById('yearTab').addEventListener('click', () => { document.getElementById('yearTab').textContent = currentYear; });
 
       document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -2643,8 +2671,8 @@
       });
       document.getElementById('prevPeriod').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderStats(); });
       document.getElementById('nextPeriod').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderStats(); });
-      document.getElementById('fromDate').addEventListener('change', function() { document.getElementById('fromDateDisplay').textContent = this.value || '—'; renderStats(); });
-      document.getElementById('toDate').addEventListener('change', function() { document.getElementById('toDateDisplay').textContent = this.value || '—'; renderStats(); });
+      document.getElementById('fromDate').addEventListener('change', function() { document.getElementById('fromDateDisplay').textContent = this.value || '—'; savedStatsFrom = this.value; saveData(); renderStats(); });
+      document.getElementById('toDate').addEventListener('change', function() { document.getElementById('toDateDisplay').textContent = this.value || '—'; savedStatsTo = this.value; saveData(); renderStats(); });
       document.getElementById('statsAdvanceInput').addEventListener('input', renderStats);
 
       document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.toggle('open'); });
@@ -2819,20 +2847,34 @@
 
       document.getElementById('calcPayroll').addEventListener('click', calculatePayroll);
 
-      document.getElementById('parsePayslipMsg').addEventListener('click', () => {
-        const raw = document.getElementById('payslipMsgInput').value.trim();
-        if (!raw) { toast('الصق نص الرسالة أولاً', 'error'); return; }
-        if (!document.getElementById('pmDaysInput').value) updatePmDaysFromPeriod();
-        const parts = raw.split('/').map(p => p.trim()).filter(p => p !== '');
-        if (parts.length < 7) { toast('صيغة الرسالة غير مكتملة، المطلوب 7 بنود', 'error'); return; }
-        const nums = parts.slice(0, 7).map(p => {
-          const m = p.match(/-?\d+(?:\.\d+)?/);
-          return m ? parseFloat(m[0]) : 0;
+      let pmValues = null;
+      const pmSigns = { meal: -1, shiftAllow: -1, sick: 1, absence: 1, delay: 1, incentive: 1 };
+      const pmFieldEl = { meal: 'pmMeal', shiftAllow: 'pmShift', sick: 'pmSick', absence: 'pmAbsence', delay: 'pmDelay', incentive: 'pmIncentive' };
+
+      function updatePmSignButtons() {
+        Object.keys(pmSigns).forEach(f => {
+          const btn = document.querySelector(`.pm-sign-btn[data-field="${f}"]`);
+          if (!btn) return;
+          const isPlus = pmSigns[f] === 1;
+          btn.textContent = isPlus ? '+' : '−';
+          btn.style.background = isPlus ? '#4ade80' : '#f87171';
+          btn.style.color = '#1a1a2e';
         });
-        const [meal, shiftAllow, sick, absence, delay, incentive, net] = nums;
+      }
+
+      function recalcPayslip() {
+        if (!pmValues) return;
+        const { meal, shiftAllow, sick, absence, delay, incentive, net } = pmValues;
         const advance = parseFloat(document.getElementById('pmAdvanceInput').value) || 0;
         const days = parseFloat(document.getElementById('pmDaysInput').value) || 0;
-        const baseWage = net - meal - shiftAllow - incentive + sick + absence + delay + advance;
+        const baseWage = net
+          + pmSigns.meal * meal
+          + pmSigns.shiftAllow * shiftAllow
+          + pmSigns.sick * sick
+          + pmSigns.absence * absence
+          + pmSigns.delay * delay
+          + pmSigns.incentive * incentive
+          + advance;
         document.getElementById('pmMeal').textContent = meal.toFixed(2);
         document.getElementById('pmShift').textContent = shiftAllow.toFixed(2);
         document.getElementById('pmSick').textContent = sick.toFixed(2);
@@ -2840,6 +2882,7 @@
         document.getElementById('pmDelay').textContent = delay.toFixed(2);
         document.getElementById('pmIncentive').textContent = incentive.toFixed(2);
         document.getElementById('pmNet').textContent = net.toFixed(2);
+        updatePmSignButtons();
         const advRow = document.getElementById('pmAdvanceRow');
         if (advance > 0) {
           advRow.style.display = 'flex';
@@ -2855,10 +2898,64 @@
         } else {
           dailyRow.style.display = 'none';
         }
+        const realRow = document.getElementById('pmRealRow');
+        const pfrom = document.getElementById('payFrom').value;
+        const pto = document.getElementById('payTo').value;
+        if (pfrom && pto) {
+          const pStart = parseDate(pfrom), pEnd = parseDate(pto);
+          let realDaysIncome = 0, realDaysWorked = 0;
+          const cur = new Date(pStart);
+          while (cur <= pEnd) {
+            const k = formatDate(cur);
+            const sId = schedule[k];
+            if (sId) {
+              const sh = getShift(sId);
+              if (sh && !sh.isAbsence && !sh.isAnnualLeave) {
+                realDaysIncome += sh.dayIncome || 0;
+                realDaysWorked++;
+              }
+            }
+            cur.setDate(cur.getDate() + 1);
+          }
+          if (realDaysWorked > 0) {
+            realRow.style.display = 'flex';
+            document.getElementById('pmRealDailyWage').textContent = (realDaysIncome / realDaysWorked).toFixed(2) + ' ج.م';
+          } else {
+            realRow.style.display = 'none';
+          }
+        } else {
+          realRow.style.display = 'none';
+        }
         document.getElementById('payslipMsgResult').style.display = 'block';
+      }
+
+      document.querySelectorAll('.pm-sign-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const f = btn.dataset.field;
+          pmSigns[f] = pmSigns[f] === 1 ? -1 : 1;
+          recalcPayslip();
+        });
       });
-      document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; updatePmDaysFromPeriod(); });
-      document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; updatePmDaysFromPeriod(); });
+      document.getElementById('pmAdvanceInput').addEventListener('input', recalcPayslip);
+      document.getElementById('pmDaysInput').addEventListener('input', recalcPayslip);
+      updatePmSignButtons();
+
+      document.getElementById('parsePayslipMsg').addEventListener('click', () => {
+        const raw = document.getElementById('payslipMsgInput').value.trim();
+        if (!raw) { toast('الصق نص الرسالة أولاً', 'error'); return; }
+        if (!document.getElementById('pmDaysInput').value) updatePmDaysFromPeriod();
+        const parts = raw.split('/').map(p => p.trim()).filter(p => p !== '');
+        if (parts.length < 7) { toast('صيغة الرسالة غير مكتملة، المطلوب 7 بنود', 'error'); return; }
+        const nums = parts.slice(0, 7).map(p => {
+          const m = p.match(/-?\d+(?:\.\d+)?/);
+          return m ? parseFloat(m[0]) : 0;
+        });
+        const [meal, shiftAllow, sick, absence, delay, incentive, net] = nums;
+        pmValues = { meal, shiftAllow, sick, absence, delay, incentive, net };
+        recalcPayslip();
+      });
+      document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; savedPayFrom = this.value; saveData(); updatePmDaysFromPeriod(); });
+      document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; savedPayTo = this.value; saveData(); updatePmDaysFromPeriod(); });
 
       document.getElementById('absenceDayValue').addEventListener('change', function() { absenceDayValue = parseFloat(this.value) || 0; saveData(); });
       document.getElementById('penaltyDayValue').addEventListener('change', function() { penaltyDayValue = parseFloat(this.value) || 0; saveData(); });
@@ -2867,8 +2964,46 @@
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
       document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
 
+      function addSwipeNav(elementId, onSwipeLeft, onSwipeRight, excludeSelector) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        let startX = 0, startY = 0, tracking = false;
+        el.addEventListener('touchstart', e => {
+          if (excludeSelector && e.target.closest(excludeSelector)) { tracking = false; return; }
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          tracking = true;
+        }, { passive: true });
+        el.addEventListener('touchend', e => {
+          if (!tracking) return;
+          tracking = false;
+          const dx = e.changedTouches[0].clientX - startX;
+          const dy = e.changedTouches[0].clientY - startY;
+          if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            if (dx < 0) onSwipeLeft(); else onSwipeRight();
+          }
+        }, { passive: true });
+      }
+
+      addSwipeNav('view-month',
+        () => document.getElementById('nextMonth').click(),
+        () => document.getElementById('prevMonth').click(),
+        '#paintBar'
+      );
+
+      addSwipeNav('view-year',
+        () => { currentYear++; renderYear(); },
+        () => { currentYear--; renderYear(); }
+      );
+
+      addSwipeNav('view-summary',
+        () => document.getElementById('nextPeriod').click(),
+        () => document.getElementById('prevPeriod').click(),
+        'input, textarea, select, button, a'
+      );
+
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -2901,6 +3036,10 @@
             weekStart = data.weekStart || 'sat';
             mealAllowanceEnabled = data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false;
             shiftAllowanceEnabled = data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false;
+            savedPayFrom = data.savedPayFrom || null;
+            savedPayTo = data.savedPayTo || null;
+            savedStatsFrom = data.savedStatsFrom || null;
+            savedStatsTo = data.savedStatsTo || null;
             saveData();
             renderCalendar();
             renderYear();
