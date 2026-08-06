@@ -1432,10 +1432,6 @@
           <div><label>مستنفذ</label><input type="text" id="sumLeaveUsed" readonly /></div>
           <div><label>المتبقي</label><input type="text" id="sumLeaveRemaining" readonly /></div>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>🎉 رصيد بدل العطلات (تلقائي)</span>
-          <span id="sumHolidayCompBalance" style="font-weight:700;">0.00 ج.م</span>
-        </div>
         <p style="font-size:12px;color:var(--nm-text-muted);margin-top:10px;">
           تُخصم أيام الإجازة الاعتيادية تلقائياً من التقويم — أي يوم مجدول بوردية "اعتيادي" يُخصم من الرصيد.
         </p>
@@ -1450,6 +1446,7 @@
           <span class="card-title" style="margin:0;">🎉 العطلات الرسمية</span>
           <span class="collapse-arrow" id="holidaysArrow">▾</span>
         </div>
+        <div id="holidayBalanceSummary" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-weight:700;font-size:14px;"></div>
         <div id="holidaysList" class="mini-list" style="margin-top:8px;"></div>
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1798,6 +1795,7 @@
           <label>لون الخلفية</label>
           <div class="color-row">
             <button class="color-wheel" id="bgWheel" type="button">🎨</button>
+            <input type="color" id="bgColorInput" value="#4f46e5" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" />
             <div class="swatches" id="bgSwatches"></div>
           </div>
         </div>
@@ -1805,6 +1803,7 @@
           <label>لون النص</label>
           <div class="color-row">
             <button class="color-wheel" id="txtWheel" type="button">🎨</button>
+            <input type="color" id="txtColorInput" value="#ffffff" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" />
             <div class="swatches" id="txtSwatches"></div>
           </div>
         </div>
@@ -1839,6 +1838,10 @@
         <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
           <input type="checkbox" id="isAbsence" style="accent-color:var(--nm-primary);" />
           <label style="font-size:13px;">❌ تُحسب كيوم غياب (تُطبق الجزاءات التصاعدية)</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+          <input type="checkbox" id="isHolidayComp" style="accent-color:var(--nm-primary);" />
+          <label style="font-size:13px;">🎉 تُحسب كبدل عطلة رسمية (تُخصم تلقائياً من رصيد العطلات بالترتيب)</label>
         </div>
       </div>
       <div class="ct-panel" data-ct="actions">
@@ -2067,6 +2070,26 @@
       } catch(e) { return false; }
     }
 
+    // ربط أيام بدل العطلة برصيد العطلات بالترتيب (FIFO)
+    function computeHolidayCompAssignments() {
+      const compDates = Object.keys(schedule).filter(dateKey => {
+        const sh = getShift(schedule[dateKey]);
+        return sh && sh.isHolidayComp;
+      }).sort();
+      const assignments = {};
+      const consumed = holidays.map(() => 0);
+      let hIdx = 0;
+      for (const dateKey of compDates) {
+        while (hIdx < holidays.length && consumed[hIdx] >= (holidays[hIdx].days || 0)) hIdx++;
+        if (hIdx >= holidays.length) break;
+        const h = holidays[hIdx];
+        const hd = parseDate(h.date);
+        assignments[dateKey] = { name: h.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}` : h.date };
+        consumed[hIdx]++;
+      }
+      return { assignments, consumed };
+    }
+
     // عرض التقويم
     function renderCalendar() {
       const year = currentYear, month = currentMonth;
@@ -2085,6 +2108,7 @@
       cal.innerHTML = '';
       const list = document.getElementById('calendarList');
       list.innerHTML = '';
+      const { assignments: holidayCompAssignments } = computeHolidayCompAssignments();
 
       const total = firstDay + days;
       const rows = Math.ceil(total / 7);
@@ -2122,6 +2146,15 @@
             label.style.fontSize = (getShift(shiftId)?.textSize || 36) + 'px';
             dayEl.style.background = getShiftColor(shiftId);
             dayEl.appendChild(label);
+            const hAssign = holidayCompAssignments[dateStr];
+            if (hAssign) {
+              const sub = document.createElement('span');
+              sub.className = 'holiday-sublabel';
+              sub.textContent = hAssign.shortDate;
+              sub.title = hAssign.name;
+              sub.style.cssText = 'display:block;font-size:10px;line-height:1;margin-top:2px;opacity:0.85;color:' + getShiftTextColor(shiftId) + ';';
+              dayEl.appendChild(sub);
+            }
           } else {
             dayEl.style.background = 'var(--nm-bg)';
           }
@@ -2132,9 +2165,10 @@
           const row = document.createElement('div');
           row.className = 'day-row';
           const weekday = new Date(year, month, dayNum).toLocaleString(translations[uiLang].locale, { weekday:'short' });
+          const hAssignRow = holidayCompAssignments[dateStr];
           row.innerHTML = `
             <div class="dr-date"><span class="dr-num">${dayNum}</span><span class="dr-wd">${weekday}</span></div>
-            ${shiftId ? `<span class="dr-shift" style="background:${getShiftColor(shiftId)};color:${getShiftTextColor(shiftId)}">${getShiftLabel(shiftId)}</span>` : '<span class="dr-empty">—</span>'}
+            ${shiftId ? `<span class="dr-shift" style="background:${getShiftColor(shiftId)};color:${getShiftTextColor(shiftId)}">${getShiftLabel(shiftId)}${hAssignRow ? ` <small style="opacity:0.85;">(${hAssignRow.shortDate})</small>` : ''}</span>` : '<span class="dr-empty">—</span>'}
           `;
           row.addEventListener('click', () => {
             if (selectedShiftId) {
@@ -2339,7 +2373,6 @@
       document.getElementById('holidayCount').textContent = holidayCount;
       const holidayComp = holidayCount * 100;
       document.getElementById('holidayAllowance').textContent = holidayComp.toFixed(2) + ' ج.م';
-      document.getElementById('sumHolidayCompBalance').textContent = holidayComp.toFixed(2) + ' ج.م';
     }
 
     // حساب المرتب
@@ -2451,16 +2484,60 @@
       const list = document.getElementById('shiftsList');
       if (shifts.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد شيفتات. أنشئ شيفتاً جديداً!</div>'; return; }
       list.innerHTML = shifts.map((s, idx) =>
-        `<div class="shift-row" data-edit="${s.id}" style="display:flex;align-items:center;padding:10px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);gap:12px;margin-bottom:6px;box-shadow:var(--nm-shadow-sm);cursor:pointer;">
+        `<div class="shift-row" data-edit="${s.id}" data-idx="${idx}" style="display:flex;align-items:center;padding:10px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);gap:12px;margin-bottom:6px;box-shadow:var(--nm-shadow-sm);cursor:pointer;">
           <div style="width:50px;height:50px;border-radius:var(--nm-radius-sm);display:flex;align-items:center;justify-content:center;font-weight:800;text-align:center;background:${s.bgColor};color:${s.textColor};flex-shrink:0;font-size:14px;box-shadow:var(--nm-shadow-sm-inset);">${s.abbr || s.name}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;">${s.name}</div>
             <div style="color:var(--nm-text-muted);font-size:12px;">${s.hours} ساعة • ${s.dayIncome} ج.م/يوم</div>
           </div>
-          <span style="color:var(--nm-text-muted);flex-shrink:0;">›</span>
+          <span class="shift-drag-handle" data-idx="${idx}" style="cursor:grab;padding:6px 10px;color:var(--nm-text-muted);flex-shrink:0;touch-action:none;font-size:18px;user-select:none;line-height:1;">☰</span>
         </div>`
       ).join('');
-      list.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => openShiftConfig(el.dataset.edit)));
+      list.querySelectorAll('.shift-row').forEach(el => el.addEventListener('click', (e) => {
+        if (e.target.closest('.shift-drag-handle')) return;
+        openShiftConfig(el.dataset.edit);
+      }));
+      setupShiftDragReorder();
+    }
+
+    function setupShiftDragReorder() {
+      const list = document.getElementById('shiftsList');
+      list.querySelectorAll('.shift-drag-handle').forEach(handle => {
+        handle.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const row = handle.closest('.shift-row');
+          row.style.opacity = '0.5';
+          try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+
+          const onMove = (ev) => {
+            const rows = Array.from(list.querySelectorAll('.shift-row')).filter(r => r !== row);
+            const y = ev.clientY;
+            let placed = false;
+            for (const r of rows) {
+              const rect = r.getBoundingClientRect();
+              const mid = rect.top + rect.height / 2;
+              if (y < mid) {
+                list.insertBefore(row, r);
+                placed = true;
+                break;
+              }
+            }
+            if (!placed) list.appendChild(row);
+          };
+          const onUp = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            row.style.opacity = '';
+            const newOrderIds = Array.from(list.querySelectorAll('.shift-row')).map(r => r.dataset.edit);
+            shifts = newOrderIds.map(id => shifts.find(s => s.id === id));
+            saveData();
+            renderShiftsList();
+          };
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+        });
+      });
     }
 
     function updateAbsenceFieldUI() {
@@ -2499,6 +2576,7 @@
         document.getElementById('shiftAllowance').value = shift.shiftAllowance || 0;
         document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
         document.getElementById('isAbsence').checked = shift.isAbsence || false;
+        document.getElementById('isHolidayComp').checked = shift.isHolidayComp || false;
         document.getElementById('hourlyRate').value = shift.hours > 0 ? ((shift.dayIncome || 0) / shift.hours).toFixed(2) : '0.00';
         updateAbsenceFieldUI();
         renderSwatches('bgSwatches', shift.bgColor || '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
@@ -2522,6 +2600,7 @@
         document.getElementById('shiftAllowance').value = 0;
         document.getElementById('isAnnualLeave').checked = false;
         document.getElementById('isAbsence').checked = false;
+        document.getElementById('isHolidayComp').checked = false;
         document.getElementById('hourlyRate').value = '0.00';
         updateAbsenceFieldUI();
         renderSwatches('bgSwatches', '#4f46e5', (c) => { document.getElementById('bgWheel').style.background = c; });
@@ -2531,7 +2610,10 @@
 
     function renderSwatches(containerId, selected, onSelect) {
       const colors = [
-        '#4f46e5','#22c55e','#ef4444','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316',
+        '#4f46e5','#3b82f6','#0ea5e9','#06b6d4','#14b8a6','#22c55e','#84cc16','#eab308',
+        '#f59e0b','#f97316','#ef4444','#dc2626','#e11d48','#ec4899','#d946ef','#a855f7','#8b5cf6','#6366f1',
+        '#fda4af','#fdba74','#fde047','#bef264','#86efac','#5eead4','#7dd3fc','#c4b5fd','#f0abfc',
+        '#78350f','#7c2d12','#365314','#134e4a','#1e3a8a','#312e81','#581c87','#831843',
         '#ffffff','#f2f2f2','#e0e0e0','#cccccc','#b3b3b3','#999999','#808080','#666666','#4d4d4d','#333333','#1a1a1a','#000000'
       ];
       const container = document.getElementById(containerId);
@@ -2563,6 +2645,7 @@
         shiftAllowance: parseFloat(document.getElementById('shiftAllowance').value) || 0,
         isAnnualLeave: document.getElementById('isAnnualLeave').checked,
         isAbsence: document.getElementById('isAbsence').checked,
+        isHolidayComp: document.getElementById('isHolidayComp').checked,
         customAdditions: []
       };
       if (editingShiftId) {
@@ -2582,21 +2665,32 @@
     // العطلات
     function renderHolidays() {
       const list = document.getElementById('holidaysList');
+      const { consumed } = computeHolidayCompAssignments();
+      const totalAllowed = holidays.reduce((sum, h) => sum + (h.days || 0), 0);
+      const totalUsed = consumed.reduce((sum, c) => sum + c, 0);
+      const totalRemaining = totalAllowed - totalUsed;
+      const summaryEl = document.getElementById('holidayBalanceSummary');
+      if (summaryEl) {
+        summaryEl.innerHTML = `<span>🎫 رصيد بدل العطلة</span><span>مسموح: ${totalAllowed} — مُستخدم: ${totalUsed} — متبقي: ${totalRemaining}</span>`;
+      }
       if (holidays.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد عطلات مسجلة</div>'; return; }
-      list.innerHTML = holidays.map((h, idx) =>
-        `<div class="mini-list-item holiday-item">
+      list.innerHTML = holidays.map((h, idx) => {
+        const used = consumed[idx] || 0;
+        const total = h.days || 0;
+        return `<div class="mini-list-item holiday-item">
           <div class="mli-row">
-            <span class="mli-info"><span class="mli-name">${h.name}</span><span class="mli-sub">${h.date} (${h.days} يوم)</span></span>
+            <span class="mli-info"><span class="mli-name">${h.name}</span><span class="mli-sub">${h.date} — الرصيد: ${used}/${total} ${used >= total && total > 0 ? '✅' : ''}</span></span>
             <button class="mli-del" data-holiday="${idx}">✕</button>
           </div>
-        </div>`
-      ).join('');
+        </div>`;
+      }).join('');
       list.querySelectorAll('.mli-del').forEach(el => {
         el.addEventListener('click', () => {
           const idx = parseInt(el.dataset.holiday);
           holidays.splice(idx, 1);
           saveData();
           renderHolidays();
+          renderCalendar();
           toast('تم حذف العطلة');
         });
       });
@@ -2625,6 +2719,7 @@
       document.getElementById('sumLeaveAccrued').value = leaveAccrued;
       document.getElementById('absenceAutoApply').checked = absenceAutoApply;
       document.getElementById('weekStart').value = weekStart;
+      document.getElementById('holidayMode').value = holidayMode;
 
       const now = new Date();
       const defFrom = savedPayFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -2743,6 +2838,21 @@
       document.getElementById('textSize').addEventListener('input', function() {
         document.getElementById('sizeVal').textContent = this.value;
         document.getElementById('shiftPreview').style.fontSize = this.value + 'px';
+      });
+
+      document.getElementById('bgWheel').addEventListener('click', () => {
+        document.getElementById('bgColorInput').click();
+      });
+      document.getElementById('bgColorInput').addEventListener('input', function() {
+        document.getElementById('bgWheel').style.background = this.value;
+        document.querySelectorAll('#bgSwatches .swatch').forEach(s => s.classList.remove('selected'));
+      });
+      document.getElementById('txtWheel').addEventListener('click', () => {
+        document.getElementById('txtColorInput').click();
+      });
+      document.getElementById('txtColorInput').addEventListener('input', function() {
+        document.getElementById('txtWheel').style.background = this.value;
+        document.querySelectorAll('#txtSwatches .swatch').forEach(s => s.classList.remove('selected'));
       });
       document.getElementById('dayIncome').addEventListener('input', function() {
         const hours = parseFloat(document.getElementById('hours').value) || 1;
@@ -2963,6 +3073,7 @@
       document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); });
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
       document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
+      document.getElementById('holidayMode').addEventListener('change', function() { holidayMode = this.value; saveData(); });
 
       function addSwipeNav(elementId, onSwipeLeft, onSwipeRight, excludeSelector) {
         const el = document.getElementById(elementId);
