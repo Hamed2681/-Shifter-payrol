@@ -1473,16 +1473,32 @@
           <span id="absenceTotalDays" style="font-weight:700;">0</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>عدد أيام الجزاء (التصاعدي)</span>
+          <span>عدد أيام الجزاء (التصاعدي - السنة الحالية)</span>
           <span id="absencePenaltyDays" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>إجمالي الجزاءات المتراكمة (سابق + الحالي)</span>
+          <span id="absencePenaltyAccumulated" style="font-weight:700;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>المخصوم فعلياً من الراتب (بحد أقصى 5 أيام)</span>
+          <span id="absencePenaltyApplied" style="font-weight:700;">0</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;">
           <span>إجمالي قيمة الخصم</span>
           <span id="absenceTotalValue" style="font-weight:700;">0.00 ج.م</span>
         </div>
         <p style="font-size:12px;color:var(--nm-text-muted);margin:10px 0 8px;">
-          يتم احتساب أيام الغياب تلقائياً من التقويم — أي يوم مجدول بوردية "غياب" يُحسب. الجدول التصاعدي للجزاءات: 0.25، 0.5، 1، 2، 3، ثم 5 أيام جزاء عن كل يوم بدءاً من اليوم السادس.
+          يتم احتساب أيام الغياب تلقائياً من التقويم. الجدول التصاعدي لكل يوم غياب حسب ترتيبه: اليوم الأول = 0.25، الثاني = 0.5، الثالث = 1، الرابع = 2، الخامس وما بعده = 5 أيام لكل يوم. لا يُعاد الترتيب إلى 0.25 إلا بعد مرور 180 يوماً على آخر يوم غياب. تُضاف جزاءات السنة الحالية على أي رصيد متراكم من سنوات سابقة (قسم "جزاءات سابقة")، ولا يُخصم من الراتب أكثر من 5 أيام. قيمة اليوم المستخدمة في الخصم هي القيمة المكتوبة يدوياً في "جزاءات سابقة".
         </p>
+        <div style="font-weight:700;margin:14px 0 8px;">🗂️ جزاءات سابقة</div>
+        <div class="leave-grid">
+          <div><label>عدد الأيام</label><input type="number" id="prevPenaltyDays" min="0" step="0.25" /></div>
+          <div><label>المخصوم</label><input type="number" id="prevPenaltyDeducted" min="0" step="0.25" /></div>
+          <div><label>المتبقى</label><input type="text" id="prevPenaltyRemaining" readonly /></div>
+          <div><label>قيمة اليوم</label><input type="number" id="prevPenaltyDayValue" min="0" step="0.01" /></div>
+          <div><label>الإجمالي</label><input type="text" id="prevPenaltyTotal" readonly /></div>
+        </div>
         <div style="font-weight:600;margin-bottom:6px;">فترات الغياب (مع تفاصيل الجزاء لكل يوم)</div>
         <div id="absenceSpellsList" class="mini-list"></div>
       </div>
@@ -1927,6 +1943,9 @@
     let leaveAccrued = 0;
     let absenceDayValue = 0;
     let penaltyDayValue = 0;
+    let prevPenaltyDays = 0;
+    let prevPenaltyDeducted = 0;
+    let prevPenaltyDayValue = 0;
     let holidayMode = '1_0';
     let absenceAutoApply = true;
     let weekStart = 'sat';
@@ -2078,7 +2097,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2099,6 +2118,9 @@
         leaveAccrued = data.leaveAccrued || 0;
         absenceDayValue = data.absenceDayValue || 0;
         penaltyDayValue = data.penaltyDayValue || 0;
+        prevPenaltyDays = data.prevPenaltyDays || 0;
+        prevPenaltyDeducted = data.prevPenaltyDeducted || 0;
+        prevPenaltyDayValue = data.prevPenaltyDayValue || 0;
         holidayMode = data.holidayMode || '1_0';
         absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
         weekStart = data.weekStart || 'sat';
@@ -2374,6 +2396,14 @@
       renderHolidays();
     }
 
+    function calculatePrevPenalty() {
+      const days = parseFloat(document.getElementById('prevPenaltyDays').value) || 0;
+      const deducted = parseFloat(document.getElementById('prevPenaltyDeducted').value) || 0;
+      const dayValue = parseFloat(document.getElementById('prevPenaltyDayValue').value) || 0;
+      const remaining = days - deducted;
+      document.getElementById('prevPenaltyRemaining').value = remaining.toFixed(2);
+      document.getElementById('prevPenaltyTotal').value = (remaining * dayValue).toFixed(2) + ' ج.م';
+    }
     function calculateLeaveBalance() {
       const fromVal = document.getElementById('leaveFromDate').value;
       const toVal = document.getElementById('leaveToDate').value;
@@ -2421,26 +2451,45 @@
       }
 
       document.getElementById('absenceTotalDays').textContent = absenceDays;
-      let penaltyDays = 0;
-      if (absenceDays > 0) {
-        const penalties = [0.25, 0.5, 1, 2, 3];
-        let remainingAbsence = absenceDays;
-        for (let i=0; i<penalties.length && remainingAbsence > 0; i++) {
-          const take = Math.min(remainingAbsence, 1);
-          penaltyDays += penalties[i] * take;
-          remainingAbsence -= take;
-        }
-        if (remainingAbsence > 0) penaltyDays += remainingAbsence * 5;
+
+      // الجدول التصاعدي: اليوم1=0.25، 2=0.5، 3=1، 4=2، 5 وما بعده=5. يُعاد الترتيب لـ0.25 فقط بعد 180 يوم من آخر يوم غياب.
+      function penaltyForPosition(pos) {
+        const table = [0.25, 0.5, 1, 2, 5];
+        return pos <= table.length ? table[pos - 1] : 5;
       }
+      let penaltyDays = 0;
+      let position = 0;
+      let lastAbsenceDate = null;
+      absenceSpells.forEach(s => {
+        const d = parseDate(s.date);
+        if (lastAbsenceDate && d) {
+          const gapDays = Math.round((d - lastAbsenceDate) / (1000 * 60 * 60 * 24));
+          position = gapDays > 180 ? 1 : position + 1;
+        } else {
+          position = 1;
+        }
+        const dayPenalty = penaltyForPosition(position);
+        penaltyDays += dayPenalty;
+        s.position = position;
+        s.penalty = dayPenalty;
+        lastAbsenceDate = d;
+      });
       document.getElementById('absencePenaltyDays').textContent = penaltyDays.toFixed(2);
+
+      const prevRemaining = (parseFloat(document.getElementById('prevPenaltyDays').value) || 0) - (parseFloat(document.getElementById('prevPenaltyDeducted').value) || 0);
+      const accumulatedPenaltyDays = prevRemaining + penaltyDays;
+      document.getElementById('absencePenaltyAccumulated').textContent = accumulatedPenaltyDays.toFixed(2);
+      const appliedPenaltyDays = Math.min(Math.max(accumulatedPenaltyDays, 0), 5);
+      document.getElementById('absencePenaltyApplied').textContent = appliedPenaltyDays.toFixed(2);
+
       const absVal = parseFloat(document.getElementById('absenceDayValue').value) || 0;
-      const penVal = parseFloat(document.getElementById('penaltyDayValue').value) || 0;
-      const totalValue = (absenceDays * absVal) + (penaltyDays * penVal);
+      const penDayValue = parseFloat(document.getElementById('prevPenaltyDayValue').value) || 0;
+      const totalValue = (absenceDays * absVal) + (appliedPenaltyDays * penDayValue);
       document.getElementById('absenceTotalValue').textContent = totalValue.toFixed(2) + ' ج.م';
 
       const spellsList = document.getElementById('absenceSpellsList');
       if (absenceSpells.length === 0) spellsList.innerHTML = '<div class="mini-list-empty">لا توجد أيام غياب في هذه السنة</div>';
-      else spellsList.innerHTML = absenceSpells.map((s,idx) => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${s.date}</span><span class="mli-sub">${s.shift}</span></span></div>`).join('');
+      else spellsList.innerHTML = absenceSpells.map(s => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${s.date}</span><span class="mli-sub">${s.shift} — يوم جزاء رقم ${s.position} = ${s.penalty}</span></span></div>`).join('');
 
       const holidayCount = holidays.reduce((sum, h) => sum + (h.dates || []).filter(dt => { const d = parseDate(dt); return d && d >= start && d <= end; }).length, 0);
       document.getElementById('holidayCount').textContent = holidayCount;
@@ -2753,6 +2802,78 @@
     }
 
     // العطلات
+    // تحويل تاريخ هجري تقريبي إلى ميلادي (لأغراض الترتيب فقط)
+    function hijriToJd(hy, hm, hd) {
+      return Math.floor((11 * hy + 3) / 30) + 354 * hy + 30 * hm - Math.floor((hm - 1) / 2) + hd + 1948440 - 385;
+    }
+    function jdToGregorian(jd) {
+      let l = jd + 68569;
+      const n = Math.floor((4 * l) / 146097);
+      l = l - Math.floor((146097 * n + 3) / 4);
+      const i = Math.floor((4000 * (l + 1)) / 1461001);
+      l = l - Math.floor((1461 * i) / 4) + 31;
+      const j = Math.floor((80 * l) / 2447);
+      const day = l - Math.floor((2447 * j) / 80);
+      const l2 = Math.floor(j / 11);
+      const month = j + 2 - 12 * l2;
+      const year = 100 * (n - 49) + i + l2;
+      return { year, month, day };
+    }
+    // تقدير تاريخ مناسبة هجرية (شهر/يوم هجري) في سنة ميلادية معينة
+    function estimateGregorianForHijri(hm, hd, gregYear) {
+      const approxHy = Math.floor((gregYear - 622) * 33 / 32);
+      let best = null;
+      for (let dh = -1; dh <= 1; dh++) {
+        const g = jdToGregorian(hijriToJd(approxHy + dh, hm, hd));
+        if (g.year === gregYear) { best = g; break; }
+      }
+      if (!best) best = jdToGregorian(hijriToJd(approxHy, hm, hd));
+      return { month: best.month, day: best.day };
+    }
+    // تقدير عيد الفصح الأرثوذكسي (يُستخدم لتحديد شم النسيم: اليوم التالي له)
+    function estimateOrthodoxEasterMonthDay(year) {
+      const a = year % 4, b = year % 7, c = year % 19;
+      const d = (19 * c + 15) % 30;
+      const e = (2 * a + 4 * b - d + 34) % 7;
+      const month = Math.floor((d + e + 114) / 31);
+      const day = ((d + e + 114) % 31) + 1;
+      const jul = new Date(Date.UTC(year, month - 1, day));
+      jul.setUTCDate(jul.getUTCDate() + 13); // تحويل من التقويم اليولياني إلى الميلادي
+      return { month: jul.getUTCMonth() + 1, day: jul.getUTCDate() };
+    }
+    const FIXED_HOLIDAY_MONTH_DAY = {
+      'رأس السنة الميلادية': [1, 1],
+      'عيد الشرطة (ثورة 25 يناير)': [1, 25],
+      'عيد تحرير سيناء': [4, 25],
+      'عيد العمال': [5, 1],
+      'ثورة 30 يونيو': [6, 30],
+      'ثورة 23 يوليو': [7, 23],
+      'نصر أكتوبر (عيد القوات المسلحة)': [10, 6]
+    };
+    const HIJRI_HOLIDAY_MONTH_DAY = {
+      'عيد الفطر': [10, 1],
+      'عيد الأضحى': [12, 10],
+      'رأس السنة الهجرية': [1, 1],
+      'المولد النبوي الشريف': [3, 12]
+    };
+    // تقدير شهر/يوم العطلة تقريبياً لسنة معينة (يُستخدم فقط كترتيب مبدئي قبل إدخال التاريخ الفعلي)
+    function estimateHolidayMonthDay(name, year) {
+      if (FIXED_HOLIDAY_MONTH_DAY[name]) {
+        const [m, d] = FIXED_HOLIDAY_MONTH_DAY[name];
+        return { month: m, day: d };
+      }
+      if (name === 'عيد شم النسيم') {
+        const easter = estimateOrthodoxEasterMonthDay(year);
+        const dt = new Date(Date.UTC(year, easter.month - 1, easter.day));
+        dt.setUTCDate(dt.getUTCDate() + 1);
+        return { month: dt.getUTCMonth() + 1, day: dt.getUTCDate() };
+      }
+      if (HIJRI_HOLIDAY_MONTH_DAY[name]) {
+        const [hm, hd] = HIJRI_HOLIDAY_MONTH_DAY[name];
+        return estimateGregorianForHijri(hm, hd, year);
+      }
+      return null;
+    }
     function renderHolidays() {
       const list = document.getElementById('holidaysList');
       const { earnings, pool, consumedByHolidayDate } = computeHolidayCompAssignments();
@@ -2768,7 +2889,26 @@
         if (!earningsByName[e.name]) earningsByName[e.name] = [];
         earningsByName[e.name].push(e);
       });
-      list.innerHTML = holidays.map((h, idx) => {
+      function holidaySortKey(h) {
+        const dates = (h.dates || []).filter(Boolean).sort();
+        if (dates.length) {
+          const d = parseDate(dates[0]);
+          if (d) return d.getMonth() * 100 + d.getDate();
+        }
+        const est = estimateHolidayMonthDay(h.name, currentYear);
+        if (est) return est.month * 100 + est.day;
+        return null;
+      }
+      const order = holidays.map((h, idx) => idx).sort((a, b) => {
+        const ka = holidaySortKey(holidays[a]);
+        const kb = holidaySortKey(holidays[b]);
+        if (ka === null && kb === null) return a - b;
+        if (ka === null) return 1;
+        if (kb === null) return -1;
+        return ka - kb;
+      });
+      list.innerHTML = order.map(idx => {
+        const h = holidays[idx];
         const hEarnings = earningsByName[h.name] || [];
         const earningsByDate = {};
         hEarnings.forEach(e => { earningsByDate[e.date] = e; });
@@ -2807,25 +2947,26 @@
           </div>`;
         }
 
-        // عيد الفطر / عيد الأضحى فقط: تواريخهم بترص جنب بعض بالتمرير الأفقي جوه الكارت
-        const chips = dates.map((date, dIdx) => `
-          <div style="flex:0 0 auto;min-width:140px;background:var(--nm-panel,rgba(255,255,255,0.05));border-radius:8px;padding:6px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <div class="date-field" style="flex:1;">
+        // عيد الفطر / عيد الأضحى: كل تاريخ بكارت مستقل خلف بعضه، والكارت الأول بيحمل الاسم الأصلي والباقي بيتم ترقيمه (اسم1، اسم2...)
+        return dates.map((date, dIdx) => {
+          const cardName = dIdx === 0 ? h.name : `${h.name}${dIdx}`;
+          const headerBtn = dIdx === 0
+            ? `<button class="holiday-date-add" data-idx="${idx}" style="border:none;border-radius:8px;background:var(--nm-primary);color:#fff;padding:3px 8px;font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;">➕</button>`
+            : `<button class="holiday-date-del" data-idx="${idx}" data-dateidx="${dIdx}" style="border:none;background:none;color:#f87171;font-size:15px;cursor:pointer;flex-shrink:0;">✕</button>`;
+          return `<div class="holiday-card" style="flex:0 0 auto;width:190px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);padding:10px;box-shadow:var(--nm-shadow-sm);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+              <span style="font-weight:700;font-size:13px;">${cardName}</span>
+              ${headerBtn}
+            </div>
+            <div style="margin-top:6px;">
+              <div class="date-field">
                 <input type="date" class="holiday-date-input" data-idx="${idx}" data-dateidx="${dIdx}" value="${date}" />
-                <span class="date-display" style="font-size:11px;">${date || `يوم ${dIdx+1}`}</span>
+                <span class="date-display" style="font-size:12px;">${date || 'اختر التاريخ'}</span>
               </div>
-              <button class="holiday-date-del" data-idx="${idx}" data-dateidx="${dIdx}" style="border:none;background:none;color:#f87171;font-size:15px;cursor:pointer;flex-shrink:0;">✕</button>
             </div>
             <div style="font-size:10px;margin-top:4px;">${statusLineFor(date)}</div>
-          </div>`).join('');
-        return `<div class="holiday-card" style="flex:0 0 auto;width:280px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);padding:10px;box-shadow:var(--nm-shadow-sm);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <span style="font-weight:700;font-size:13px;">${h.name}</span>
-            <button class="holiday-date-add" data-idx="${idx}" style="border:none;border-radius:8px;background:var(--nm-primary);color:#fff;padding:3px 8px;font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;">➕</button>
-          </div>
-          <div class="eid-dates-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:6px;padding-bottom:4px;touch-action:pan-x;">${chips}</div>
-        </div>`;
+          </div>`;
+        }).join('');
       }).join('');
 
       list.querySelectorAll('.holiday-date-input').forEach(el => {
@@ -2881,6 +3022,10 @@
       });
       document.getElementById('absenceDayValue').value = absenceDayValue > 0 ? absenceDayValue : '';
       document.getElementById('penaltyDayValue').value = penaltyDayValue > 0 ? penaltyDayValue : '';
+      document.getElementById('prevPenaltyDays').value = prevPenaltyDays > 0 ? prevPenaltyDays : '';
+      document.getElementById('prevPenaltyDeducted').value = prevPenaltyDeducted > 0 ? prevPenaltyDeducted : '';
+      document.getElementById('prevPenaltyDayValue').value = prevPenaltyDayValue > 0 ? prevPenaltyDayValue : '';
+      calculatePrevPenalty();
       document.getElementById('sumLeavePrev').value = leavePrev;
       document.getElementById('sumLeaveAccrued').value = leaveAccrued;
       document.getElementById('absenceAutoApply').checked = absenceAutoApply;
@@ -3215,12 +3360,33 @@
         const [meal, shiftAllow, sick, absence, delay, incentive, net] = nums;
         pmValues = { meal, shiftAllow, sick, absence, delay, incentive, net };
         recalcPayslip();
+
+        // ت الحافز في رسالة القبض بتشمل الجزاءات الإدارية (غياب + جزاءات تأديبية).
+        // لو قيمتها بتساوي إجمالي قيمة الخصم في كارت الغياب، معناه إنه اتخصم فعلياً، فنضيفه للمخصوم.
+        const absenceTotalText = document.getElementById('absenceTotalValue').textContent || '';
+        const absenceTotalVal = parseFloat(absenceTotalText) || 0;
+        if (absenceTotalVal > 0 && Math.abs(Math.abs(incentive) - absenceTotalVal) < 0.01) {
+          const appliedDays = parseFloat(document.getElementById('absencePenaltyApplied').textContent) || 0;
+          if (appliedDays > 0) {
+            const deductedInput = document.getElementById('prevPenaltyDeducted');
+            const newDeducted = (parseFloat(deductedInput.value) || 0) + appliedDays;
+            deductedInput.value = newDeducted;
+            prevPenaltyDeducted = newDeducted;
+            calculatePrevPenalty();
+            calculateAbsenceAndHolidays();
+            saveData();
+            toast('ت الحافز يساوي خصم الغياب — تمت إضافة ' + appliedDays.toFixed(2) + ' يوم إلى المخصوم', 'success');
+          }
+        }
       });
       document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; savedPayFrom = this.value; saveData(); updatePmDaysFromPeriod(); });
       document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; savedPayTo = this.value; saveData(); updatePmDaysFromPeriod(); });
 
       document.getElementById('absenceDayValue').addEventListener('change', function() { absenceDayValue = parseFloat(this.value) || 0; saveData(); });
       document.getElementById('penaltyDayValue').addEventListener('change', function() { penaltyDayValue = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('prevPenaltyDays').addEventListener('input', function() { prevPenaltyDays = parseFloat(this.value) || 0; calculatePrevPenalty(); calculateAbsenceAndHolidays(); saveData(); });
+      document.getElementById('prevPenaltyDeducted').addEventListener('input', function() { prevPenaltyDeducted = parseFloat(this.value) || 0; calculatePrevPenalty(); calculateAbsenceAndHolidays(); saveData(); });
+      document.getElementById('prevPenaltyDayValue').addEventListener('input', function() { prevPenaltyDayValue = parseFloat(this.value) || 0; calculatePrevPenalty(); calculateAbsenceAndHolidays(); saveData(); });
       document.getElementById('sumLeavePrev').addEventListener('change', function() { leavePrev = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
       document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
@@ -3266,7 +3432,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -3294,6 +3460,9 @@
             leaveAccrued = data.leaveAccrued || 0;
             absenceDayValue = data.absenceDayValue || 0;
             penaltyDayValue = data.penaltyDayValue || 0;
+            prevPenaltyDays = data.prevPenaltyDays || 0;
+            prevPenaltyDeducted = data.prevPenaltyDeducted || 0;
+            prevPenaltyDayValue = data.prevPenaltyDayValue || 0;
             holidayMode = data.holidayMode || '1_0';
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
             weekStart = data.weekStart || 'sat';
