@@ -2341,7 +2341,7 @@
       if (mode === 'range' && fromDate && toDate) { start = parseDate(fromDate); end = parseDate(toDate); }
       else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
       const shiftCounts = {};
-      let totalDays = 0, totalIncome = 0, totalMealAllowance = 0;
+      let totalDays = 0, totalIncome = 0, totalMealAllowance = 0, totalShiftAllowanceAmt = 0;
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
@@ -2352,12 +2352,15 @@
           const shift = getShift(shiftId);
           if (shift) {
             totalIncome += shift.dayIncome || 0;
-            if (!shift.isAnnualLeave && !shift.isAbsence) totalMealAllowance += shift.mealAllowance || 0;
+            if (!shift.isAnnualLeave && !shift.isAbsence) {
+              totalMealAllowance += shift.mealAllowance || 0;
+              totalShiftAllowanceAmt += shift.shiftAllowance || 0;
+            }
           }
         }
         current.setDate(current.getDate() + 1);
       }
-      return { shiftCounts, totalDays, totalIncome, totalMealAllowance };
+      return { shiftCounts, totalDays, totalIncome, totalMealAllowance, totalShiftAllowanceAmt };
     }
 
     function renderStats() {
@@ -2388,9 +2391,15 @@
         body.appendChild(row);
       });
       const avgDayWage = stats.totalDays > 0 ? totalIncomeAll / stats.totalDays : 0;
-      let globalText = `إجمالي الأيام: ${stats.totalDays} | إجمالي الدخل: ${totalIncomeAll.toFixed(2)} ج.م | بدل الوجبة: ${stats.totalMealAllowance.toFixed(2)} ج.م`;
-      globalText += ` | أجر اليوم (بدون بدلات): ${avgDayWage.toFixed(2)} ج.م`;
-      document.getElementById('statsGlobal').textContent = globalText;
+      const totalAllowances = (mealAllowanceEnabled ? stats.totalMealAllowance : 0) + (shiftAllowanceEnabled ? stats.totalShiftAllowanceAmt : 0);
+      const totalIncomeWithAllowances = totalIncomeAll + totalAllowances;
+      let globalText = `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الأيام</span><span>${stats.totalDays}</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بدون البدلات)</span><span>${totalIncomeAll.toFixed(2)} ج.م</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بالبدلات)</span><span>${totalIncomeWithAllowances.toFixed(2)} ج.م</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>بدل الوجبة</span><span>${stats.totalMealAllowance.toFixed(2)} ج.م</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>بدل الوردية</span><span>${stats.totalShiftAllowanceAmt.toFixed(2)} ج.م</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>أجر اليوم (بدون بدلات)</span><span>${avgDayWage.toFixed(2)} ج.م</span></div>`;
+      document.getElementById('statsGlobal').innerHTML = globalText;
       calculateLeaveBalance();
       calculateAbsenceAndHolidays();
       renderHolidays();
