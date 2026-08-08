@@ -1900,7 +1900,13 @@
       const parts = (mode || '0_0').split('_').map(n => parseInt(n) || 0);
       return { incomeDays: parts[0] || 0, leaveDays: parts[1] || 0 };
     }
-    // إرجاع أيام العطلات التي عمل فيها الموظف فعلياً (بأي وردية عادية) مع استحقاقها حسب طريقة الحساب المفعّلة
+    // تتحقق أن الوردية المسجلة هي إحدى ورديات العمل الثلاث فقط (أولى/ثانية/ثالثة)
+    function isWorkShiftForHolidayComp(shift) {
+      if (!shift) return false;
+      const label = `${shift.abbr || ''} ${shift.name || ''}`;
+      return /(أولى|اولى|ثانية|تانية|ثالثة|تالتة|تالته)/.test(label);
+    }
+    // إرجاع أيام العطلات التي عمل فيها الموظف فعلياً (بوردية أولى/ثانية/ثالثة فقط) مع استحقاقها حسب طريقة الحساب المفعّلة
     function computeHolidayEarnings() {
       const { incomeDays, leaveDays } = parseHolidayMode(holidayMode);
       const earnings = [];
@@ -1911,7 +1917,7 @@
           if (!d || d.getFullYear() !== currentYear) return;
           const shiftId = schedule[date];
           const shift = shiftId ? getShift(shiftId) : null;
-          const worked = shift && !shift.isAbsence && !shift.isAnnualLeave && !shift.isHolidayComp;
+          const worked = isWorkShiftForHolidayComp(shift);
           earnings.push({ name: h.name, date, worked: !!worked, dayIncome: shift ? (shift.dayIncome || 0) : 0, incomeDaysEarned: worked ? incomeDays : 0, leaveDaysEarned: worked ? leaveDays : 0 });
         });
       });
