@@ -1416,16 +1416,28 @@
             <span>الشيفتات</span><span>العدد</span><span>الوقت/الدخل</span><span>الكل</span>
           </div>
           <div id="statsBody"></div>
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
-            <label style="font-size:12px;color:var(--nm-text-muted);white-space:nowrap;">💳 قيمة السلفة (تُخصم من أجر اليوم)</label>
-            <input type="number" id="statsAdvanceInput" min="0" step="0.01" placeholder="0" style="flex:1;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          </div>
           <div class="stats-global" id="statsGlobal"></div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-title">🏖️ رصيد الإجازات الاعتيادية</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <label style="font-size:12px;color:var(--nm-text-muted);">من</label>
+            <div class="date-field">
+              <input type="date" id="leaveFromDate" />
+              <span class="date-display" id="leaveFromDateDisplay">—</span>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:12px;color:var(--nm-text-muted);">إلى</label>
+            <div class="date-field">
+              <input type="date" id="leaveToDate" />
+              <span class="date-display" id="leaveToDateDisplay">—</span>
+            </div>
+          </div>
+        </div>
         <div class="leave-grid">
           <div><label>رصيد سابق</label><input type="number" id="sumLeavePrev" step="0.5" /></div>
           <div><label>رصيد حالي</label><input type="number" id="sumLeaveAccrued" step="0.5" /></div>
@@ -1447,38 +1459,9 @@
           <span class="collapse-arrow" id="holidaysArrow">▾</span>
         </div>
         <div id="holidayBalanceSummary" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-weight:700;font-size:14px;"></div>
-        <div id="holidaysList" class="mini-list" style="margin-top:8px;"></div>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <select id="newHolidayName" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-              <option value="">اختر اسم العطلة...</option>
-              <option value="رأس السنة الميلادية">رأس السنة الميلادية</option>
-              <option value="عيد الشرطة (ثورة 25 يناير)">عيد الشرطة (ثورة 25 يناير)</option>
-              <option value="عيد تحرير سيناء">عيد تحرير سيناء</option>
-              <option value="عيد شم النسيم">عيد شم النسيم</option>
-              <option value="عيد العمال">عيد العمال</option>
-              <option value="ثورة 30 يونيو">ثورة 30 يونيو</option>
-              <option value="ثورة 23 يوليو">ثورة 23 يوليو</option>
-              <option value="عيد الفطر">عيد الفطر</option>
-              <option value="عيد الأضحى">عيد الأضحى</option>
-              <option value="رأس السنة الهجرية">رأس السنة الهجرية</option>
-              <option value="المولد النبوي الشريف">المولد النبوي الشريف</option>
-              <option value="نصر أكتوبر (عيد القوات المسلحة)">نصر أكتوبر (عيد القوات المسلحة)</option>
-              <option value="__other__">أخرى (اسم مخصص)</option>
-            </select>
-            <input type="text" id="newHolidayNameCustom" placeholder="اسم العطلة المخصص" style="display:none;flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <div class="date-field" style="flex:1;min-width:130px;">
-              <input type="date" id="newHolidayDate" />
-              <span class="date-display" id="newHolidayDateDisplay">—</span>
-            </div>
-            <input type="number" id="newHolidayDays" value="1" min="1" step="1" style="width:80px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-            <button class="btn btn-primary" id="addHoliday">➕ إضافة</button>
-          </div>
-        </div>
+        <div id="holidaysList" style="display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;margin-top:8px;touch-action:pan-x;"></div>
         <p style="font-size:12px;color:var(--nm-text-muted);margin-top:10px;">
-          الرصيد يُحسب تلقائياً: لو تم تسجيل وردية في نفس تاريخ العطلة فهذا يعني أن الموظف عمل بدل الراحة، فيُحسب له رصيد إجازة.
+          الرصيد يُحسب تلقائياً: لو تم تسجيل وردية (أولى/ثانية/ثالثة...) في نفس تاريخ العطلة، فهذا يعني أن الموظف عمل يوم العطلة، فيُحسب له استحقاق بدل عطلة حسب طريقة الحساب المفعّلة في الإعدادات.
         </p>
       </div>
 
@@ -1544,6 +1527,10 @@
           <span id="shiftAllowanceTotal" style="font-weight:700;flex-shrink:0;">0.00 ج.م</span>
         </div>
         <div id="additionsIncomeRows"></div>
+        <div id="holidayIncomeBonusRow" style="display:none;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;">
+          <span>🎉 أجر أيام العطلات الرسمية المعمولة</span>
+          <span id="holidayIncomeBonusVal" style="font-weight:700;">0.00 ج.م</span>
+        </div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-primary);font-weight:800;margin-top:4px;">
           <span>إجمالي الدخل</span>
           <span id="totalIncome" style="color:var(--nm-primary);">0.00 ج.م</span>
@@ -1578,7 +1565,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
           <div style="flex:1;min-width:140px;">
             <label style="font-size:12px;color:var(--nm-text-muted);">عدد أيام الفترة (أساس الشهر 30 يوم)</label>
-            <input type="number" id="pmDaysInput" min="1" step="1" value="30" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+            <input type="number" id="pmDaysInput" min="1" step="1" placeholder="30" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           </div>
           <div style="flex:1;min-width:140px;">
             <label style="font-size:12px;color:var(--nm-text-muted);">قيمة السلفة (لو غير مذكورة في الرسالة)</label>
@@ -1883,10 +1870,57 @@
     let additionTypes = [{ id: 'add1', label: 'بدل انتقال', value: 50 }];
     let deductionTypes = [{ id: 'ded1', label: 'تأمينات', unit: 'amount', value: 100 }];
     let holidays = [];
+    const OFFICIAL_HOLIDAY_NAMES = [
+      'رأس السنة الميلادية',
+      'عيد الشرطة (ثورة 25 يناير)',
+      'عيد تحرير سيناء',
+      'عيد شم النسيم',
+      'عيد العمال',
+      'ثورة 30 يونيو',
+      'ثورة 23 يوليو',
+      'عيد الفطر',
+      'عيد الأضحى',
+      'رأس السنة الهجرية',
+      'المولد النبوي الشريف',
+      'نصر أكتوبر (عيد القوات المسلحة)'
+    ];
+    const MULTI_DATE_HOLIDAYS = ['عيد الفطر', 'عيد الأضحى'];
+    function ensureOfficialHolidaysTable() {
+      holidays = OFFICIAL_HOLIDAY_NAMES.map(name => {
+        const existing = holidays.find(h => h.name === name);
+        let dates = [];
+        if (existing) {
+          if (Array.isArray(existing.dates)) dates = existing.dates.slice();
+          else if (existing.date) dates = [existing.date];
+        }
+        return { name, dates };
+      });
+    }
+    function parseHolidayMode(mode) {
+      const parts = (mode || '0_0').split('_').map(n => parseInt(n) || 0);
+      return { incomeDays: parts[0] || 0, leaveDays: parts[1] || 0 };
+    }
+    // إرجاع أيام العطلات التي عمل فيها الموظف فعلياً (بأي وردية عادية) مع استحقاقها حسب طريقة الحساب المفعّلة
+    function computeHolidayEarnings() {
+      const { incomeDays, leaveDays } = parseHolidayMode(holidayMode);
+      const earnings = [];
+      holidays.forEach(h => {
+        (h.dates || []).forEach(date => {
+          if (!date) return;
+          const d = parseDate(date);
+          if (!d || d.getFullYear() !== currentYear) return;
+          const shiftId = schedule[date];
+          const shift = shiftId ? getShift(shiftId) : null;
+          const worked = shift && !shift.isAbsence && !shift.isAnnualLeave && !shift.isHolidayComp;
+          earnings.push({ name: h.name, date, worked: !!worked, dayIncome: shift ? (shift.dayIncome || 0) : 0, incomeDaysEarned: worked ? incomeDays : 0, leaveDaysEarned: worked ? leaveDays : 0 });
+        });
+      });
+      return earnings.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    }
     let leavePrev = 0;
     let leaveAccrued = 0;
-    let absenceDayValue = 250;
-    let penaltyDayValue = 250;
+    let absenceDayValue = 0;
+    let penaltyDayValue = 0;
     let holidayMode = '1_0';
     let absenceAutoApply = true;
     let weekStart = 'sat';
@@ -1896,6 +1930,8 @@
     let savedPayTo = null;
     let savedStatsFrom = null;
     let savedStatsTo = null;
+    let savedLeaveFrom = null;
+    let savedLeaveTo = null;
     let darkMode = false;
     try { darkMode = localStorage.getItem('shifterTheme') === 'dark'; } catch(e) {}
     let uiLang = 'ar';
@@ -2036,7 +2072,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2055,8 +2091,8 @@
         holidays = data.holidays || [];
         leavePrev = data.leavePrev || 0;
         leaveAccrued = data.leaveAccrued || 0;
-        absenceDayValue = data.absenceDayValue || 250;
-        penaltyDayValue = data.penaltyDayValue || 250;
+        absenceDayValue = data.absenceDayValue || 0;
+        penaltyDayValue = data.penaltyDayValue || 0;
         holidayMode = data.holidayMode || '1_0';
         absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
         weekStart = data.weekStart || 'sat';
@@ -2066,28 +2102,41 @@
         savedPayTo = data.savedPayTo || null;
         savedStatsFrom = data.savedStatsFrom || null;
         savedStatsTo = data.savedStatsTo || null;
+        savedLeaveFrom = data.savedLeaveFrom || null;
+        savedLeaveTo = data.savedLeaveTo || null;
         return true;
       } catch(e) { return false; }
     }
 
     // ربط أيام بدل العطلة برصيد العطلات بالترتيب (FIFO)
     function computeHolidayCompAssignments() {
+      const earnings = computeHolidayEarnings();
+      const pool = earnings
+        .filter(e => e.leaveDaysEarned > 0)
+        .map(e => ({ name: e.name, date: e.date, remaining: e.leaveDaysEarned, total: e.leaveDaysEarned }));
+
       const compDates = Object.keys(schedule).filter(dateKey => {
         const sh = getShift(schedule[dateKey]);
-        return sh && sh.isHolidayComp;
+        if (!sh || !sh.isHolidayComp) return false;
+        const d = parseDate(dateKey);
+        return d && d.getFullYear() === currentYear;
       }).sort();
+
       const assignments = {};
-      const consumed = holidays.map(() => 0);
-      let hIdx = 0;
+      const consumedByHolidayDate = {}; // holiday date -> [comp dates consumed against it]
+      let pIdx = 0;
       for (const dateKey of compDates) {
-        while (hIdx < holidays.length && consumed[hIdx] >= (holidays[hIdx].days || 0)) hIdx++;
-        if (hIdx >= holidays.length) break;
-        const h = holidays[hIdx];
-        const hd = parseDate(h.date);
-        assignments[dateKey] = { name: h.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}` : h.date };
-        consumed[hIdx]++;
+        while (pIdx < pool.length && pool[pIdx].remaining <= 0) pIdx++;
+        if (pIdx >= pool.length) break;
+        const p = pool[pIdx];
+        const hd = parseDate(p.date);
+        assignments[dateKey] = { name: p.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}` : p.date };
+        p.remaining--;
+        const cd = parseDate(dateKey);
+        if (!consumedByHolidayDate[p.date]) consumedByHolidayDate[p.date] = [];
+        consumedByHolidayDate[p.date].push(cd ? `${cd.getDate()}/${cd.getMonth()+1}` : dateKey);
       }
-      return { assignments, consumed };
+      return { assignments, earnings, pool, consumedByHolidayDate };
     }
 
     // عرض التقويم
@@ -2129,6 +2178,7 @@
               else schedule[dateStr] = selectedShiftId;
               saveData();
               renderCalendar();
+              renderHolidays();
               toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
             }
           });
@@ -2176,6 +2226,7 @@
               else schedule[dateStr] = selectedShiftId;
               saveData();
               renderCalendar();
+              renderHolidays();
               toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
             }
           });
@@ -2308,31 +2359,29 @@
         row.innerHTML = `<span>${shift ? shift.name : id}</span><span>${count}</span><span>${shift ? (shift.hours || 0) * count + ' ساعة' : ''}</span><span style="text-align:center;font-weight:700;">${income.toFixed(2)}</span>`;
         body.appendChild(row);
       });
-      const advance = parseFloat(document.getElementById('statsAdvanceInput').value) || 0;
-      const avgDayWage = stats.totalDays > 0 ? (totalIncomeAll - advance) / stats.totalDays : 0;
+      const avgDayWage = stats.totalDays > 0 ? totalIncomeAll / stats.totalDays : 0;
       let globalText = `إجمالي الأيام: ${stats.totalDays} | إجمالي الدخل: ${totalIncomeAll.toFixed(2)} ج.م | بدل الوجبة: ${stats.totalMealAllowance.toFixed(2)} ج.م`;
-      if (advance > 0) globalText += ` | سلفة: -${advance.toFixed(2)} ج.م`;
       globalText += ` | أجر اليوم (بدون بدلات): ${avgDayWage.toFixed(2)} ج.م`;
       document.getElementById('statsGlobal').textContent = globalText;
-      calculateLeaveAndAbsence(mode, year, month, fromDate, toDate);
+      calculateLeaveBalance();
+      calculateAbsenceAndHolidays();
+      renderHolidays();
     }
 
-    function calculateLeaveAndAbsence(mode, year, month, fromDate, toDate) {
-      let start, end;
-      if (mode === 'range' && fromDate && toDate) { start = parseDate(fromDate); end = parseDate(toDate); }
-      else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
-      let leaveDays = 0, absenceDays = 0;
-      const leaveDates = [], absenceSpells = [];
+    function calculateLeaveBalance() {
+      const fromVal = document.getElementById('leaveFromDate').value;
+      const toVal = document.getElementById('leaveToDate').value;
+      if (!fromVal || !toVal) return;
+      const start = parseDate(fromVal), end = parseDate(toVal);
+      let leaveDays = 0;
+      const leaveDates = [];
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
         const shiftId = schedule[key];
         if (shiftId) {
           const shift = getShift(shiftId);
-          if (shift) {
-            if (shift.isAnnualLeave) { leaveDays++; leaveDates.push(key); }
-            if (shift.isAbsence) { absenceDays++; absenceSpells.push({ date: key, shift: shift.name }); }
-          }
+          if (shift && shift.isAnnualLeave) { leaveDays++; leaveDates.push(key); }
         }
         current.setDate(current.getDate() + 1);
       }
@@ -2346,6 +2395,24 @@
       const list = document.getElementById('leaveDatesList');
       if (leaveDates.length === 0) list.innerHTML = '<div class="mini-list-empty">لا توجد أيام إجازة اعتيادية في هذه الفترة</div>';
       else list.innerHTML = leaveDates.map(d => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d}</span></span></div>`).join('');
+    }
+
+    // الغياب والعطلات مرتبطين بالسنة المحددة فقط (من تاب "السنة")، بمعزل عن فلتر شهر/فترة الإحصائيات
+    function calculateAbsenceAndHolidays() {
+      const start = new Date(currentYear, 0, 1);
+      const end = new Date(currentYear, 11, 31);
+      let absenceDays = 0;
+      const absenceSpells = [];
+      const current = new Date(start);
+      while (current <= end) {
+        const key = formatDate(current);
+        const shiftId = schedule[key];
+        if (shiftId) {
+          const shift = getShift(shiftId);
+          if (shift && shift.isAbsence) { absenceDays++; absenceSpells.push({ date: key, shift: shift.name }); }
+        }
+        current.setDate(current.getDate() + 1);
+      }
 
       document.getElementById('absenceTotalDays').textContent = absenceDays;
       let penaltyDays = 0;
@@ -2366,10 +2433,10 @@
       document.getElementById('absenceTotalValue').textContent = totalValue.toFixed(2) + ' ج.م';
 
       const spellsList = document.getElementById('absenceSpellsList');
-      if (absenceSpells.length === 0) spellsList.innerHTML = '<div class="mini-list-empty">لا توجد أيام غياب في هذه الفترة</div>';
+      if (absenceSpells.length === 0) spellsList.innerHTML = '<div class="mini-list-empty">لا توجد أيام غياب في هذه السنة</div>';
       else spellsList.innerHTML = absenceSpells.map((s,idx) => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${s.date}</span><span class="mli-sub">${s.shift}</span></span></div>`).join('');
 
-      const holidayCount = holidays.filter(h => { const d = parseDate(h.date); return d >= start && d <= end; }).length;
+      const holidayCount = holidays.reduce((sum, h) => sum + (h.dates || []).filter(dt => { const d = parseDate(dt); return d && d >= start && d <= end; }).length, 0);
       document.getElementById('holidayCount').textContent = holidayCount;
       const holidayComp = holidayCount * 100;
       document.getElementById('holidayAllowance').textContent = holidayComp.toFixed(2) + ' ج.م';
@@ -2377,9 +2444,7 @@
 
     // حساب المرتب
     function updatePmDaysFromPeriod() {
-      const daysInput = document.getElementById('pmDaysInput');
-      if (!daysInput) return;
-      if (!daysInput.value) daysInput.value = 30;
+      // لا نملأ قيمة افتراضية تلقائياً - نترك المستخدم يدخلها بنفسه (placeholder فقط كتلميح)
     }
 
     function calculatePayroll() {
@@ -2423,6 +2488,24 @@
       let additionsTotal = 0;
       additionTypes.forEach(add => { if (add.enabled !== false) additionsTotal += add.value || 0; });
       totalIncome += additionsTotal;
+
+      // استحقاق أجر أيام العطلات الرسمية المعمولة (حسب طريقة الحساب المفعّلة)
+      let holidayIncomeBonus = 0;
+      computeHolidayEarnings().forEach(e => {
+        if (e.date && e.date >= from && e.date <= to && e.incomeDaysEarned > 0) {
+          holidayIncomeBonus += e.incomeDaysEarned * e.dayIncome;
+        }
+      });
+      const holidayBonusRow = document.getElementById('holidayIncomeBonusRow');
+      if (holidayBonusRow) {
+        if (holidayIncomeBonus > 0) {
+          holidayBonusRow.style.display = 'flex';
+          document.getElementById('holidayIncomeBonusVal').textContent = holidayIncomeBonus.toFixed(2) + ' ج.م';
+        } else {
+          holidayBonusRow.style.display = 'none';
+        }
+      }
+      totalIncome += holidayIncomeBonus;
       let deductionsTotal = 0;
       deductionTypes.forEach(ded => {
         if (ded.enabled === false) return;
@@ -2659,39 +2742,115 @@
       document.getElementById('shiftConfigModal').classList.remove('open');
       renderShiftsList();
       renderCalendar();
+      renderHolidays();
       toast('تم حفظ الشيفت بنجاح');
     }
 
     // العطلات
     function renderHolidays() {
       const list = document.getElementById('holidaysList');
-      const { consumed } = computeHolidayCompAssignments();
-      const totalAllowed = holidays.reduce((sum, h) => sum + (h.days || 0), 0);
-      const totalUsed = consumed.reduce((sum, c) => sum + c, 0);
+      const { earnings, pool, consumedByHolidayDate } = computeHolidayCompAssignments();
+      const totalAllowed = pool.reduce((sum, p) => sum + p.total, 0);
+      const totalUsed = pool.reduce((sum, p) => sum + (p.total - p.remaining), 0);
       const totalRemaining = totalAllowed - totalUsed;
       const summaryEl = document.getElementById('holidayBalanceSummary');
       if (summaryEl) {
-        summaryEl.innerHTML = `<span>🎫 رصيد بدل العطلة</span><span>مسموح: ${totalAllowed} — مُستخدم: ${totalUsed} — متبقي: ${totalRemaining}</span>`;
+        summaryEl.innerHTML = `<span>🎫 رصيد بدل العطلة = ${totalAllowed}</span><span>مستنفذ = ${totalUsed}   متبقى = ${totalRemaining}</span>`;
       }
-      if (holidays.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد عطلات مسجلة</div>'; return; }
+      const earningsByName = {};
+      earnings.forEach(e => {
+        if (!earningsByName[e.name]) earningsByName[e.name] = [];
+        earningsByName[e.name].push(e);
+      });
       list.innerHTML = holidays.map((h, idx) => {
-        const used = consumed[idx] || 0;
-        const total = h.days || 0;
-        return `<div class="mini-list-item holiday-item">
-          <div class="mli-row">
-            <span class="mli-info"><span class="mli-name">${h.name}</span><span class="mli-sub">${h.date} — الرصيد: ${used}/${total} ${used >= total && total > 0 ? '✅' : ''}</span></span>
-            <button class="mli-del" data-holiday="${idx}">✕</button>
+        const hEarnings = earningsByName[h.name] || [];
+        const earningsByDate = {};
+        hEarnings.forEach(e => { earningsByDate[e.date] = e; });
+
+        function statusLineFor(date) {
+          if (!date) return '<span style="color:var(--nm-text-muted);">لم يُحدد تاريخها بعد</span>';
+          const e = earningsByDate[date];
+          if (!e || !e.worked) return '<span style="color:var(--nm-text-muted);">لا توجد وردية مسجلة في هذا التاريخ — لا يوجد استحقاق</span>';
+          const compDates = consumedByHolidayDate[date] || [];
+          const parts = [];
+          if (e.leaveDaysEarned > 0) parts.push(`بدل مُستحق: ${e.leaveDaysEarned} (مُستنفذ: ${compDates.length})`);
+          if (e.incomeDaysEarned > 0) parts.push(`+${e.incomeDaysEarned} يوم أجر إضافي`);
+          if (parts.length === 0) parts.push('تم العمل، لكن طريقة الحساب الحالية لا تمنح استحقاق');
+          let html = `<span style="color:#4ade80;">✅ ${parts.join(' • ')}</span>`;
+          if (compDates.length) {
+            const numbered = compDates.map((d, i) => `<div>${i + 1}. ${d}</div>`).join('');
+            html += `<div style="font-size:11px;color:var(--nm-text-muted);margin-top:2px;">${numbered}</div>`;
+          }
+          return html;
+        }
+
+        const isMulti = MULTI_DATE_HOLIDAYS.includes(h.name);
+        const dates = (h.dates && h.dates.length) ? h.dates : [''];
+
+        if (!isMulti) {
+          const date = dates[0] || '';
+          return `<div class="holiday-card" style="flex:0 0 auto;width:190px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);padding:10px;box-shadow:var(--nm-shadow-sm);">
+            <span style="font-weight:700;font-size:13px;">${h.name}</span>
+            <div style="margin-top:6px;">
+              <div class="date-field">
+                <input type="date" class="holiday-date-input" data-idx="${idx}" data-dateidx="0" value="${date}" />
+                <span class="date-display" style="font-size:12px;">${date || 'اختر التاريخ'}</span>
+              </div>
+            </div>
+            <div style="font-size:10px;margin-top:4px;">${statusLineFor(date)}</div>
+          </div>`;
+        }
+
+        // عيد الفطر / عيد الأضحى فقط: تواريخهم بترص جنب بعض بالتمرير الأفقي جوه الكارت
+        const chips = dates.map((date, dIdx) => `
+          <div style="flex:0 0 auto;min-width:140px;background:var(--nm-panel,rgba(255,255,255,0.05));border-radius:8px;padding:6px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <div class="date-field" style="flex:1;">
+                <input type="date" class="holiday-date-input" data-idx="${idx}" data-dateidx="${dIdx}" value="${date}" />
+                <span class="date-display" style="font-size:11px;">${date || `يوم ${dIdx+1}`}</span>
+              </div>
+              <button class="holiday-date-del" data-idx="${idx}" data-dateidx="${dIdx}" style="border:none;background:none;color:#f87171;font-size:15px;cursor:pointer;flex-shrink:0;">✕</button>
+            </div>
+            <div style="font-size:10px;margin-top:4px;">${statusLineFor(date)}</div>
+          </div>`).join('');
+        return `<div class="holiday-card" style="flex:0 0 auto;width:280px;background:var(--nm-bg);border-radius:var(--nm-radius-sm);padding:10px;box-shadow:var(--nm-shadow-sm);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <span style="font-weight:700;font-size:13px;">${h.name}</span>
+            <button class="holiday-date-add" data-idx="${idx}" style="border:none;border-radius:8px;background:var(--nm-primary);color:#fff;padding:3px 8px;font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;">➕</button>
           </div>
+          <div class="eid-dates-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:6px;padding-bottom:4px;touch-action:pan-x;">${chips}</div>
         </div>`;
       }).join('');
-      list.querySelectorAll('.mli-del').forEach(el => {
-        el.addEventListener('click', () => {
-          const idx = parseInt(el.dataset.holiday);
-          holidays.splice(idx, 1);
+
+      list.querySelectorAll('.holiday-date-input').forEach(el => {
+        el.addEventListener('change', function() {
+          const idx = parseInt(this.dataset.idx);
+          const dIdx = parseInt(this.dataset.dateidx);
+          if (!holidays[idx].dates) holidays[idx].dates = [];
+          holidays[idx].dates[dIdx] = this.value;
           saveData();
           renderHolidays();
           renderCalendar();
-          toast('تم حذف العطلة');
+        });
+      });
+      list.querySelectorAll('.holiday-date-add').forEach(el => {
+        el.addEventListener('click', function() {
+          const idx = parseInt(this.dataset.idx);
+          if (!holidays[idx].dates) holidays[idx].dates = [];
+          holidays[idx].dates.push('');
+          saveData();
+          renderHolidays();
+        });
+      });
+      list.querySelectorAll('.holiday-date-del').forEach(el => {
+        el.addEventListener('click', function() {
+          const idx = parseInt(this.dataset.idx);
+          const dIdx = parseInt(this.dataset.dateidx);
+          holidays[idx].dates.splice(dIdx, 1);
+          if (holidays[idx].dates.length === 0) holidays[idx].dates = [''];
+          saveData();
+          renderHolidays();
+          renderCalendar();
         });
       });
     }
@@ -2699,6 +2858,7 @@
     // ==================== ربط الأحداث ====================
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
+      ensureOfficialHolidaysTable();
       applyTheme();
       applyLanguage();
       document.getElementById('themeToggleBtn').addEventListener('click', () => {
@@ -2713,8 +2873,8 @@
         renderYear();
         try { localStorage.setItem('shifterLang', uiLang); } catch(e) {}
       });
-      document.getElementById('absenceDayValue').value = absenceDayValue;
-      document.getElementById('penaltyDayValue').value = penaltyDayValue;
+      document.getElementById('absenceDayValue').value = absenceDayValue > 0 ? absenceDayValue : '';
+      document.getElementById('penaltyDayValue').value = penaltyDayValue > 0 ? penaltyDayValue : '';
       document.getElementById('sumLeavePrev').value = leavePrev;
       document.getElementById('sumLeaveAccrued').value = leaveAccrued;
       document.getElementById('absenceAutoApply').checked = absenceAutoApply;
@@ -2734,8 +2894,12 @@
       document.getElementById('fromDate').value = statsDefFrom;
       document.getElementById('fromDateDisplay').textContent = statsDefFrom;
       document.getElementById('toDate').value = statsDefTo;      document.getElementById('toDateDisplay').textContent = statsDefTo;
-      document.getElementById('newHolidayDate').value = defFrom;
-      document.getElementById('newHolidayDateDisplay').textContent = defFrom;
+      const leaveDefFrom = savedLeaveFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      const leaveDefTo = savedLeaveTo || formatDate(new Date(now.getFullYear(), now.getMonth()+1, 0));
+      document.getElementById('leaveFromDate').value = leaveDefFrom;
+      document.getElementById('leaveFromDateDisplay').textContent = leaveDefFrom;
+      document.getElementById('leaveToDate').value = leaveDefTo;
+      document.getElementById('leaveToDateDisplay').textContent = leaveDefTo;
 
       renderCalendar();
       renderYear();
@@ -2768,7 +2932,8 @@
       document.getElementById('nextPeriod').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderStats(); });
       document.getElementById('fromDate').addEventListener('change', function() { document.getElementById('fromDateDisplay').textContent = this.value || '—'; savedStatsFrom = this.value; saveData(); renderStats(); });
       document.getElementById('toDate').addEventListener('change', function() { document.getElementById('toDateDisplay').textContent = this.value || '—'; savedStatsTo = this.value; saveData(); renderStats(); });
-      document.getElementById('statsAdvanceInput').addEventListener('input', renderStats);
+      document.getElementById('leaveFromDate').addEventListener('change', function() { document.getElementById('leaveFromDateDisplay').textContent = this.value || '—'; savedLeaveFrom = this.value; saveData(); calculateLeaveBalance(); });
+      document.getElementById('leaveToDate').addEventListener('change', function() { document.getElementById('leaveToDateDisplay').textContent = this.value || '—'; savedLeaveTo = this.value; saveData(); calculateLeaveBalance(); });
 
       document.getElementById('menuBtn').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.toggle('open'); });
       document.getElementById('closeSideMenu').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.remove('open'); });
@@ -2936,25 +3101,6 @@
       }
       renderDeductionTypes();
 
-      document.getElementById('newHolidayName').addEventListener('change', function() {
-        document.getElementById('newHolidayNameCustom').style.display = this.value === '__other__' ? 'inline-block' : 'none';
-      });
-      document.getElementById('newHolidayDate').addEventListener('change', function() {
-        document.getElementById('newHolidayDateDisplay').textContent = this.value || '—';
-      });
-      document.getElementById('addHoliday').addEventListener('click', () => {
-        let name = document.getElementById('newHolidayName').value;
-        if (name === '__other__') name = document.getElementById('newHolidayNameCustom').value.trim();
-        if (!name) { toast('أدخل اسم العطلة', 'error'); return; }
-        const date = document.getElementById('newHolidayDate').value;
-        if (!date) { toast('اختر تاريخ العطلة', 'error'); return; }
-        const days = parseInt(document.getElementById('newHolidayDays').value) || 1;
-        holidays.push({ name, date, days });
-        saveData();
-        renderHolidays();
-        toast('تم إضافة العطلة');
-      });
-
       document.getElementById('calcPayroll').addEventListener('click', calculatePayroll);
 
       let pmValues = null;
@@ -3069,8 +3215,8 @@
 
       document.getElementById('absenceDayValue').addEventListener('change', function() { absenceDayValue = parseFloat(this.value) || 0; saveData(); });
       document.getElementById('penaltyDayValue').addEventListener('change', function() { penaltyDayValue = parseFloat(this.value) || 0; saveData(); });
-      document.getElementById('sumLeavePrev').addEventListener('change', function() { leavePrev = parseFloat(this.value) || 0; saveData(); });
-      document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('sumLeavePrev').addEventListener('change', function() { leavePrev = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
+      document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
       document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
       document.getElementById('holidayMode').addEventListener('change', function() { holidayMode = this.value; saveData(); });
@@ -3110,11 +3256,11 @@
       addSwipeNav('view-summary',
         () => document.getElementById('nextPeriod').click(),
         () => document.getElementById('prevPeriod').click(),
-        'input, textarea, select, button, a'
+        'input, textarea, select, button, a, #holidaysList, .eid-dates-scroll'
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -3140,8 +3286,8 @@
             holidays = data.holidays || [];
             leavePrev = data.leavePrev || 0;
             leaveAccrued = data.leaveAccrued || 0;
-            absenceDayValue = data.absenceDayValue || 250;
-            penaltyDayValue = data.penaltyDayValue || 250;
+            absenceDayValue = data.absenceDayValue || 0;
+            penaltyDayValue = data.penaltyDayValue || 0;
             holidayMode = data.holidayMode || '1_0';
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
             weekStart = data.weekStart || 'sat';
@@ -3151,6 +3297,8 @@
             savedPayTo = data.savedPayTo || null;
             savedStatsFrom = data.savedStatsFrom || null;
             savedStatsTo = data.savedStatsTo || null;
+            savedLeaveFrom = data.savedLeaveFrom || null;
+            savedLeaveTo = data.savedLeaveTo || null;
             saveData();
             renderCalendar();
             renderYear();
