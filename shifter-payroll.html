@@ -988,6 +988,89 @@
       flex: 1;
     }
 
+    /* ===== Department Schedule (جدول القسم) ===== */
+    .dept-sch-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--nm-radius-sm);
+      box-shadow: var(--nm-shadow-inset);
+    }
+    .dept-sch-table {
+      border-collapse: collapse;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .dept-sch-table th, .dept-sch-table td {
+      border: 1px solid rgba(163,177,198,0.35);
+      padding: 4px;
+      text-align: center;
+    }
+    .dept-sch-table th {
+      background: var(--nm-bg-card);
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .dept-sch-table .dept-sticky-col {
+      position: sticky;
+      right: 0;
+      background: var(--nm-bg-card);
+      z-index: 3;
+      text-align: right;
+      min-width: 130px;
+      max-width: 150px;
+      white-space: normal;
+    }
+    .dept-sch-table thead .dept-sticky-col {
+      z-index: 4;
+    }
+    .dept-sch-table select.dept-cell {
+      width: 34px;
+      text-align: center;
+      border: none;
+      color: #111;
+      font-family: var(--nm-font);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 4px;
+      padding: 3px 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .dept-sch-table select.dept-cell.dc-empty {
+      background: transparent;
+      color: inherit;
+    }
+    .dept-sch-table select.dept-cell.dc-1 {
+      background: #ffffff;
+      color: #111;
+    }
+    .dept-sch-table select.dept-cell.dc-2 {
+      background: #bdbdbd;
+      color: #111;
+    }
+    .dept-sch-table select.dept-cell.dc-3 {
+      background: #2b2b2b;
+      color: #fff;
+    }
+    .dept-sch-table td.dept-rest-day {
+      background: #1a1a1a;
+    }
+    .dept-sch-table td.dept-rest-day select.dept-cell.dc-empty {
+      background: transparent;
+      color: #fff;
+    }
+    .dept-sch-table tfoot td, .dept-sch-table tfoot th {
+      position: sticky;
+      bottom: 0;
+      background: var(--nm-bg-card);
+      font-weight: 700;
+    }
+    .dept-sch-table tfoot .dept-sticky-col {
+      z-index: 5;
+    }
+
     /* ===== Side Menu ===== */
     .side-menu-overlay {
       position: fixed;
@@ -1339,6 +1422,8 @@
           <option value="list" data-i18n="calendarViewList">قائمة رأسية (أيام)</option>
         </select>
       </div>
+      <div class="side-menu-divider"></div>
+      <button class="side-menu-item" id="menuDeptSchedule">📋 جدول القسم</button>
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuExport" data-i18n="menuExport">📤 تصدير البيانات (JSON)</button>
       <button class="side-menu-item" id="menuImport" data-i18n="menuImport">📥 استيراد البيانات (JSON)</button>
@@ -1762,8 +1847,41 @@
     </div>
   </div>
 
+  <div class="modal" id="deptScheduleModal">
+    <div class="modal-content" style="max-width:100%;">
+      <button class="modal-close" id="closeDeptSchedule">⌃</button>
+      <h3>📋 جدول القسم</h3>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
+        <button class="nav-arrow" id="deptSchPrev">›</button>
+        <span id="deptSchLabel" style="font-weight:700;min-width:120px;text-align:center;">—</span>
+        <button class="nav-arrow" id="deptSchNext">‹</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <input type="text" id="newDeptEmpName" placeholder="اسم الموظف" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+        <select id="newDeptEmpRestDay" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+          <option value="">بدون يوم راحة ثابت</option>
+          <option value="0">راحة: الأحد</option>
+          <option value="1">راحة: الاثنين</option>
+          <option value="2">راحة: الثلاثاء</option>
+          <option value="3">راحة: الأربعاء</option>
+          <option value="4">راحة: الخميس</option>
+          <option value="5">راحة: الجمعة</option>
+          <option value="6">راحة: السبت</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <button class="btn btn-primary" id="addDeptEmp" style="width:100%;padding:10px 16px;">➕ إضافة موظف</button>
+      </div>
+      <div id="deptEmpList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار رقم الوردية (١، ٢، ٣) لكل يوم من القائمة المنسدلة — البيانات بتتحفظ تلقائياً ولكل شهر جدول منفصل. يوم الراحة الأسبوعي بيتظلل تلقائياً بالأسود في صف الموظف.</p>
+      <div class="dept-sch-scroll">
+        <div id="deptScheduleTable"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="shiftConfigModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:100%;">
       <button class="modal-close" id="closeConfig">⌃</button>
       <h3 data-i18n="shiftConfigModalTitle">إعداد الشيفت</h3>
       <div class="input-field">
@@ -1933,6 +2051,10 @@
     let holidayMode = '1_0';
     let absenceAutoApply = true;
     let weekStart = 'sat';
+    let deptEmployees = [];
+    let deptSchedule = {};
+    let deptSchYear = new Date().getFullYear();
+    let deptSchMonth = new Date().getMonth();
     let autoAllowanceTypes = [
       { id: 'meal', name: '🍽️ بدل الوجبة', enabled: false },
       { id: 'shift', name: '🌙 بدل الوردية', enabled: false }
@@ -2095,7 +2217,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, deptEmployees, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2126,6 +2248,8 @@
           { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
           { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
         ];
+        deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
+        deptSchedule = data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {};
         savedPayFrom = data.savedPayFrom || null;
         savedPayTo = data.savedPayTo || null;
         savedStatsFrom = data.savedStatsFrom || null;
@@ -2362,6 +2486,122 @@
         current.setDate(current.getDate() + 1);
       }
       return { shiftCounts, totalDays, totalIncome, allowanceTotals };
+    }
+
+    function deptMonthKey(y, m) { return y + '-' + (m + 1); }
+
+    function renderDeptEmpList() {
+      const list = document.getElementById('deptEmpList');
+      if (!list) return;
+      if (deptEmployees.length === 0) {
+        list.innerHTML = '<div class="mini-list-empty">لا يوجد موظفين — ضيف موظف من الأعلى</div>';
+        return;
+      }
+      const restLabels = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      list.innerHTML = deptEmployees.map(emp => {
+        const restTxt = emp.restDay !== undefined && emp.restDay !== '' ? 'راحة: ' + restLabels[Number(emp.restDay)] : 'بدون يوم راحة ثابت';
+        return `<div class="mini-list-item">
+          <div class="mli-info">
+            <span class="mli-name">${emp.name}</span>
+            <span class="mli-sub">${restTxt}</span>
+          </div>
+          <button type="button" class="mli-del" data-emp="${emp.id}">✕</button>
+        </div>`;
+      }).join('');
+      list.querySelectorAll('.mli-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!confirm('حذف هذا الموظف من جدول القسم نهائياً؟ (هيتحذف من كل الشهور)')) return;
+          const empId = btn.dataset.emp;
+          deptEmployees = deptEmployees.filter(e => e.id !== empId);
+          Object.keys(deptSchedule).forEach(mk => { delete deptSchedule[mk][empId]; });
+          saveData();
+          renderDeptEmpList();
+          renderDeptSchedule();
+        });
+      });
+    }
+
+    function renderDeptSchedule() {
+      const daysInMonth = new Date(deptSchYear, deptSchMonth + 1, 0).getDate();
+      const monthKey = deptMonthKey(deptSchYear, deptSchMonth);
+      if (!deptSchedule[monthKey]) deptSchedule[monthKey] = {};
+      const monthData = deptSchedule[monthKey];
+
+      const label = document.getElementById('deptSchLabel');
+      if (label) {
+        const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        label.textContent = monthNames[deptSchMonth] + ' ' + deptSchYear;
+      }
+
+      const weekdayNames = ['أحد', 'اثنين', 'ثلاثاء', 'اربعاء', 'خميس', 'جمعة', 'سبت'];
+      let headerRow = '<tr><th class="dept-sticky-col">الموظف</th>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
+        headerRow += `<th>${d}<br><span style="font-weight:400;">${weekdayNames[dow]}</span></th>`;
+      }
+      headerRow += '</tr>';
+
+      function cellOptionsHtml(val) {
+        return ['', '1', '2', '3'].map(v => {
+          const lbl = v === '' ? '—' : v;
+          return `<option value="${v}" ${val === v ? 'selected' : ''}>${lbl}</option>`;
+        }).join('');
+      }
+
+      let bodyRows = '';
+      const dayCounts = {};
+      for (let d = 1; d <= daysInMonth; d++) dayCounts[d] = { '1': 0, '2': 0, '3': 0 };
+
+      if (deptEmployees.length === 0) {
+        bodyRows = `<tr><td colspan="${daysInMonth + 1}" style="padding:16px;color:var(--nm-text-muted);">لا يوجد موظفين — ضيف موظف من الأعلى</td></tr>`;
+      } else {
+        deptEmployees.forEach(emp => {
+          const empDays = monthData[emp.id] || {};
+          const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
+          bodyRows += `<tr><td class="dept-sticky-col">${emp.name}</td>`;
+          for (let d = 1; d <= daysInMonth; d++) {
+            const val = empDays[d] || '';
+            const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
+            const isRest = restDay !== null && dow === restDay;
+            if (isRest) {
+              bodyRows += `<td class="dept-rest-day"></td>`;
+            } else {
+              if (val === '1' || val === '2' || val === '3') dayCounts[d][val]++;
+              const colorCls = val === '1' ? 'dc-1' : (val === '2' ? 'dc-2' : (val === '3' ? 'dc-3' : 'dc-empty'));
+              bodyRows += `<td><select class="dept-cell ${colorCls}" data-emp="${emp.id}" data-day="${d}">${cellOptionsHtml(val)}</select></td>`;
+            }
+          }
+          bodyRows += '</tr>';
+        });
+      }
+
+      let footerRows = '';
+      if (deptEmployees.length > 0) {
+        ['1', '2', '3'].forEach(shiftNum => {
+          footerRows += `<tr><td class="dept-sticky-col">عدد وردية ${shiftNum}</td>`;
+          for (let d = 1; d <= daysInMonth; d++) {
+            footerRows += `<td>${dayCounts[d][shiftNum]}</td>`;
+          }
+          footerRows += '</tr>';
+        });
+      }
+
+      const container = document.getElementById('deptScheduleTable');
+      container.innerHTML = `<table class="dept-sch-table"><thead>${headerRow}</thead><tbody>${bodyRows}</tbody><tfoot>${footerRows}</tfoot></table>`;
+
+      container.querySelectorAll('select.dept-cell').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const empId = sel.dataset.emp, day = sel.dataset.day;
+          if (!deptSchedule[monthKey][empId]) deptSchedule[monthKey][empId] = {};
+          const v = sel.value;
+          if (v) deptSchedule[monthKey][empId][day] = v;
+          else delete deptSchedule[monthKey][empId][day];
+          saveData();
+          renderDeptSchedule();
+        });
+      });
+
+      renderDeptEmpList();
     }
 
     function renderStats() {
@@ -3112,6 +3352,37 @@
       document.getElementById('closeSideMenu').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.remove('open'); });
       document.getElementById('sideMenuOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('sideMenuOverlay').classList.remove('open'); });
 
+      document.getElementById('menuDeptSchedule').addEventListener('click', () => {
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+        deptSchYear = currentYear !== undefined ? currentYear : new Date().getFullYear();
+        deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+        renderDeptSchedule();
+        document.getElementById('deptScheduleModal').classList.add('open');
+      });
+      document.getElementById('closeDeptSchedule').addEventListener('click', () => { document.getElementById('deptScheduleModal').classList.remove('open'); });
+      document.getElementById('deptSchPrev').addEventListener('click', () => {
+        deptSchMonth--;
+        if (deptSchMonth < 0) { deptSchMonth = 11; deptSchYear--; }
+        renderDeptSchedule();
+      });
+      document.getElementById('deptSchNext').addEventListener('click', () => {
+        deptSchMonth++;
+        if (deptSchMonth > 11) { deptSchMonth = 0; deptSchYear++; }
+        renderDeptSchedule();
+      });
+      document.getElementById('addDeptEmp').addEventListener('click', () => {
+        const nameInput = document.getElementById('newDeptEmpName');
+        const restDaySelect = document.getElementById('newDeptEmpRestDay');
+        const name = nameInput.value.trim();
+        if (!name) { toast('أدخل اسم الموظف', 'error'); return; }
+        deptEmployees.push({ id: generateId(), name, restDay: restDaySelect.value });
+        nameInput.value = '';
+        restDaySelect.value = '';
+        saveData();
+        renderDeptSchedule();
+        toast('تم إضافة الموظف');
+      });
+
       document.getElementById('calendarViewSelect').addEventListener('change', function() {
         document.getElementById('view-month').classList.toggle('list-mode', this.value === 'list');
       });
@@ -3498,7 +3769,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, deptEmployees, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -3536,6 +3807,8 @@
               { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
               { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
             ];
+            deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
+            deptSchedule = data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {};
             savedPayFrom = data.savedPayFrom || null;
             savedPayTo = data.savedPayTo || null;
             savedStatsFrom = data.savedStatsFrom || null;
