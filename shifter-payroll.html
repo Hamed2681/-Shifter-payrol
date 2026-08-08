@@ -2755,7 +2755,7 @@
       const totalRemaining = totalAllowed - totalUsed;
       const summaryEl = document.getElementById('holidayBalanceSummary');
       if (summaryEl) {
-        summaryEl.innerHTML = `<span>🎫 رصيد بدل العطلة = ${totalAllowed}</span><span>مستنفذ = ${totalUsed}   متبقى = ${totalRemaining}</span>`;
+        summaryEl.innerHTML = `<span>🎫 الرصيد = ${totalAllowed}</span><span>مستنفذ = ${totalUsed}</span><span>متبقى = ${totalRemaining}</span>`;
       }
       const earningsByName = {};
       earnings.forEach(e => {
