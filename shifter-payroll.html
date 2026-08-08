@@ -871,6 +871,33 @@
       box-shadow: var(--nm-shadow-sm-inset);
       transform: scale(0.95);
     }
+    .mini-list-item .mli-move-group {
+      display: flex;
+      gap: 4px;
+    }
+    .mini-list-item .mli-grip {
+      background: var(--nm-bg);
+      border: none;
+      color: var(--nm-text-muted);
+      font-size: 20px;
+      line-height: 1;
+      cursor: grab;
+      padding: 6px 12px;
+      border-radius: var(--nm-radius-sm);
+      box-shadow: var(--nm-shadow-sm);
+      touch-action: none;
+      user-select: none;
+    }
+    .mini-list-item .mli-grip:active {
+      cursor: grabbing;
+      box-shadow: var(--nm-shadow-sm-inset);
+    }
+    .mini-list-item.dragging {
+      position: relative;
+      z-index: 10;
+      opacity: 0.85;
+      box-shadow: var(--nm-shadow);
+    }
     .mini-list-item.holiday-item {
       flex-direction: column;
       align-items: stretch;
@@ -898,6 +925,15 @@
     }
     .collapse-arrow.collapsed {
       transform: rotate(-90deg);
+    }
+    .dept-list-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
+      margin-bottom: 6px;
     }
 
     /* ===== Net Row ===== */
@@ -1017,13 +1053,99 @@
       right: 0;
       background: var(--nm-bg-card);
       z-index: 3;
-      text-align: right;
+      text-align: center;
       min-width: 130px;
       max-width: 150px;
       white-space: normal;
     }
     .dept-sch-table thead .dept-sticky-col {
       z-index: 4;
+    }
+    .dept-collapse-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      font-size: 11px;
+      padding: 2px 4px;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .dept-collapse-arrow {
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+    .dept-collapse-arrow.collapsed {
+      transform: rotate(-90deg);
+    }
+    .dept-sch-table.dept-collapsed tbody {
+      display: none;
+    }
+    .dept-sch-table tfoot tr:first-child td,
+    .dept-sch-table tfoot tr:first-child th {
+      border-top: 3px solid var(--nm-primary);
+    }
+    .dept-daily-card {
+      margin-top: 16px;
+      padding: 14px;
+    }
+    .dept-daily-label {
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--nm-text-muted);
+    }
+    .dept-daily-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .dept-daily-col {
+      background: var(--nm-bg);
+      border-radius: var(--nm-radius-sm);
+      box-shadow: var(--nm-shadow-inset);
+      padding: 8px 6px;
+      min-height: 60px;
+    }
+    .dept-daily-col-title {
+      font-weight: 700;
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(163,177,198,0.35);
+      color: var(--nm-primary);
+    }
+    .dept-daily-col-name {
+      font-size: 12px;
+      text-align: center;
+      padding: 3px 0;
+    }
+    .dept-daily-col-empty {
+      font-size: 11px;
+      text-align: center;
+      color: var(--nm-text-muted);
+      padding: 4px 0;
+    }
+    .dept-daily-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--nm-bg);
+      border-radius: var(--nm-radius-sm);
+      box-shadow: var(--nm-shadow-sm);
+      font-size: 12px;
+    }
+    .dept-daily-row-title {
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .dept-daily-row-names {
+      color: var(--nm-text-muted);
     }
     .dept-sch-table select.dept-cell {
       width: 34px;
@@ -1665,6 +1787,10 @@
             <label style="font-size:12px;color:var(--nm-text-muted);">قيمة السلفة (لو غير مذكورة في الرسالة)</label>
             <input type="number" id="pmAdvanceInput" min="0" step="0.01" placeholder="مثال: 2500" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           </div>
+          <div style="flex:1;min-width:140px;">
+            <label style="font-size:12px;color:var(--nm-text-muted);">عدد أيام الغياب في هذه الفترة</label>
+            <input type="number" id="pmAbsenceDaysInput" min="0" step="1" placeholder="مثال: 2" style="width:100%;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          </div>
         </div>
         <button class="btn btn-primary" id="parsePayslipMsg" style="width:100%;margin-top:10px;">🔍 احسب أجر اليوم الأساسي</button>
         <div id="payslipMsgResult" style="display:none;margin-top:12px;">
@@ -1703,11 +1829,15 @@
             <span>أجر اليوم الواحد (تقدير من الرسالة)</span>
             <span id="pmDailyWage" style="color:var(--nm-primary);">0.00 ج.م</span>
           </div>
+          <div id="pmAbsAdjRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid #4ade80;font-weight:800;">
+            <span>🎯 أجر اليوم الفعلي (بعد خصم أيام الغياب من عدد الأيام)</span>
+            <span id="pmAbsAdjDailyWage" style="color:#4ade80;">0.00 ج.م</span>
+          </div>
           <div id="pmRealRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid #4ade80;font-weight:800;">
             <span>🎯 أجر اليوم الفعلي (من جدول الشيفتات للفترة)</span>
             <span id="pmRealDailyWage" style="color:#4ade80;">0.00 ج.م</span>
           </div>
-          <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: علامة (−) يعني البند بيتخصم من "أجر الفترة الأساسي"، وعلامة (+) يعني بيتضاف. جرب الاحتمالات المختلفة لحد ما توصل لنفس رقم "أجر اليوم الفعلي" الأخضر تحت، وده معناه لقيت المعادلة الصح لرسايل الشركة دي.</p>
+          <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: علامة (−) يعني البند بيتخصم من "أجر الفترة الأساسي"، وعلامة (+) يعني بيتضاف. جرب الاحتمالات المختلفة لحد ما توصل لنفس رقم "أجر اليوم الفعلي" الأخضر تحت، وده معناه لقيت المعادلة الصح لرسايل الشركة دي. اكتب "عدد أيام الغياب في هذه الفترة" عشان يتخصم من عدد أيام الفترة قبل القسمة، فيطلعلك أجر اليوم الفعلي الحقيقي.</p>
         </div>
       </div>
     </section>
@@ -1872,10 +2002,48 @@
       <div style="margin-bottom:12px;">
         <button class="btn btn-primary" id="addDeptEmp" style="width:100%;padding:10px 16px;">➕ إضافة موظف</button>
       </div>
-      <div id="deptEmpList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div class="dept-list-toggle" id="deptEmpListToggle">
+        <span style="font-weight:600;">👥 قائمة الموظفين</span>
+        <span class="collapse-arrow" id="deptEmpListArrow">▾</span>
+      </div>
+      <div id="deptEmpListWrap">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+          <button type="button" class="btn" id="deptReorderToggle" style="padding:6px 12px;font-size:12px;">🔀 إعادة ترتيب</button>
+        </div>
+        <div id="deptEmpList" class="mini-list" style="margin-bottom:14px;"></div>
+      </div>
       <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار رقم الوردية (١، ٢، ٣) لكل يوم من القائمة المنسدلة — البيانات بتتحفظ تلقائياً ولكل شهر جدول منفصل. يوم الراحة الأسبوعي بيتظلل تلقائياً بالأسود في صف الموظف.</p>
       <div class="dept-sch-scroll">
         <div id="deptScheduleTable"></div>
+      </div>
+      <div class="neu dept-daily-card" id="deptDailyCard">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <button type="button" class="nav-arrow" id="deptDailyPrev">›</button>
+          <span class="dept-daily-label" id="deptDailyLabel" style="margin-bottom:0;min-width:150px;text-align:center;">—</span>
+          <button type="button" class="nav-arrow" id="deptDailyNext">‹</button>
+        </div>
+        <div class="dept-daily-cols">
+          <div class="dept-daily-col">
+            <div class="dept-daily-col-title">الأولى</div>
+            <div id="deptDailyCol1"></div>
+          </div>
+          <div class="dept-daily-col">
+            <div class="dept-daily-col-title">الثانية</div>
+            <div id="deptDailyCol2"></div>
+          </div>
+          <div class="dept-daily-col">
+            <div class="dept-daily-col-title">الثالثة</div>
+            <div id="deptDailyCol3"></div>
+          </div>
+        </div>
+        <div class="dept-daily-row">
+          <span class="dept-daily-row-title">🏖️ إجازات</span>
+          <span class="dept-daily-row-names" id="deptDailyLeaves">—</span>
+        </div>
+        <div class="dept-daily-row">
+          <span class="dept-daily-row-title">🛌 راحات</span>
+          <span class="dept-daily-row-names" id="deptDailyRests">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -2055,6 +2223,9 @@
     let deptSchedule = {};
     let deptSchYear = new Date().getFullYear();
     let deptSchMonth = new Date().getMonth();
+    let deptCollapsed = false;
+    let deptReorderMode = false;
+    let deptDailyDay = new Date().getDate();
     let autoAllowanceTypes = [
       { id: 'meal', name: '🍽️ بدل الوجبة', enabled: false },
       { id: 'shift', name: '🌙 بدل الوردية', enabled: false }
@@ -2500,23 +2671,87 @@
       const restLabels = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
       list.innerHTML = deptEmployees.map(emp => {
         const restTxt = emp.restDay !== undefined && emp.restDay !== '' ? 'راحة: ' + restLabels[Number(emp.restDay)] : 'بدون يوم راحة ثابت';
-        return `<div class="mini-list-item">
+        const actionHtml = deptReorderMode
+          ? `<button type="button" class="mli-grip" data-emp="${emp.id}">☰</button>`
+          : `<button type="button" class="mli-del" data-emp="${emp.id}">✕</button>`;
+        return `<div class="mini-list-item" data-emp-id="${emp.id}">
           <div class="mli-info">
             <span class="mli-name">${emp.name}</span>
             <span class="mli-sub">${restTxt}</span>
           </div>
-          <button type="button" class="mli-del" data-emp="${emp.id}">✕</button>
+          ${actionHtml}
         </div>`;
       }).join('');
-      list.querySelectorAll('.mli-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!confirm('حذف هذا الموظف من جدول القسم نهائياً؟ (هيتحذف من كل الشهور)')) return;
-          const empId = btn.dataset.emp;
-          deptEmployees = deptEmployees.filter(e => e.id !== empId);
-          Object.keys(deptSchedule).forEach(mk => { delete deptSchedule[mk][empId]; });
-          saveData();
-          renderDeptEmpList();
-          renderDeptSchedule();
+      if (deptReorderMode) {
+        enableDeptDragReorder(list);
+      } else {
+        list.querySelectorAll('.mli-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!confirm('حذف هذا الموظف من جدول القسم نهائياً؟ (هيتحذف من كل الشهور)')) return;
+            const empId = btn.dataset.emp;
+            deptEmployees = deptEmployees.filter(e => e.id !== empId);
+            Object.keys(deptSchedule).forEach(mk => { delete deptSchedule[mk][empId]; });
+            saveData();
+            renderDeptEmpList();
+            renderDeptSchedule();
+          });
+        });
+      }
+    }
+
+    function enableDeptDragReorder(list) {
+      list.querySelectorAll('.mli-grip').forEach(grip => {
+        grip.addEventListener('pointerdown', function(e) {
+          const dragEl = grip.closest('.mini-list-item');
+          if (!dragEl) return;
+          e.preventDefault();
+          const pointerId = e.pointerId;
+          let startY = e.clientY;
+          dragEl.classList.add('dragging');
+          try { grip.setPointerCapture(pointerId); } catch(err) {}
+
+          function onMove(ev) {
+            const dy = ev.clientY - startY;
+            dragEl.style.transform = `translateY(${dy}px)`;
+            const siblings = Array.from(list.children);
+            const dragIdx = siblings.indexOf(dragEl);
+            const dragRect = dragEl.getBoundingClientRect();
+            const dragCenter = dragRect.top + dragRect.height / 2;
+            for (let i = 0; i < siblings.length; i++) {
+              const sib = siblings[i];
+              if (sib === dragEl) continue;
+              const rect = sib.getBoundingClientRect();
+              const center = rect.top + rect.height / 2;
+              if (i < dragIdx && dragCenter < center) {
+                list.insertBefore(dragEl, sib);
+                dragEl.style.transform = 'translateY(0px)';
+                startY = ev.clientY;
+                break;
+              } else if (i > dragIdx && dragCenter > center) {
+                list.insertBefore(dragEl, sib.nextSibling);
+                dragEl.style.transform = 'translateY(0px)';
+                startY = ev.clientY;
+                break;
+              }
+            }
+          }
+
+          function onUp(ev) {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            document.removeEventListener('pointercancel', onUp);
+            try { grip.releasePointerCapture(pointerId); } catch(err) {}
+            dragEl.style.transform = '';
+            dragEl.classList.remove('dragging');
+            const newOrder = Array.from(list.children).map(el => el.dataset.empId);
+            deptEmployees.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+            saveData();
+            renderDeptSchedule();
+          }
+
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', onUp);
+          document.addEventListener('pointercancel', onUp);
         });
       });
     }
@@ -2534,7 +2769,7 @@
       }
 
       const weekdayNames = ['أحد', 'اثنين', 'ثلاثاء', 'اربعاء', 'خميس', 'جمعة', 'سبت'];
-      let headerRow = '<tr><th class="dept-sticky-col">الموظف</th>';
+      let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}">▾</span></button>الموظف</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
         headerRow += `<th>${d}<br><span style="font-weight:400;">${weekdayNames[dow]}</span></th>`;
@@ -2587,7 +2822,7 @@
       }
 
       const container = document.getElementById('deptScheduleTable');
-      container.innerHTML = `<table class="dept-sch-table"><thead>${headerRow}</thead><tbody>${bodyRows}</tbody><tfoot>${footerRows}</tfoot></table>`;
+      container.innerHTML = `<table class="dept-sch-table${deptCollapsed ? ' dept-collapsed' : ''}"><thead>${headerRow}</thead><tbody>${bodyRows}</tbody><tfoot>${footerRows}</tfoot></table>`;
 
       container.querySelectorAll('select.dept-cell').forEach(sel => {
         sel.addEventListener('change', () => {
@@ -2601,7 +2836,91 @@
         });
       });
 
+      const collapseBtn = document.getElementById('deptCollapseToggle');
+      if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+          deptCollapsed = !deptCollapsed;
+          renderDeptSchedule();
+        });
+      }
+
       renderDeptEmpList();
+      renderDeptDailyCard();
+    }
+
+    function daysInDeptMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+
+    function renderDeptDailyCard() {
+      const label = document.getElementById('deptDailyLabel');
+      const col1 = document.getElementById('deptDailyCol1');
+      const col2 = document.getElementById('deptDailyCol2');
+      const col3 = document.getElementById('deptDailyCol3');
+      const leavesEl = document.getElementById('deptDailyLeaves');
+      const restsEl = document.getElementById('deptDailyRests');
+      if (!label || !col1 || !col2 || !col3 || !leavesEl || !restsEl) return;
+
+      const daysCount = daysInDeptMonth(deptSchYear, deptSchMonth);
+      if (deptDailyDay > daysCount) deptDailyDay = daysCount;
+      if (deptDailyDay < 1) deptDailyDay = 1;
+
+      const y = deptSchYear, m = deptSchMonth, d = deptDailyDay;
+      const dow = new Date(y, m, d).getDay();
+      const weekdayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+      const today = new Date();
+      const isToday = y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
+      label.textContent = `${weekdayNames[dow]} ${d} ${monthNames[m]}${isToday ? ' (اليوم)' : ''}`;
+
+      const monthKey = deptMonthKey(y, m);
+      const monthData = deptSchedule[monthKey] || {};
+
+      const cols = { '1': [], '2': [], '3': [] };
+      const leaves = [];
+      const rests = [];
+
+      deptEmployees.forEach(emp => {
+        const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
+        if (restDay !== null && dow === restDay) {
+          rests.push(emp.name);
+          return;
+        }
+        const val = (monthData[emp.id] || {})[d] || '';
+        if (val === '1' || val === '2' || val === '3') {
+          cols[val].push(emp.name);
+        } else {
+          leaves.push(emp.name);
+        }
+      });
+
+      function renderCol(el, names) {
+        el.innerHTML = names.length
+          ? names.map(n => `<div class="dept-daily-col-name">${n}</div>`).join('')
+          : '<div class="dept-daily-col-empty">—</div>';
+      }
+      renderCol(col1, cols['1']);
+      renderCol(col2, cols['2']);
+      renderCol(col3, cols['3']);
+      leavesEl.textContent = leaves.length ? leaves.join('، ') : '—';
+      restsEl.textContent = rests.length ? rests.join('، ') : '—';
+    }
+
+    function deptDailyStep(delta) {
+      deptDailyDay += delta;
+      const daysCount = daysInDeptMonth(deptSchYear, deptSchMonth);
+      if (deptDailyDay < 1) {
+        deptSchMonth--;
+        if (deptSchMonth < 0) { deptSchMonth = 11; deptSchYear--; }
+        deptDailyDay = daysInDeptMonth(deptSchYear, deptSchMonth);
+        renderDeptSchedule();
+      } else if (deptDailyDay > daysCount) {
+        deptSchMonth++;
+        if (deptSchMonth > 11) { deptSchMonth = 0; deptSchYear++; }
+        deptDailyDay = 1;
+        renderDeptSchedule();
+      } else {
+        renderDeptDailyCard();
+      }
     }
 
     function renderStats() {
@@ -3356,6 +3675,7 @@
         document.getElementById('sideMenuOverlay').classList.remove('open');
         deptSchYear = currentYear !== undefined ? currentYear : new Date().getFullYear();
         deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+        deptDailyDay = new Date().getDate();
         renderDeptSchedule();
         document.getElementById('deptScheduleModal').classList.add('open');
       });
@@ -3382,6 +3702,19 @@
         renderDeptSchedule();
         toast('تم إضافة الموظف');
       });
+      document.getElementById('deptReorderToggle').addEventListener('click', function() {
+        deptReorderMode = !deptReorderMode;
+        this.textContent = deptReorderMode ? '✅ تم' : '🔀 إعادة ترتيب';
+        renderDeptEmpList();
+      });
+      document.getElementById('deptEmpListToggle').addEventListener('click', () => {
+        const arrow = document.getElementById('deptEmpListArrow');
+        const wrap = document.getElementById('deptEmpListWrap');
+        arrow.classList.toggle('collapsed');
+        wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
+      });
+      document.getElementById('deptDailyPrev').addEventListener('click', () => deptDailyStep(-1));
+      document.getElementById('deptDailyNext').addEventListener('click', () => deptDailyStep(1));
 
       document.getElementById('calendarViewSelect').addEventListener('change', function() {
         document.getElementById('view-month').classList.toggle('list-mode', this.value === 'list');
@@ -3642,6 +3975,15 @@
         } else {
           dailyRow.style.display = 'none';
         }
+        const absAdjDays = parseFloat(document.getElementById('pmAbsenceDaysInput').value) || 0;
+        const absAdjRow = document.getElementById('pmAbsAdjRow');
+        const actualDays = days - absAdjDays;
+        if (days > 0 && actualDays > 0) {
+          absAdjRow.style.display = 'flex';
+          document.getElementById('pmAbsAdjDailyWage').textContent = (baseWage / actualDays).toFixed(2) + ' ج.م';
+        } else {
+          absAdjRow.style.display = 'none';
+        }
         const realRow = document.getElementById('pmRealRow');
         const pfrom = document.getElementById('payFrom').value;
         const pto = document.getElementById('payTo').value;
@@ -3682,6 +4024,7 @@
       });
       document.getElementById('pmAdvanceInput').addEventListener('input', recalcPayslip);
       document.getElementById('pmDaysInput').addEventListener('input', recalcPayslip);
+      document.getElementById('pmAbsenceDaysInput').addEventListener('input', recalcPayslip);
       updatePmSignButtons();
 
       document.getElementById('parsePayslipMsg').addEventListener('click', () => {
@@ -3766,6 +4109,11 @@
         () => document.getElementById('nextPeriod').click(),
         () => document.getElementById('prevPeriod').click(),
         'input, textarea, select, button, a, #holidaysList, .eid-dates-scroll'
+      );
+
+      addSwipeNav('deptDailyCard',
+        () => deptDailyStep(1),
+        () => deptDailyStep(-1)
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
