@@ -1534,14 +1534,7 @@
           <span>إجمالي أجر الأيام (محسوب تلقائياً)</span>
           <span id="totalDaysIncome" style="font-weight:700;">0.00 ج.م</span>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-          <span id="mealAllowanceLabel">🍽️ بدل الوجبة (تلقائي)</span>
-          <span id="mealAllowanceTotal" style="font-weight:700;flex-shrink:0;">0.00 ج.م</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-          <span id="shiftAllowanceLabel">🌙 بدل الوردية (تلقائي)</span>
-          <span id="shiftAllowanceTotal" style="font-weight:700;flex-shrink:0;">0.00 ج.م</span>
-        </div>
+        <div id="autoAllowanceRows"></div>
         <div id="additionsIncomeRows"></div>
         <div id="holidayIncomeBonusRow" style="display:none;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;">
           <span>🎉 أجر أيام العطلات الرسمية المعمولة</span>
@@ -1690,19 +1683,12 @@
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="font-weight:700;margin-bottom:8px;">🔄 بنود تلقائية (تُحسب من الشيفتات وأيام الحضور الفعلي)</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" id="mealAllowanceEnabledCb" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🍽️ بدل الوجبة</span>
-          </label>
+        <div id="autoAllowanceTypesList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <input type="text" id="newAutoAllowLabel" placeholder="اسم البند (مثال: 🚗 بدل انتقال يومي)" style="flex:1;min-width:160px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <button class="btn btn-primary" id="addAutoAllowType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
-          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" id="shiftAllowanceEnabledCb" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌙 بدل الوردية</span>
-          </label>
-        </div>
-        <p style="font-size:12px;color:var(--nm-text-muted);margin:6px 0 0;">قيمة كل بدل تُضبط من إعدادات كل شيفت، وتُجمع تلقائياً حسب أيام الحضور الفعلية في الفترة المحسوبة.</p>
+        <p style="font-size:12px;color:var(--nm-text-muted);margin:8px 0 0;">قيمة كل بند تُضبط من إعدادات كل شيفت، وتُجمع تلقائياً حسب أيام الحضور الفعلية في الفترة المحسوبة.</p>
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
@@ -1830,8 +1816,6 @@
         <div class="input-field" id="hourlyRateField"><label>أجر الساعة المحسوب (معاينة)</label><input type="text" id="hourlyRate" readonly /></div>
         <div id="incomeExtraFields">
         <div class="input-field"><label>أجر/ساعة إضافية (Overtime)</label><input type="number" id="overtimeRate" value="0" step="0.01" /></div>
-        <div class="input-field"><label>🍽️ بدل وجبة / يوم</label><input type="number" id="mealAllowance" value="0" step="0.01" /></div>
-        <div class="input-field"><label>🌙 بدل وردية / يوم</label><input type="number" id="shiftAllowance" value="0" step="0.01" /></div>
         <div id="customAdditionFields"></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
@@ -1949,8 +1933,22 @@
     let holidayMode = '1_0';
     let absenceAutoApply = true;
     let weekStart = 'sat';
-    let mealAllowanceEnabled = false;
-    let shiftAllowanceEnabled = false;
+    let autoAllowanceTypes = [
+      { id: 'meal', name: '🍽️ بدل الوجبة', enabled: false },
+      { id: 'shift', name: '🌙 بدل الوردية', enabled: false }
+    ];
+    function getShiftAllowanceValue(shift, typeId) {
+      if (!shift) return 0;
+      if (typeId === 'meal') return shift.mealAllowance || 0;
+      if (typeId === 'shift') return shift.shiftAllowance || 0;
+      return (shift.autoAllowances && shift.autoAllowances[typeId]) || 0;
+    }
+    function setShiftAllowanceValue(shiftData, typeId, value) {
+      if (typeId === 'meal') { shiftData.mealAllowance = value; return; }
+      if (typeId === 'shift') { shiftData.shiftAllowance = value; return; }
+      if (!shiftData.autoAllowances) shiftData.autoAllowances = {};
+      shiftData.autoAllowances[typeId] = value;
+    }
     let savedPayFrom = null;
     let savedPayTo = null;
     let savedStatsFrom = null;
@@ -2097,7 +2095,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2124,8 +2122,10 @@
         holidayMode = data.holidayMode || '1_0';
         absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
         weekStart = data.weekStart || 'sat';
-        mealAllowanceEnabled = data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false;
-        shiftAllowanceEnabled = data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false;
+        autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
+          { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
+          { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
+        ];
         savedPayFrom = data.savedPayFrom || null;
         savedPayTo = data.savedPayTo || null;
         savedStatsFrom = data.savedStatsFrom || null;
@@ -2341,7 +2341,9 @@
       if (mode === 'range' && fromDate && toDate) { start = parseDate(fromDate); end = parseDate(toDate); }
       else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
       const shiftCounts = {};
-      let totalDays = 0, totalIncome = 0, totalMealAllowance = 0, totalShiftAllowanceAmt = 0;
+      let totalDays = 0, totalIncome = 0;
+      const allowanceTotals = {};
+      autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
@@ -2351,16 +2353,15 @@
           totalDays++;
           const shift = getShift(shiftId);
           if (shift) {
-            totalIncome += shift.dayIncome || 0;
+            if (!shift.isAbsence) totalIncome += shift.dayIncome || 0;
             if (!shift.isAnnualLeave && !shift.isAbsence) {
-              totalMealAllowance += shift.mealAllowance || 0;
-              totalShiftAllowanceAmt += shift.shiftAllowance || 0;
+              autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] += getShiftAllowanceValue(shift, t.id); });
             }
           }
         }
         current.setDate(current.getDate() + 1);
       }
-      return { shiftCounts, totalDays, totalIncome, totalMealAllowance, totalShiftAllowanceAmt };
+      return { shiftCounts, totalDays, totalIncome, allowanceTotals };
     }
 
     function renderStats() {
@@ -2384,20 +2385,21 @@
         const shift = getShift(id);
         const income = shift ? (shift.dayIncome || 0) * count : 0;
         totalShifts += count;
-        totalIncomeAll += income;
+        if (!shift || !shift.isAbsence) totalIncomeAll += income;
         const row = document.createElement('div');
         row.className = 'stats-row';
         row.innerHTML = `<span>${shift ? shift.name : id}</span><span>${count}</span><span>${shift ? (shift.hours || 0) * count + ' ساعة' : ''}</span><span style="text-align:center;font-weight:700;">${income.toFixed(2)}</span>`;
         body.appendChild(row);
       });
       const avgDayWage = stats.totalDays > 0 ? totalIncomeAll / stats.totalDays : 0;
-      const totalAllowances = (mealAllowanceEnabled ? stats.totalMealAllowance : 0) + (shiftAllowanceEnabled ? stats.totalShiftAllowanceAmt : 0);
+      const totalAllowances = autoAllowanceTypes.reduce((sum, t) => sum + (t.enabled ? (stats.allowanceTotals[t.id] || 0) : 0), 0);
       const totalIncomeWithAllowances = totalIncomeAll + totalAllowances;
       let globalText = `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الأيام</span><span>${stats.totalDays}</span></div>`;
       globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بدون البدلات)</span><span>${totalIncomeAll.toFixed(2)} ج.م</span></div>`;
       globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بالبدلات)</span><span>${totalIncomeWithAllowances.toFixed(2)} ج.م</span></div>`;
-      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>بدل الوجبة</span><span>${stats.totalMealAllowance.toFixed(2)} ج.م</span></div>`;
-      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>بدل الوردية</span><span>${stats.totalShiftAllowanceAmt.toFixed(2)} ج.م</span></div>`;
+      autoAllowanceTypes.forEach(t => {
+        globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>${t.name}</span><span>${(stats.allowanceTotals[t.id] || 0).toFixed(2)} ج.م</span></div>`;
+      });
       globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>أجر اليوم (بدون بدلات)</span><span>${avgDayWage.toFixed(2)} ج.م</span></div>`;
       document.getElementById('statsGlobal').innerHTML = globalText;
       calculateLeaveBalance();
@@ -2517,7 +2519,8 @@
       if (!from || !to) { toast('يرجى تحديد الفترة', 'error'); return; }
       const start = parseDate(from), end = parseDate(to);
       let totalIncome = 0, totalDeductions = 0, daysWorked = 0;
-      let totalMealAllowance = 0, totalShiftAllowance = 0;
+      const allowanceTotals = {};
+      autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
@@ -2528,8 +2531,7 @@
             totalIncome += shift.dayIncome || 0;
             if (!shift.isAnnualLeave) {
               daysWorked++;
-              totalMealAllowance += shift.mealAllowance || 0;
-              totalShiftAllowance += shift.shiftAllowance || 0;
+              autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] += getShiftAllowanceValue(shift, t.id); });
             }
           }
           if (shift && shift.isAbsence) {
@@ -2539,16 +2541,17 @@
         }
         current.setDate(current.getDate() + 1);
       }
-      document.getElementById('mealAllowanceTotal').textContent = totalMealAllowance.toFixed(2) + ' ج.م';
-      document.getElementById('shiftAllowanceTotal').textContent = totalShiftAllowance.toFixed(2) + ' ج.م';
-      const mealLabel = document.getElementById('mealAllowanceLabel');
-      const shiftLabel = document.getElementById('shiftAllowanceLabel');
-      mealLabel.textContent = mealAllowanceEnabled ? '🍽️ بدل الوجبة (تلقائي)' : '🍽️ بدل الوجبة (غير مفعّل من الإعدادات)';
-      mealLabel.style.opacity = mealAllowanceEnabled ? '1' : '0.5';
-      shiftLabel.textContent = shiftAllowanceEnabled ? '🌙 بدل الوردية (تلقائي)' : '🌙 بدل الوردية (غير مفعّل من الإعدادات)';
-      shiftLabel.style.opacity = shiftAllowanceEnabled ? '1' : '0.5';
-      if (mealAllowanceEnabled) totalIncome += totalMealAllowance;
-      if (shiftAllowanceEnabled) totalIncome += totalShiftAllowance;
+      const autoAllowanceRowsEl = document.getElementById('autoAllowanceRows');
+      if (autoAllowanceRowsEl) {
+        autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.map(t => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;opacity:${t.enabled ? '1' : '0.5'};">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} ${t.enabled ? '(تلقائي)' : '(غير مفعّل من الإعدادات)'}</span>
+            <span style="font-weight:700;flex-shrink:0;">${(allowanceTotals[t.id] || 0).toFixed(2)} ج.م</span>
+          </div>`).join('');
+      }
+      let allowancesTotal = 0;
+      autoAllowanceTypes.forEach(t => { if (t.enabled) allowancesTotal += allowanceTotals[t.id] || 0; });
+      totalIncome += allowancesTotal;
       let additionsTotal = 0;
       additionTypes.forEach(add => { if (add.enabled !== false) additionsTotal += add.value || 0; });
       totalIncome += additionsTotal;
@@ -2697,6 +2700,15 @@
       if (extraFields) extraFields.style.display = isAbs ? 'none' : '';
     }
 
+    function renderShiftAutoAllowanceFields(shift) {
+      const container = document.getElementById('customAdditionFields');
+      if (!container) return;
+      container.innerHTML = autoAllowanceTypes.map(t => {
+        const val = getShiftAllowanceValue(shift, t.id);
+        return `<div class="input-field"><label>${t.name} / يوم</label><input type="number" class="autoAllowValueInput" data-type-id="${t.id}" value="${val}" step="0.01" /></div>`;
+      }).join('');
+    }
+
     function openShiftConfig(shiftId = null) {
       const modal = document.getElementById('shiftConfigModal');
       modal.classList.add('open');
@@ -2719,8 +2731,7 @@
         document.getElementById('currency').value = shift.currency || 'ج.م';
         document.getElementById('dayIncome').value = shift.dayIncome || 0;
         document.getElementById('overtimeRate').value = shift.overtimeRate || 0;
-        document.getElementById('mealAllowance').value = shift.mealAllowance || 0;
-        document.getElementById('shiftAllowance').value = shift.shiftAllowance || 0;
+        renderShiftAutoAllowanceFields(shift);
         document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
         document.getElementById('isAbsence').checked = shift.isAbsence || false;
         document.getElementById('isHolidayComp').checked = shift.isHolidayComp || false;
@@ -2743,8 +2754,7 @@
         document.getElementById('currency').value = 'ج.م';
         document.getElementById('dayIncome').value = 0;
         document.getElementById('overtimeRate').value = 0;
-        document.getElementById('mealAllowance').value = 0;
-        document.getElementById('shiftAllowance').value = 0;
+        renderShiftAutoAllowanceFields(null);
         document.getElementById('isAnnualLeave').checked = false;
         document.getElementById('isAbsence').checked = false;
         document.getElementById('isHolidayComp').checked = false;
@@ -2788,13 +2798,16 @@
         currency: document.getElementById('currency').value || 'ج.م',
         dayIncome: parseFloat(document.getElementById('dayIncome').value) || 0,
         overtimeRate: parseFloat(document.getElementById('overtimeRate').value) || 0,
-        mealAllowance: parseFloat(document.getElementById('mealAllowance').value) || 0,
-        shiftAllowance: parseFloat(document.getElementById('shiftAllowance').value) || 0,
         isAnnualLeave: document.getElementById('isAnnualLeave').checked,
         isAbsence: document.getElementById('isAbsence').checked,
         isHolidayComp: document.getElementById('isHolidayComp').checked,
         customAdditions: []
       };
+      const autoAllowValues = {};
+      document.querySelectorAll('#customAdditionFields .autoAllowValueInput').forEach(inp => {
+        autoAllowValues[inp.dataset.typeId] = parseFloat(inp.value) || 0;
+      });
+      autoAllowanceTypes.forEach(t => { setShiftAllowanceValue(shiftData, t.id, autoAllowValues[t.id] || 0); });
       if (editingShiftId) {
         const idx = shifts.findIndex(s => s.id === editingShiftId);
         if (idx !== -1) shifts[idx] = { ...shifts[idx], ...shiftData };
@@ -3225,10 +3238,54 @@
       }
       renderAdditionTypes();
 
-      document.getElementById('mealAllowanceEnabledCb').checked = mealAllowanceEnabled;
-      document.getElementById('shiftAllowanceEnabledCb').checked = shiftAllowanceEnabled;
-      document.getElementById('mealAllowanceEnabledCb').addEventListener('change', function() { mealAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
-      document.getElementById('shiftAllowanceEnabledCb').addEventListener('change', function() { shiftAllowanceEnabled = this.checked; saveData(); calculatePayroll(); });
+      function renderAutoAllowanceTypes() {
+        const list = document.getElementById('autoAllowanceTypesList');
+        if (!list) return;
+        if (autoAllowanceTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد بنود تلقائية</div>'; return; }
+        list.innerHTML = autoAllowanceTypes.map((t, idx) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+            <input type="checkbox" class="autoAllowEnableCb" data-idx="${idx}" ${t.enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <input type="text" class="autoAllowNameInput" data-idx="${idx}" value="${(t.name || '').replace(/"/g, '&quot;')}" style="flex:1;min-width:0;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+            <button class="mli-del autoAllowDeleteBtn" data-idx="${idx}">✕</button>
+          </div>`).join('');
+        list.querySelectorAll('.autoAllowEnableCb').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = parseInt(cb.dataset.idx);
+            if (autoAllowanceTypes[idx]) { autoAllowanceTypes[idx].enabled = cb.checked; saveData(); calculatePayroll(); renderStats(); }
+          });
+        });
+        list.querySelectorAll('.autoAllowNameInput').forEach(inp => {
+          inp.addEventListener('change', () => {
+            const idx = parseInt(inp.dataset.idx);
+            const val = inp.value.trim();
+            if (autoAllowanceTypes[idx] && val) { autoAllowanceTypes[idx].name = val; saveData(); calculatePayroll(); renderStats(); }
+          });
+        });
+        list.querySelectorAll('.autoAllowDeleteBtn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.idx);
+            if (!confirm('حذف هذا البند نهائياً؟')) return;
+            autoAllowanceTypes.splice(idx, 1);
+            saveData();
+            renderAutoAllowanceTypes();
+            calculatePayroll();
+            renderStats();
+          });
+        });
+      }
+      renderAutoAllowanceTypes();
+      document.getElementById('addAutoAllowType').addEventListener('click', () => {
+        const labelInput = document.getElementById('newAutoAllowLabel');
+        const label = labelInput.value.trim();
+        if (!label) { toast('أدخل اسم البند', 'error'); return; }
+        autoAllowanceTypes.push({ id: generateId(), name: label, enabled: true });
+        labelInput.value = '';
+        saveData();
+        renderAutoAllowanceTypes();
+        calculatePayroll();
+        renderStats();
+        toast('تم إضافة البند');
+      });
 
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
@@ -3441,7 +3498,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, mealAllowanceEnabled, shiftAllowanceEnabled, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -3475,8 +3532,10 @@
             holidayMode = data.holidayMode || '1_0';
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
             weekStart = data.weekStart || 'sat';
-            mealAllowanceEnabled = data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false;
-            shiftAllowanceEnabled = data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false;
+            autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
+              { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
+              { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
+            ];
             savedPayFrom = data.savedPayFrom || null;
             savedPayTo = data.savedPayTo || null;
             savedStatsFrom = data.savedStatsFrom || null;
@@ -3491,8 +3550,7 @@
             renderHolidays();
             renderAdditionTypes();
             renderDeductionTypes();
-            document.getElementById('mealAllowanceEnabledCb').checked = mealAllowanceEnabled;
-            document.getElementById('shiftAllowanceEnabledCb').checked = shiftAllowanceEnabled;
+            renderAutoAllowanceTypes();
             toast('تم استيراد البيانات بنجاح');
           } catch(err) { toast('خطأ في الملف', 'error'); }
         };
