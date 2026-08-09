@@ -1671,7 +1671,6 @@
         <div class="paint-fixed">
           <button class="paint-toggle" id="paintToggle">⌃</button>
           <button class="paint-btn erase" id="paintErase" data-shift="">مسح</button>
-          <button class="paint-btn" id="paintExtraToggle" title="إضافة وردية ثانية/ثالثة لليوم">📲 وردية إضافية</button>
         </div>
         <div class="paint-scroll" id="paintScroll"></div>
       </div>
@@ -2297,12 +2296,11 @@
     ];
     let schedule = {};
     let scheduleExtra = {};
-    let extraShiftMode = false;
+    let selectedShiftId = null;
     let companies = ['الشركة الرئيسية'];
     let currentCompany = 0;
     let currentYear = 2026;
     let currentMonth = 6;
-    let selectedShiftId = null;
     const ERASE_ID = '__erase__';
     let editingShiftId = null;
     let additionTypes = [{ id: 'add1', label: 'بدل انتقال', value: 50 }];
@@ -2653,43 +2651,65 @@
       return { assignments, earnings, pool, consumedByHolidayDate };
     }
 
-    // معالجة الضغط على يوم في التقويم: تلوين عادي، أو إضافة وردية ثانية/ثالثة في وضع "وردية إضافية"
+    // معالجة الضغط على يوم في التقويم: أول ضغط بوردية يحطها أساسية، أي ضغط تاني بوردية مختلفة يضيفها فوق (لحد 3)، وضغط نفس الوردية تاني يشيلها
     function handleDayTap(dateStr) {
       if (!selectedShiftId) return;
-      if (extraShiftMode) {
-        if (selectedShiftId === ERASE_ID) {
-          if (scheduleExtra[dateStr]) {
-            delete scheduleExtra[dateStr];
-            saveData();
-            renderCalendar();
-            renderHolidays();
-            toast('تم مسح الورديات الإضافية: ' + dateStr);
-          }
-          return;
+      if (selectedShiftId === ERASE_ID) {
+        delete schedule[dateStr];
+        delete scheduleExtra[dateStr];
+        saveData();
+        renderCalendar();
+        renderHolidays();
+        toast('تم مسح اليوم: ' + dateStr);
+        return;
+      }
+      const mainId = schedule[dateStr];
+      const extras = scheduleExtra[dateStr] ? scheduleExtra[dateStr].slice() : [];
+
+      if (mainId === selectedShiftId) {
+        // إزالة الوردية الأساسية، وترقية أول وردية إضافية (لو موجودة) لتبقى هي الأساسية
+        if (extras.length > 0) {
+          schedule[dateStr] = extras.shift();
+          scheduleExtra[dateStr] = extras;
+        } else {
+          delete schedule[dateStr];
+          delete scheduleExtra[dateStr];
         }
-        if (!schedule[dateStr]) {
-          toast('لازم يكون في وردية أولى في اليوم ده الأول', 'error');
-          return;
-        }
-        const extras = scheduleExtra[dateStr] ? scheduleExtra[dateStr].slice() : [];
-        if (extras.length >= 2) {
-          toast('الحد الأقصى 3 ورديات في اليوم', 'error');
-          return;
-        }
-        extras.push(selectedShiftId);
+        saveData();
+        renderCalendar();
+        renderHolidays();
+        toast('تم إزالة الوردية: ' + dateStr);
+        return;
+      }
+      const extraIdx = extras.indexOf(selectedShiftId);
+      if (extraIdx !== -1) {
+        extras.splice(extraIdx, 1);
         scheduleExtra[dateStr] = extras;
         saveData();
         renderCalendar();
         renderHolidays();
-        toast(extras.length === 1 ? 'تم إضافة وردية ثانية: ' + dateStr : 'تم إضافة وردية ثالثة: ' + dateStr);
+        toast('تم إزالة الوردية: ' + dateStr);
         return;
       }
-      if (selectedShiftId === ERASE_ID) { delete schedule[dateStr]; delete scheduleExtra[dateStr]; }
-      else schedule[dateStr] = selectedShiftId;
+
+      if (!mainId) {
+        schedule[dateStr] = selectedShiftId;
+        saveData();
+        renderCalendar();
+        renderHolidays();
+        toast('تم تحديث اليوم: ' + dateStr);
+        return;
+      }
+      if (extras.length >= 2) {
+        toast('الحد الأقصى 3 ورديات في اليوم', 'error');
+        return;
+      }
+      extras.push(selectedShiftId);
+      scheduleExtra[dateStr] = extras;
       saveData();
       renderCalendar();
       renderHolidays();
-      toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
+      toast(extras.length === 1 ? 'تم إضافة وردية ثانية: ' + dateStr : 'تم إضافة وردية ثالثة: ' + dateStr);
     }
 
     // عرض التقويم
@@ -4136,11 +4156,6 @@
       document.getElementById('paintErase').addEventListener('click', function() {
         selectedShiftId = selectedShiftId === ERASE_ID ? null : ERASE_ID;
         renderPaintBar();
-      });
-      document.getElementById('paintExtraToggle').addEventListener('click', function() {
-        extraShiftMode = !extraShiftMode;
-        this.classList.toggle('active', extraShiftMode);
-        toast(extraShiftMode ? 'وضع الوردية الإضافية مفعّل — لمس أي يوم بيه وردية عشان تضيف وردية ثانية أو ثالثة' : 'وضع الوردية الإضافية متوقف');
       });
 
       document.getElementById('logoBtn').addEventListener('click', () => { document.getElementById('shiftsModal').classList.add('open'); });
