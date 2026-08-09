@@ -1176,13 +1176,13 @@
       color: var(--nm-text-muted);
     }
     .dept-sch-table select.dept-cell {
-      width: 34px;
+      width: 36px;
       text-align: center;
       border: none;
       color: #111;
       font-family: var(--nm-font);
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       border-radius: 4px;
       padding: 3px 0;
       -webkit-appearance: none;
@@ -2275,7 +2275,7 @@
     let deptSchedule = {};
     let deptSchYear = new Date().getFullYear();
     let deptSchMonth = new Date().getMonth();
-    let deptCollapsed = false;
+    let deptCollapsed = true;
     let deptReorderMode = false;
     let deptDailyDay = new Date().getDate();
     let autoAllowanceTypes = [
@@ -2999,17 +2999,32 @@
       deptEmployees.forEach(emp => {
         const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
         const empColor = getDeptGroupColor(emp);
+        const empGroupId = emp.groupId || '';
         if (restDay !== null && dow === restDay) {
-          rests.push({ name: emp.name, color: empColor });
+          rests.push({ name: emp.name, color: empColor, groupId: empGroupId });
           return;
         }
         const val = (monthData[emp.id] || {})[d] || '';
         if (val === '1' || val === '2' || val === '3') {
-          cols[val].push({ name: emp.name, color: empColor });
+          cols[val].push({ name: emp.name, color: empColor, groupId: empGroupId });
         } else {
-          leaves.push({ name: emp.name, color: empColor });
+          leaves.push({ name: emp.name, color: empColor, groupId: empGroupId });
         }
       });
+
+      function groupSortIndex(groupId) {
+        if (!groupId) return deptGroups.length;
+        const idx = deptGroups.findIndex(g => g.id === groupId);
+        return idx === -1 ? deptGroups.length : idx;
+      }
+      function sortByGroup(items) {
+        return items.slice().sort((a, b) => groupSortIndex(a.groupId) - groupSortIndex(b.groupId));
+      }
+      cols['1'] = sortByGroup(cols['1']);
+      cols['2'] = sortByGroup(cols['2']);
+      cols['3'] = sortByGroup(cols['3']);
+      const sortedLeaves = sortByGroup(leaves);
+      const sortedRests = sortByGroup(rests);
 
       function renderCol(el, items) {
         el.innerHTML = items.length
@@ -3024,8 +3039,8 @@
           ? items.map(it => `<span${it.color ? ` style="color:${it.color};"` : ''}>${it.name}</span>`).join('، ')
           : '—';
       }
-      leavesEl.innerHTML = joinColored(leaves);
-      restsEl.innerHTML = joinColored(rests);
+      leavesEl.innerHTML = joinColored(sortedLeaves);
+      restsEl.innerHTML = joinColored(sortedRests);
       fitDeptDailyNames();
     }
 
