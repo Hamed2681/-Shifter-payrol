@@ -1256,15 +1256,18 @@
     }
     .dept-sch-table select.dept-cell.dc-1 {
       background: #ffffff;
-      color: #111;
+      color: #000000;
     }
     .dept-sch-table select.dept-cell.dc-2 {
       background: #bdbdbd;
-      color: #111;
+      color: #000000;
     }
     .dept-sch-table select.dept-cell.dc-3 {
       background: #2b2b2b;
-      color: #fff;
+      color: #000000;
+    }
+    .dept-sch-table select.dept-cell.dc-swap {
+      background: transparent;
     }
     .dept-sch-table td.dept-rest-day {
       background: #1a1a1a;
@@ -2905,6 +2908,11 @@
     }
 
     function deptMonthKey(y, m) { return y + '-' + (m + 1); }
+    function deptCellEffectiveNum(val) {
+      if (val === '1' || val === '2' || val === '3') return val;
+      const m = /^([123])>([123])$/.exec(val || '');
+      return m ? m[2] : null;
+    }
 
     function renderDeptEmpList() {
       const list = document.getElementById('deptEmpList');
@@ -3076,10 +3084,16 @@
       headerRow += '</tr>';
 
       function cellOptionsHtml(val) {
-        return ['', '1', '2', '3'].map(v => {
+        const base = ['', '1', '2', '3'].map(v => {
           const lbl = v === '' ? '—' : v;
           return `<option value="${v}" ${val === v ? 'selected' : ''}>${lbl}</option>`;
         }).join('');
+        const swapPairs = ['1>2', '1>3', '2>1', '2>3', '3>2', '3>1'];
+        const swaps = swapPairs.map(v => {
+          const [from, to] = v.split('>');
+          return `<option value="${v}" ${val === v ? 'selected' : ''}>${from}->${to}</option>`;
+        }).join('');
+        return base + `<optgroup label="تبديل وردية">${swaps}</optgroup>`;
       }
 
       let bodyRows = '';
@@ -3103,8 +3117,19 @@
               bodyRows += `<td class="dept-rest-day${todayCls}"></td>`;
             } else {
               if (val === '1' || val === '2' || val === '3') dayCounts[d][val]++;
-              const colorCls = val === '1' ? 'dc-1' : (val === '2' ? 'dc-2' : (val === '3' ? 'dc-3' : 'dc-empty'));
-              bodyRows += `<td class="${todayCls.trim()}"><select class="dept-cell ${colorCls}" data-emp="${emp.id}" data-day="${d}">${cellOptionsHtml(val)}</select></td>`;
+              const numColor = { '1': '#ffffff', '2': '#bdbdbd', '3': '#2b2b2b' };
+              const numText = { '1': '#000000', '2': '#0d3b8f', '3': '#ffe066' };
+              const numGlow = '';
+              const swapMatch = /^([123])>([123])$/.exec(val);
+              const selectHtml = `<select class="dept-cell ${swapMatch ? 'dc-swap' : (val === '1' ? 'dc-1' : (val === '2' ? 'dc-2' : (val === '3' ? 'dc-3' : 'dc-empty')))}" data-emp="${emp.id}" data-day="${d}"${swapMatch ? ' style="color:transparent;"' : ''}>${cellOptionsHtml(val)}</select>`;
+              if (swapMatch) {
+                const [, from, to] = swapMatch;
+                dayCounts[d][to]++;
+                const bg = `background-color:${numColor[to]};background-image:repeating-linear-gradient(45deg, ${numColor[from]} 0px, ${numColor[from]} 1.5px, transparent 1.5px, transparent 4px);`;
+                bodyRows += `<td class="${todayCls.trim()}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${numText[to]};${numGlow}">${to}</span></span></td>`;
+              } else {
+                bodyRows += `<td class="${todayCls.trim()}">${selectHtml}</td>`;
+              }
             }
           }
           bodyRows += '</tr>';
@@ -3191,8 +3216,9 @@
           return;
         }
         const val = (monthData[emp.id] || {})[d] || '';
-        if (val === '1' || val === '2' || val === '3') {
-          cols[val].push({ name: emp.name, color: empColor, groupId: empGroupId });
+        const effNum = deptCellEffectiveNum(val);
+        if (effNum) {
+          cols[effNum].push({ name: emp.name, color: empColor, groupId: empGroupId, swap: val.includes('>') ? val : null });
         } else {
           leaves.push({ name: emp.name, color: empColor, groupId: empGroupId });
         }
