@@ -539,6 +539,27 @@
       font-size: 9px;
       font-weight: 800;
       color: var(--nm-text-muted);
+      z-index: 2;
+    }
+    .day .day-bands {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .day .day-band {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .day .day-band + .day-band {
+      box-shadow: inset 0 1px 0 rgba(0,0,0,0.25);
     }
     .day .label {
       font-weight: 800;
@@ -919,9 +940,30 @@
       padding: 4px 0;
     }
     .collapse-arrow {
-      font-size: 20px;
-      transition: transform 0.2s;
-      color: var(--nm-text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--nm-danger);
+      color: #ffffff;
+      font-size: 13px;
+      line-height: 1;
+      transition: transform 0.2s ease;
+      box-shadow: var(--nm-shadow-sm);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .collapse-arrow::before {
+      content: '';
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid #ffffff;
+      border-bottom: 2px solid #ffffff;
+      transform: rotate(45deg);
+      margin-top: -3px;
     }
     .collapse-arrow.collapsed {
       transform: rotate(-90deg);
@@ -1066,14 +1108,34 @@
       border: none;
       cursor: pointer;
       color: inherit;
-      font-size: 11px;
       padding: 2px 4px;
       vertical-align: middle;
       margin-left: 4px;
     }
     .dept-collapse-arrow {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--nm-danger);
+      color: #ffffff;
+      font-size: 11px;
+      line-height: 1;
       transition: transform 0.2s ease;
+      box-shadow: var(--nm-shadow-sm);
+      position: relative;
+    }
+    .dept-collapse-arrow::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid #ffffff;
+      border-bottom: 2px solid #ffffff;
+      transform: rotate(45deg);
+      margin-top: -2px;
     }
     .dept-collapse-arrow.collapsed {
       transform: rotate(-90deg);
@@ -1609,6 +1671,7 @@
         <div class="paint-fixed">
           <button class="paint-toggle" id="paintToggle">⌃</button>
           <button class="paint-btn erase" id="paintErase" data-shift="">مسح</button>
+          <button class="paint-btn" id="paintExtraToggle" title="إضافة وردية ثانية/ثالثة لليوم">📲 وردية إضافية</button>
         </div>
         <div class="paint-scroll" id="paintScroll"></div>
       </div>
@@ -1688,14 +1751,14 @@
         </p>
         <div class="collapse-toggle" id="leaveDatesToggle">
           <span style="font-weight:600;">📅 تواريخ الأيام الاعتيادية</span>
-          <span class="collapse-arrow" id="leaveDatesArrow">▾</span>
+          <span class="collapse-arrow" id="leaveDatesArrow"></span>
         </div>
         <div id="leaveDatesList" class="mini-list" style="margin-top:8px;"></div>
       </div>
       <div class="card">
         <div class="collapse-toggle" id="holidaysToggle">
           <span class="card-title" style="margin:0;">🎉 العطلات الرسمية</span>
-          <span class="collapse-arrow" id="holidaysArrow">▾</span>
+          <span class="collapse-arrow" id="holidaysArrow"></span>
         </div>
         <div id="holidayBalanceSummary" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-weight:700;font-size:14px;"></div>
         <div id="holidaysList" style="display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;margin-top:8px;touch-action:pan-x;"></div>
@@ -1778,6 +1841,10 @@
         <div id="holidayIncomeBonusRow" style="display:none;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;">
           <span>🎉 أجر أيام العطلات الرسمية المعمولة</span>
           <span id="holidayIncomeBonusVal" style="font-weight:700;">0.00 ج.م</span>
+        </div>
+        <div id="appAllowanceBonusRow" style="display:none;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;">
+          <span>📲 بدل التطبيق (ورديات إضافية)</span>
+          <span id="appAllowanceBonusVal" style="font-weight:700;">0.00 ج.م</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-primary);font-weight:800;margin-top:4px;">
           <span>إجمالي الدخل</span>
@@ -1946,15 +2013,15 @@
         <div id="additionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newAddLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          <input type="number" id="newAddValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           <button class="btn btn-primary" id="addAdditionType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
+        <p style="font-size:11px;color:var(--nm-text-muted);margin:6px 0 0;">قيمة كل بند بتتحدد وقت حساب المرتب نفسه، مش هنا.</p>
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="font-weight:700;margin-bottom:8px;">🎉 العطلات الرسمية (بدل العطلة)</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>طريقة حساب العطلة الرسمية</span>
+          <span>طريقة حساب العطلة</span>
           <select id="holidayMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
             <option value="1_0">يوم دخل</option>
             <option value="2_0">يومين دخل</option>
@@ -1968,13 +2035,46 @@
           </select>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>عدد أيام العطلات في الفترة الحالية (محسوب)</span>
-          <span id="holidayCount" style="font-weight:700;">0</span>
+          <span>طريقة حساب بدل التطبيق</span>
+          <select id="appAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="1_0">يوم دخل</option>
+            <option value="2_0">يومين دخل</option>
+            <option value="3_0">ثلاثة أيام دخل</option>
+            <option value="0_1">يوم إجازة</option>
+            <option value="0_2">يومين إجازة</option>
+            <option value="0_3">ثلاثة أيام إجازة</option>
+            <option value="1_1">يوم إجازة + يوم دخل</option>
+            <option value="2_1">يوم إجازة + يومين دخل</option>
+            <option value="1_2">يومين إجازة + يوم دخل</option>
+          </select>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;">
-          <span>قيمة بدل العطلة (محسوبة)</span>
-          <span id="holidayAllowance" style="font-weight:700;">0.00 ج.م</span>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>طريقة حساب بدل الراحة</span>
+          <select id="restAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="1_0">يوم دخل</option>
+            <option value="2_0">يومين دخل</option>
+            <option value="3_0">ثلاثة أيام دخل</option>
+            <option value="0_1">يوم إجازة</option>
+            <option value="0_2">يومين إجازة</option>
+            <option value="0_3">ثلاثة أيام إجازة</option>
+            <option value="1_1">يوم إجازة + يوم دخل</option>
+            <option value="2_1">يوم إجازة + يومين دخل</option>
+            <option value="1_2">يومين إجازة + يوم دخل</option>
+          </select>
         </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>قيمة بدل العطلة</span>
+          <input type="number" id="holidayAllowanceValue" min="0" step="0.01" placeholder="مثال: 100" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>قيمة بدل التطبيق</span>
+          <input type="number" id="appAllowanceValueInput" min="0" step="0.01" placeholder="مثال: 100" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+          <span>قيمة بدل الراحة</span>
+          <input type="number" id="restAllowanceValueInput" min="0" step="0.01" placeholder="مثال: 100" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+        </div>
+        <p style="font-size:11px;color:var(--nm-text-muted);margin:6px 0 0;">القيم دي بتتسجل يدوياً وبتتحفظ، مش بتتحسب تلقائي.</p>
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
@@ -2037,9 +2137,9 @@
       </div>
       <div class="dept-list-toggle" id="deptEmpListToggle">
         <span style="font-weight:600;">👥 قائمة الموظفين</span>
-        <span class="collapse-arrow" id="deptEmpListArrow">▾</span>
+        <span class="collapse-arrow collapsed" id="deptEmpListArrow"></span>
       </div>
-      <div id="deptEmpListWrap">
+      <div id="deptEmpListWrap" style="display:none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
           <button type="button" class="btn" id="deptReorderToggle" style="padding:6px 12px;font-size:12px;">🔀 إعادة ترتيب</button>
         </div>
@@ -2047,7 +2147,7 @@
       </div>
       <div class="dept-list-toggle" id="deptGroupsToggle">
         <span style="font-weight:600;">🏷️ مجموعات الموظفين</span>
-        <span class="collapse-arrow collapsed" id="deptGroupsArrow">▾</span>
+        <span class="collapse-arrow collapsed" id="deptGroupsArrow"></span>
       </div>
       <div id="deptGroupsWrap" style="display:none;">
         <div style="display:flex;gap:6px;margin:8px 0;align-items:center;">
@@ -2196,6 +2296,8 @@
       { id: 'shift4', name: 'غياب', abbr: 'غياب', bgColor: '#ef4444', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 0, currency: 'ج.م', dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, isAnnualLeave: false, isAbsence: true, customAdditions: [] }
     ];
     let schedule = {};
+    let scheduleExtra = {};
+    let extraShiftMode = false;
     let companies = ['الشركة الرئيسية'];
     let currentCompany = 0;
     let currentYear = 2026;
@@ -2259,6 +2361,21 @@
       });
       return earnings.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
+    // إرجاع أيام "بدل التطبيق" (الأيام التي أُضيفت لها وردية ثانية أو ثالثة) مع استحقاقها حسب طريقة الحساب المفعّلة
+    function computeAppAllowanceEarnings() {
+      const { incomeDays, leaveDays } = parseHolidayMode(appAllowanceMode);
+      const earnings = [];
+      Object.keys(scheduleExtra).forEach(date => {
+        const extras = scheduleExtra[date];
+        if (!extras || extras.length === 0) return;
+        const d = parseDate(date);
+        if (!d || d.getFullYear() !== currentYear) return;
+        const shiftId = schedule[date];
+        const shift = shiftId ? getShift(shiftId) : null;
+        earnings.push({ date, extraCount: extras.length, dayIncome: shift ? (shift.dayIncome || 0) : 0, incomeDaysEarned: incomeDays, leaveDaysEarned: leaveDays });
+      });
+      return earnings.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    }
     let leavePrev = 0;
     let leaveAccrued = 0;
     let absenceDayValue = 0;
@@ -2267,6 +2384,11 @@
     let prevPenaltyDeducted = 0;
     let prevPenaltyDayValue = 0;
     let holidayMode = '1_0';
+    let appAllowanceMode = '1_0';
+    let restAllowanceMode = '1_0';
+    let holidayAllowanceValue = 0;
+    let appAllowanceValueManual = 0;
+    let restAllowanceValueManual = 0;
     let absenceAutoApply = true;
     let weekStart = 'sat';
     let deptEmployees = [];
@@ -2446,7 +2568,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, scheduleExtra, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         localStorage.setItem('shifterData', JSON.stringify(data));
       } catch(e) {}
     }
@@ -2457,6 +2579,7 @@
         const data = JSON.parse(raw);
         shifts = data.shifts || shifts;
         schedule = data.schedule || {};
+        scheduleExtra = data.scheduleExtra || {};
         companies = data.companies || companies;
         currentCompany = data.currentCompany || 0;
         additionTypes = data.additionTypes || additionTypes;
@@ -2471,6 +2594,11 @@
         prevPenaltyDeducted = data.prevPenaltyDeducted || 0;
         prevPenaltyDayValue = data.prevPenaltyDayValue || 0;
         holidayMode = data.holidayMode || '1_0';
+        appAllowanceMode = data.appAllowanceMode || '1_0';
+        restAllowanceMode = data.restAllowanceMode || '1_0';
+        holidayAllowanceValue = data.holidayAllowanceValue || 0;
+        appAllowanceValueManual = data.appAllowanceValueManual || 0;
+        restAllowanceValueManual = data.restAllowanceValueManual || 0;
         absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
         weekStart = data.weekStart || 'sat';
         autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
@@ -2486,6 +2614,10 @@
         savedStatsTo = data.savedStatsTo || null;
         savedLeaveFrom = data.savedLeaveFrom || null;
         savedLeaveTo = data.savedLeaveTo || null;
+        if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
+          currentYear = data.currentYear;
+          currentMonth = data.currentMonth;
+        }
         return true;
       } catch(e) { return false; }
     }
@@ -2521,6 +2653,45 @@
       return { assignments, earnings, pool, consumedByHolidayDate };
     }
 
+    // معالجة الضغط على يوم في التقويم: تلوين عادي، أو إضافة وردية ثانية/ثالثة في وضع "وردية إضافية"
+    function handleDayTap(dateStr) {
+      if (!selectedShiftId) return;
+      if (extraShiftMode) {
+        if (selectedShiftId === ERASE_ID) {
+          if (scheduleExtra[dateStr]) {
+            delete scheduleExtra[dateStr];
+            saveData();
+            renderCalendar();
+            renderHolidays();
+            toast('تم مسح الورديات الإضافية: ' + dateStr);
+          }
+          return;
+        }
+        if (!schedule[dateStr]) {
+          toast('لازم يكون في وردية أولى في اليوم ده الأول', 'error');
+          return;
+        }
+        const extras = scheduleExtra[dateStr] ? scheduleExtra[dateStr].slice() : [];
+        if (extras.length >= 2) {
+          toast('الحد الأقصى 3 ورديات في اليوم', 'error');
+          return;
+        }
+        extras.push(selectedShiftId);
+        scheduleExtra[dateStr] = extras;
+        saveData();
+        renderCalendar();
+        renderHolidays();
+        toast(extras.length === 1 ? 'تم إضافة وردية ثانية: ' + dateStr : 'تم إضافة وردية ثالثة: ' + dateStr);
+        return;
+      }
+      if (selectedShiftId === ERASE_ID) { delete schedule[dateStr]; delete scheduleExtra[dateStr]; }
+      else schedule[dateStr] = selectedShiftId;
+      saveData();
+      renderCalendar();
+      renderHolidays();
+      toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
+    }
+
     // عرض التقويم
     function renderCalendar() {
       const year = currentYear, month = currentMonth;
@@ -2549,44 +2720,47 @@
         const dateObj = isOther ? null : new Date(year, month, dayNum);
         const dateStr = dateObj ? formatDate(dateObj) : '';
         const shiftId = dateStr ? schedule[dateStr] : null;
+        const extraIds = dateStr ? (scheduleExtra[dateStr] || []) : [];
 
         const dayEl = document.createElement('div');
         dayEl.className = 'day' + (isOther ? ' other' : '');
         if (!isOther) {
           dayEl.dataset.date = dateStr;
-          dayEl.addEventListener('click', () => {
-            if (selectedShiftId) {
-              if (selectedShiftId === ERASE_ID) delete schedule[dateStr];
-              else schedule[dateStr] = selectedShiftId;
-              saveData();
-              renderCalendar();
-              renderHolidays();
-              toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
-            }
-          });
+          dayEl.addEventListener('click', () => handleDayTap(dateStr));
         }
         if (!isOther) {
           const num = document.createElement('span');
           num.className = 'num-top';
           num.textContent = dayNum;
           dayEl.appendChild(num);
-          if (shiftId) {
-            const label = document.createElement('span');
-            label.className = 'label';
-            label.textContent = getShiftLabel(shiftId);
-            label.style.color = getShiftTextColor(shiftId);
-            label.style.fontSize = (getShift(shiftId)?.textSize || 36) + 'px';
-            dayEl.style.background = getShiftColor(shiftId);
-            dayEl.appendChild(label);
+          const allIds = [shiftId, ...extraIds].filter(Boolean);
+          if (allIds.length > 0) {
+            const bandsWrap = document.createElement('div');
+            bandsWrap.className = 'day-bands';
             const hAssign = holidayCompAssignments[dateStr];
-            if (hAssign) {
-              const sub = document.createElement('span');
-              sub.className = 'holiday-sublabel';
-              sub.textContent = hAssign.shortDate;
-              sub.title = hAssign.name;
-              sub.style.cssText = 'display:block;font-size:10px;line-height:1;margin-top:2px;opacity:0.85;color:' + getShiftTextColor(shiftId) + ';';
-              dayEl.appendChild(sub);
-            }
+            allIds.forEach((sid, idx) => {
+              const band = document.createElement('div');
+              band.className = 'day-band';
+              band.style.background = getShiftColor(sid);
+              const label = document.createElement('span');
+              label.className = 'label';
+              label.textContent = getShiftLabel(sid);
+              label.style.color = getShiftTextColor(sid);
+              const baseSize = getShift(sid)?.textSize || 36;
+              label.style.fontSize = (allIds.length > 1 ? Math.min(baseSize, 20) : baseSize) + 'px';
+              band.appendChild(label);
+              if (hAssign && idx === 0) {
+                const sub = document.createElement('span');
+                sub.className = 'holiday-sublabel';
+                sub.textContent = hAssign.shortDate;
+                sub.title = hAssign.name;
+                sub.style.cssText = 'display:block;font-size:9px;line-height:1;margin-top:1px;opacity:0.85;color:' + getShiftTextColor(sid) + ';';
+                band.appendChild(sub);
+              }
+              bandsWrap.appendChild(band);
+            });
+            dayEl.title = allIds.map(id => getShiftLabel(id)).join(' + ');
+            dayEl.appendChild(bandsWrap);
           } else {
             dayEl.style.background = 'var(--nm-bg)';
           }
@@ -2598,20 +2772,12 @@
           row.className = 'day-row';
           const weekday = new Date(year, month, dayNum).toLocaleString(translations[uiLang].locale, { weekday:'short' });
           const hAssignRow = holidayCompAssignments[dateStr];
+          const extraLabelHtml = extraIds.length > 0 ? ` <small style="opacity:0.85;">(+${extraIds.map(id => getShiftLabel(id)).join('+')})</small>` : '';
           row.innerHTML = `
             <div class="dr-date"><span class="dr-num">${dayNum}</span><span class="dr-wd">${weekday}</span></div>
-            ${shiftId ? `<span class="dr-shift" style="background:${getShiftColor(shiftId)};color:${getShiftTextColor(shiftId)}">${getShiftLabel(shiftId)}${hAssignRow ? ` <small style="opacity:0.85;">(${hAssignRow.shortDate})</small>` : ''}</span>` : '<span class="dr-empty">—</span>'}
+            ${shiftId ? `<span class="dr-shift" style="background:${getShiftColor(shiftId)};color:${getShiftTextColor(shiftId)}">${getShiftLabel(shiftId)}${hAssignRow ? ` <small style="opacity:0.85;">(${hAssignRow.shortDate})</small>` : ''}${extraLabelHtml}</span>` : '<span class="dr-empty">—</span>'}
           `;
-          row.addEventListener('click', () => {
-            if (selectedShiftId) {
-              if (selectedShiftId === ERASE_ID) delete schedule[dateStr];
-              else schedule[dateStr] = selectedShiftId;
-              saveData();
-              renderCalendar();
-              renderHolidays();
-              toast(selectedShiftId === ERASE_ID ? 'تم مسح اليوم: ' + dateStr : 'تم تحديث اليوم: ' + dateStr);
-            }
-          });
+          row.addEventListener('click', () => handleDayTap(dateStr));
           list.appendChild(row);
         }
       }
@@ -2881,7 +3047,7 @@
       const todayDate = new Date();
       const isCurrentMonth = deptSchYear === todayDate.getFullYear() && deptSchMonth === todayDate.getMonth();
       const todayDayNum = todayDate.getDate();
-      let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}">▾</span></button>الموظف</th>`;
+      let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}"></span></button>الموظف</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
         const todayCls = isCurrentMonth && d === todayDayNum ? ' dept-today-col' : '';
@@ -3213,10 +3379,6 @@
       if (absenceSpells.length === 0) spellsList.innerHTML = '<div class="mini-list-empty">لا توجد أيام غياب في هذه السنة</div>';
       else spellsList.innerHTML = absenceSpells.map(s => `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${s.date}</span><span class="mli-sub">${s.shift} — يوم جزاء رقم ${s.position} = ${s.penalty}</span></span></div>`).join('');
 
-      const holidayCount = holidays.reduce((sum, h) => sum + (h.dates || []).filter(dt => { const d = parseDate(dt); return d && d >= start && d <= end; }).length, 0);
-      document.getElementById('holidayCount').textContent = holidayCount;
-      const holidayComp = holidayCount * 100;
-      document.getElementById('holidayAllowance').textContent = holidayComp.toFixed(2) + ' ج.م';
     }
 
     // حساب المرتب
@@ -3284,6 +3446,25 @@
         }
       }
       totalIncome += holidayIncomeBonus;
+
+      // استحقاق بدل التطبيق (أيام الورديات الإضافية) حسب طريقة الحساب المفعّلة
+      let appAllowanceBonus = 0;
+      computeAppAllowanceEarnings().forEach(e => {
+        if (e.date && e.date >= from && e.date <= to && e.incomeDaysEarned > 0) {
+          appAllowanceBonus += e.incomeDaysEarned * e.dayIncome;
+        }
+      });
+      const appAllowanceBonusRow = document.getElementById('appAllowanceBonusRow');
+      if (appAllowanceBonusRow) {
+        if (appAllowanceBonus > 0) {
+          appAllowanceBonusRow.style.display = 'flex';
+          document.getElementById('appAllowanceBonusVal').textContent = appAllowanceBonus.toFixed(2) + ' ج.م';
+        } else {
+          appAllowanceBonusRow.style.display = 'none';
+        }
+      }
+      totalIncome += appAllowanceBonus;
+
       let deductionsTotal = 0;
       deductionTypes.forEach(ded => {
         if (ded.enabled === false) return;
@@ -3298,9 +3479,29 @@
       document.getElementById('absenceDeduction').textContent = (totalDeductions > 0 ? totalDeductions.toFixed(2) : '0.00') + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
-      const activeAdds = additionTypes.filter(a => a.enabled !== false);
-      if (activeAdds.length === 0) addRows.innerHTML = '';
-      else addRows.innerHTML = activeAdds.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;"><span>${a.label}</span><span>${(a.value || 0).toFixed(2)} ج.م</span></div>`).join('');
+      if (additionTypes.length === 0) addRows.innerHTML = '';
+      else addRows.innerHTML = additionTypes.map(a => {
+        const enabled = a.enabled !== false;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
+          <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+            <input type="checkbox" class="add-calc-enable" data-add="${a.id}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'opacity:0.5;text-decoration:line-through;'}">${a.label}</span>
+          </label>
+          <input type="number" class="add-calc-amount" data-add="${a.id}" value="${a.value || 0}" step="0.01" style="width:90px;text-align:center;padding:6px 8px;border:none;border-radius:8px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);font-family:var(--nm-font);" />
+        </div>`;
+      }).join('');
+      addRows.querySelectorAll('.add-calc-enable').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const item = additionTypes.find(x => x.id === cb.dataset.add);
+          if (item) { item.enabled = cb.checked; saveData(); calculatePayroll(); }
+        });
+      });
+      addRows.querySelectorAll('.add-calc-amount').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const item = additionTypes.find(x => x.id === inp.dataset.add);
+          if (item) { item.value = parseFloat(inp.value) || 0; saveData(); calculatePayroll(); }
+        });
+      });
 
       const dedRows = document.getElementById('deductionsRows');
       if (deductionTypes.length === 0) dedRows.innerHTML = '';
@@ -3764,6 +3965,11 @@
       document.getElementById('absenceAutoApply').checked = absenceAutoApply;
       document.getElementById('weekStart').value = weekStart;
       document.getElementById('holidayMode').value = holidayMode;
+      document.getElementById('appAllowanceMode').value = appAllowanceMode;
+      document.getElementById('restAllowanceMode').value = restAllowanceMode;
+      document.getElementById('holidayAllowanceValue').value = holidayAllowanceValue > 0 ? holidayAllowanceValue : '';
+      document.getElementById('appAllowanceValueInput').value = appAllowanceValueManual > 0 ? appAllowanceValueManual : '';
+      document.getElementById('restAllowanceValueInput').value = restAllowanceValueManual > 0 ? restAllowanceValueManual : '';
 
       const now = new Date();
       const defFrom = savedPayFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -3791,8 +3997,8 @@
       renderShiftsList();
       renderHolidays();
 
-      document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); renderStats(); });
-      document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); renderStats(); });
+      document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } saveData(); renderCalendar(); renderStats(); });
+      document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } saveData(); renderCalendar(); renderStats(); });
 
       document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -3931,6 +4137,11 @@
         selectedShiftId = selectedShiftId === ERASE_ID ? null : ERASE_ID;
         renderPaintBar();
       });
+      document.getElementById('paintExtraToggle').addEventListener('click', function() {
+        extraShiftMode = !extraShiftMode;
+        this.classList.toggle('active', extraShiftMode);
+        toast(extraShiftMode ? 'وضع الوردية الإضافية مفعّل — لمس أي يوم بيه وردية عشان تضيف وردية ثانية أو ثالثة' : 'وضع الوردية الإضافية متوقف');
+      });
 
       document.getElementById('logoBtn').addEventListener('click', () => { document.getElementById('shiftsModal').classList.add('open'); });
       document.getElementById('closeShifts').addEventListener('click', () => { document.getElementById('shiftsModal').classList.remove('open'); });
@@ -3999,13 +4210,10 @@
 
       document.getElementById('addAdditionType').addEventListener('click', () => {
         const labelInput = document.getElementById('newAddLabel');
-        const valInput = document.getElementById('newAddValue');
         const label = labelInput.value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        if (valInput.value === '') { toast('أدخل قيمة البند', 'error'); return; }
-        additionTypes.push({ id: generateId(), label, value: parseFloat(valInput.value) || 0, enabled: true });
+        additionTypes.push({ id: generateId(), label, value: 0, enabled: true });
         labelInput.value = '';
-        valInput.value = '';
         saveData();
         renderAdditionTypes();
         toast('تم إضافة البند');
@@ -4015,7 +4223,7 @@
         if (additionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد إضافات</div>'; return; }
         list.innerHTML = additionTypes.map((a, idx) => {
           const enabled = a.enabled !== false;
-          return `<div class="mini-list-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;"><input type="checkbox" class="add-enable-toggle" data-add-cb="${idx}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" /><span class="mli-info" style="${enabled ? '' : 'opacity:0.5;'}"><span class="mli-name">${a.label}</span><span class="mli-sub">${a.value} ج.م</span></span></label><button class="mli-del" data-add="${idx}">✕</button></div>`;
+          return `<div class="mini-list-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;"><input type="checkbox" class="add-enable-toggle" data-add-cb="${idx}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" /><span class="mli-name" style="${enabled ? '' : 'opacity:0.5;'}">${a.label}</span></label><button class="mli-del" data-add="${idx}">✕</button></div>`;
         }).join('');
         list.querySelectorAll('.add-enable-toggle').forEach(cb => {
           cb.addEventListener('change', () => {
@@ -4285,6 +4493,11 @@
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
       document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
       document.getElementById('holidayMode').addEventListener('change', function() { holidayMode = this.value; saveData(); });
+      document.getElementById('appAllowanceMode').addEventListener('change', function() { appAllowanceMode = this.value; saveData(); });
+      document.getElementById('restAllowanceMode').addEventListener('change', function() { restAllowanceMode = this.value; saveData(); });
+      document.getElementById('holidayAllowanceValue').addEventListener('change', function() { holidayAllowanceValue = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('appAllowanceValueInput').addEventListener('change', function() { appAllowanceValueManual = parseFloat(this.value) || 0; saveData(); });
+      document.getElementById('restAllowanceValueInput').addEventListener('change', function() { restAllowanceValueManual = parseFloat(this.value) || 0; saveData(); });
 
       function addSwipeNav(elementId, onSwipeLeft, onSwipeRight, excludeSelector) {
         const el = document.getElementById(elementId);
@@ -4330,7 +4543,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, absenceAutoApply, weekStart, autoAllowanceTypes, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, scheduleExtra, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -4348,6 +4561,7 @@
             const data = JSON.parse(ev.target.result);
             shifts = data.shifts || shifts;
             schedule = data.schedule || {};
+        scheduleExtra = data.scheduleExtra || {};
             companies = data.companies || companies;
             currentCompany = data.currentCompany || 0;
             additionTypes = data.additionTypes || additionTypes;
@@ -4362,6 +4576,11 @@
             prevPenaltyDeducted = data.prevPenaltyDeducted || 0;
             prevPenaltyDayValue = data.prevPenaltyDayValue || 0;
             holidayMode = data.holidayMode || '1_0';
+        appAllowanceMode = data.appAllowanceMode || '1_0';
+        restAllowanceMode = data.restAllowanceMode || '1_0';
+            holidayAllowanceValue = data.holidayAllowanceValue || 0;
+            appAllowanceValueManual = data.appAllowanceValueManual || 0;
+            restAllowanceValueManual = data.restAllowanceValueManual || 0;
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
             weekStart = data.weekStart || 'sat';
             autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
@@ -4377,6 +4596,10 @@
             savedStatsTo = data.savedStatsTo || null;
             savedLeaveFrom = data.savedLeaveFrom || null;
             savedLeaveTo = data.savedLeaveTo || null;
+            if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
+              currentYear = data.currentYear;
+              currentMonth = data.currentMonth;
+            }
             saveData();
             renderCalendar();
             renderYear();
