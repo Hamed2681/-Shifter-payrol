@@ -2174,7 +2174,7 @@
           <button type="button" class="btn" id="deptEmpImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث</button>
         </div>
         <input type="file" id="deptEmpImportFile" accept=".json,application/json" style="display:none" />
-        <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اضغط "مشاركة" لإرسال ملف الموظفين + المجموعات + جدول الورديات الفعلي لأي زميل معاه نفس التطبيق (يفتح قايمة مشاركة واتساب مباشرة على الموبايل). ولما يستلم الملف، يضغط هو "استيراد وتحديث" عنده عشان يتحدّث عنده كل حاجة تلقائياً: الموظفين، المجموعات، وجدول الورديات لكل الشهور المرسلة.</p>
+        <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اضغط "مشاركة" لإرسال أسماء الموظفين + المجموعات (من غير جدول الورديات) لأي زميل معاه نفس التطبيق. جدول الورديات نفسه ليه زرار مشاركة/استيراد منفصل تحت.</p>
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
           <button type="button" class="btn" id="deptReorderToggle" style="padding:6px 12px;font-size:12px;">🔀 إعادة ترتيب</button>
         </div>
@@ -2198,6 +2198,12 @@
         <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار لون للمجموعة، وبعد كده حدد مجموعة كل موظف من القائمة اللي جنب اسمه. اسم الموظف هيتلون بلون مجموعته في القائمة والجدول والتوزيع اليومي.</p>
       </div>
       <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار رقم الوردية (١، ٢، ٣) لكل يوم من القائمة المنسدلة — البيانات بتتحفظ تلقائياً ولكل شهر جدول منفصل. يوم الراحة الأسبوعي بيتظلل تلقائياً بالأسود في صف الموظف.</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary" id="deptSchExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة جدول الورديات (واتساب)</button>
+        <button type="button" class="btn" id="deptSchImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث الجدول</button>
+      </div>
+      <input type="file" id="deptSchImportFile" accept=".json,application/json" style="display:none" />
+      <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">ده بيصدّر جدول الورديات نفسه (كل الشهور) لوحده منفصل عن بيانات الموظفين. لازم أسماء الموظفين تكون متطابقة عند الطرفين عشان الجدول يتربط صح — لو موظف مش موجود عند المستلم، هيتضاف تلقائياً بالاسم بس من غير رقم واتساب أو مجموعة.</p>
       <div class="dept-sch-scroll">
         <div id="deptScheduleTable"></div>
       </div>
@@ -3070,11 +3076,10 @@
       if (deptEmployees.length === 0) { toast('لا يوجد موظفين لتصديرهم', 'error'); return; }
       const payload = {
         type: 'shifter_employees_export',
-        version: 2,
+        version: 1,
         exportedAt: new Date().toISOString(),
         groups: deptGroups,
-        employees: deptEmployees,
-        schedule: deptSchedule
+        employees: deptEmployees
       };
       const jsonStr = JSON.stringify(payload, null, 2);
       const fileName = 'shifter_employees_' + new Date().toISOString().slice(0, 10) + '.json';
@@ -3106,8 +3111,6 @@
           const data = JSON.parse(ev.target.result);
           const incomingGroups = Array.isArray(data.groups) ? data.groups : (Array.isArray(data.deptGroups) ? data.deptGroups : []);
           const incomingEmployees = Array.isArray(data.employees) ? data.employees : (Array.isArray(data.deptEmployees) ? data.deptEmployees : []);
-          const incomingSchedule = data.schedule && typeof data.schedule === 'object' ? data.schedule :
-                                    (data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {});
           if (!incomingEmployees.length && !incomingGroups.length) { toast('الملف لا يحتوي على بيانات موظفين', 'error'); return; }
 
           const groupIdMap = {};
@@ -3124,14 +3127,12 @@
           });
 
           let added = 0, updated = 0;
-          const empIdMap = {};
           incomingEmployees.forEach(emp => {
             if (!emp || !emp.name) return;
             const mappedGroupId = emp.groupId ? groupIdMap[emp.groupId] : undefined;
             let existing = (emp.id && deptEmployees.find(e => e.id === emp.id)) ||
                             deptEmployees.find(e => e.name.trim() === emp.name.trim());
             if (existing) {
-              if (emp.id) empIdMap[emp.id] = existing.id;
               existing.name = emp.name;
               if (emp.restDay !== undefined) existing.restDay = emp.restDay;
               if (emp.phone) existing.phone = emp.phone;
@@ -3139,13 +3140,82 @@
               updated++;
             } else {
               const newId = generateId();
-              if (emp.id) empIdMap[emp.id] = newId;
               const newEmp = { id: newId, name: emp.name, restDay: emp.restDay };
               if (emp.phone) newEmp.phone = emp.phone;
               if (mappedGroupId) newEmp.groupId = mappedGroupId;
               deptEmployees.push(newEmp);
               added++;
             }
+          });
+
+          saveData();
+          renderDeptEmpList();
+          renderDeptGroupsList();
+          renderDeptSchedule();
+          toast(`تم تحديث الجدول: ${added} إضافة، ${updated} تحديث`);
+        } catch (err) {
+          toast('خطأ في الملف', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportScheduleTable() {
+      if (Object.keys(deptSchedule).length === 0) { toast('لا يوجد جدول ورديات لتصديره', 'error'); return; }
+      const employeeNames = {};
+      deptEmployees.forEach(e => { employeeNames[e.id] = e.name; });
+      const payload = {
+        type: 'shifter_schedule_export',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        employeeNames: employeeNames,
+        schedule: deptSchedule
+      };
+      const jsonStr = JSON.stringify(payload, null, 2);
+      const fileName = 'shifter_schedule_' + new Date().toISOString().slice(0, 10) + '.json';
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+
+      let file = null;
+      try { file = new File([blob], fileName, { type: 'application/json' }); } catch (e) {}
+
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: 'جدول الورديات',
+          text: 'ملف تحديث جدول الورديات — افتحه من داخل التطبيق بزرار "استيراد وتحديث الجدول".'
+        }).catch(() => {});
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
+        toast('تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
+      }
+    }
+
+    function importScheduleTable(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          const incomingSchedule = data.schedule && typeof data.schedule === 'object' ? data.schedule :
+                                    (data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {});
+          const incomingNames = data.employeeNames && typeof data.employeeNames === 'object' ? data.employeeNames : {};
+          if (Object.keys(incomingSchedule).length === 0) { toast('الملف لا يحتوي على جدول ورديات', 'error'); return; }
+
+          const empIdMap = {};
+          let newEmpAdded = 0;
+          Object.keys(incomingNames).forEach(oldEmpId => {
+            const name = (incomingNames[oldEmpId] || '').trim();
+            if (!name) return;
+            let existing = deptEmployees.find(e => e.name.trim() === name);
+            if (!existing) {
+              existing = { id: generateId(), name: name };
+              deptEmployees.push(existing);
+              newEmpAdded++;
+            }
+            empIdMap[oldEmpId] = existing.id;
           });
 
           let daysUpdated = 0;
@@ -3166,9 +3236,8 @@
 
           saveData();
           renderDeptEmpList();
-          renderDeptGroupsList();
           renderDeptSchedule();
-          toast(`تم التحديث: ${added} موظف جديد، ${updated} تحديث بيانات، ${daysUpdated} يوم في الجدول`);
+          toast(`تم تحديث الجدول: ${daysUpdated} يوم` + (newEmpAdded ? `، ${newEmpAdded} موظف جديد اتضاف بالاسم` : ''));
         } catch (err) {
           toast('خطأ في الملف', 'error');
         }
@@ -4464,6 +4533,15 @@
       document.getElementById('deptEmpImportFile').addEventListener('change', function(e) {
         const file = this.files[0];
         importEmployeesTable(file);
+        this.value = '';
+      });
+      document.getElementById('deptSchExportBtn').addEventListener('click', exportScheduleTable);
+      document.getElementById('deptSchImportBtn').addEventListener('click', () => {
+        document.getElementById('deptSchImportFile').click();
+      });
+      document.getElementById('deptSchImportFile').addEventListener('change', function(e) {
+        const file = this.files[0];
+        importScheduleTable(file);
         this.value = '';
       });
       document.getElementById('deptReorderToggle').addEventListener('click', function() {
