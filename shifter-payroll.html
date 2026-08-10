@@ -2169,6 +2169,12 @@
         <span class="collapse-arrow collapsed" id="deptEmpListArrow"></span>
       </div>
       <div id="deptEmpListWrap" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="deptEmpExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة الموظفين (واتساب)</button>
+          <button type="button" class="btn" id="deptEmpImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث</button>
+        </div>
+        <input type="file" id="deptEmpImportFile" accept=".json,application/json" style="display:none" />
+        <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اضغط "مشاركة" لإرسال ملف الموظفين + المجموعات + جدول الورديات الفعلي لأي زميل معاه نفس التطبيق (يفتح قايمة مشاركة واتساب مباشرة على الموبايل). ولما يستلم الملف، يضغط هو "استيراد وتحديث" عنده عشان يتحدّث عنده كل حاجة تلقائياً: الموظفين، المجموعات، وجدول الورديات لكل الشهور المرسلة.</p>
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
           <button type="button" class="btn" id="deptReorderToggle" style="padding:6px 12px;font-size:12px;">🔀 إعادة ترتيب</button>
         </div>
@@ -2946,7 +2952,7 @@
     //   اسم: أحمد
     //   يوم: 12
     //   وردية: 2          (أو "تبديل: 1-2" لو فيه تبديل، أو "إجازة" بدل السطر ده لو الطلب إجازة)
-    const SHARE_MESSAGE_TEMPLATE = 'اسم: \nيوم: \nوردية: (اكتب رقم الوردية 1 أو 2 أو 3، أو تبديل زي 1-2، أو اكتب "إجازة")';
+    const SHARE_MESSAGE_TEMPLATE = 'اسم: \nيوم: \nوردية: (اكتب رقم الوردية 1 أو 2 أو 3، أو تبديل زي من 1الى2، أو اكتب "اجازة")';
 
     function arDigitsToWestern(s) {
       const map = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
@@ -2962,7 +2968,7 @@
       const nameLine = norm.match(/اسم\s*[:\-]\s*(.+)/);
       const dayLine = norm.match(/يوم\s*[:\-]\s*(\d{1,2})/);
       const shiftLine = norm.match(/(?:وردية|تبديل)\s*[:\-]\s*(.+)/);
-      const hasLeaveWord = /إجاز/.test(norm);
+      const hasLeaveWord = /(ا|إ)جاز/.test(norm);
 
       if (nameLine || dayLine || shiftLine || hasLeaveWord) {
         result.strict = true;
@@ -3058,6 +3064,116 @@
       deptDailyDay = new Date().getDate();
       renderDeptSchedule();
       document.getElementById('deptScheduleModal').classList.add('open');
+    }
+
+    function exportEmployeesTable() {
+      if (deptEmployees.length === 0) { toast('لا يوجد موظفين لتصديرهم', 'error'); return; }
+      const payload = {
+        type: 'shifter_employees_export',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        groups: deptGroups,
+        employees: deptEmployees,
+        schedule: deptSchedule
+      };
+      const jsonStr = JSON.stringify(payload, null, 2);
+      const fileName = 'shifter_employees_' + new Date().toISOString().slice(0, 10) + '.json';
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+
+      let file = null;
+      try { file = new File([blob], fileName, { type: 'application/json' }); } catch (e) {}
+
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: 'جدول الموظفين',
+          text: 'ملف تحديث جدول الموظفين — افتحه من داخل التطبيق بزرار "استيراد وتحديث".'
+        }).catch(() => {});
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
+        toast('تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
+      }
+    }
+
+    function importEmployeesTable(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          const incomingGroups = Array.isArray(data.groups) ? data.groups : (Array.isArray(data.deptGroups) ? data.deptGroups : []);
+          const incomingEmployees = Array.isArray(data.employees) ? data.employees : (Array.isArray(data.deptEmployees) ? data.deptEmployees : []);
+          const incomingSchedule = data.schedule && typeof data.schedule === 'object' ? data.schedule :
+                                    (data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {});
+          if (!incomingEmployees.length && !incomingGroups.length) { toast('الملف لا يحتوي على بيانات موظفين', 'error'); return; }
+
+          const groupIdMap = {};
+          incomingGroups.forEach(g => {
+            if (!g || !g.name) return;
+            const existing = deptGroups.find(x => x.name.trim() === g.name.trim());
+            if (existing) {
+              groupIdMap[g.id] = existing.id;
+            } else {
+              const newId = generateId();
+              deptGroups.push({ id: newId, name: g.name, color: g.color || '#50b5d3' });
+              groupIdMap[g.id] = newId;
+            }
+          });
+
+          let added = 0, updated = 0;
+          const empIdMap = {};
+          incomingEmployees.forEach(emp => {
+            if (!emp || !emp.name) return;
+            const mappedGroupId = emp.groupId ? groupIdMap[emp.groupId] : undefined;
+            let existing = (emp.id && deptEmployees.find(e => e.id === emp.id)) ||
+                            deptEmployees.find(e => e.name.trim() === emp.name.trim());
+            if (existing) {
+              if (emp.id) empIdMap[emp.id] = existing.id;
+              existing.name = emp.name;
+              if (emp.restDay !== undefined) existing.restDay = emp.restDay;
+              if (emp.phone) existing.phone = emp.phone;
+              if (mappedGroupId) existing.groupId = mappedGroupId;
+              updated++;
+            } else {
+              const newId = generateId();
+              if (emp.id) empIdMap[emp.id] = newId;
+              const newEmp = { id: newId, name: emp.name, restDay: emp.restDay };
+              if (emp.phone) newEmp.phone = emp.phone;
+              if (mappedGroupId) newEmp.groupId = mappedGroupId;
+              deptEmployees.push(newEmp);
+              added++;
+            }
+          });
+
+          let daysUpdated = 0;
+          Object.keys(incomingSchedule).forEach(monthKey => {
+            const monthData = incomingSchedule[monthKey] || {};
+            if (!deptSchedule[monthKey]) deptSchedule[monthKey] = {};
+            Object.keys(monthData).forEach(oldEmpId => {
+              const localEmpId = empIdMap[oldEmpId];
+              if (!localEmpId) return;
+              if (!deptSchedule[monthKey][localEmpId]) deptSchedule[monthKey][localEmpId] = {};
+              const dayEntries = monthData[oldEmpId] || {};
+              Object.keys(dayEntries).forEach(day => {
+                deptSchedule[monthKey][localEmpId][day] = dayEntries[day];
+                daysUpdated++;
+              });
+            });
+          });
+
+          saveData();
+          renderDeptEmpList();
+          renderDeptGroupsList();
+          renderDeptSchedule();
+          toast(`تم التحديث: ${added} موظف جديد، ${updated} تحديث بيانات، ${daysUpdated} يوم في الجدول`);
+        } catch (err) {
+          toast('خطأ في الملف', 'error');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function renderDeptEmpList() {
@@ -4340,6 +4456,15 @@
         saveData();
         renderDeptSchedule();
         toast('تم إضافة الموظف');
+      });
+      document.getElementById('deptEmpExportBtn').addEventListener('click', exportEmployeesTable);
+      document.getElementById('deptEmpImportBtn').addEventListener('click', () => {
+        document.getElementById('deptEmpImportFile').click();
+      });
+      document.getElementById('deptEmpImportFile').addEventListener('change', function(e) {
+        const file = this.files[0];
+        importEmployeesTable(file);
+        this.value = '';
       });
       document.getElementById('deptReorderToggle').addEventListener('click', function() {
         deptReorderMode = !deptReorderMode;
