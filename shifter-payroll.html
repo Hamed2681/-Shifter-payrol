@@ -1643,6 +1643,8 @@
       </div>
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuDeptSchedule">📋 جدول القسم</button>
+      <button class="side-menu-item" id="menuShareImport">📲 استيراد رسالة تبديل</button>
+      <button class="side-menu-item" id="menuCopyTemplate">📋 نسخ نموذج الرسالة للموظفين</button>
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuExport" data-i18n="menuExport">📤 تصدير البيانات (JSON)</button>
       <button class="side-menu-item" id="menuImport" data-i18n="menuImport">📥 استيراد البيانات (JSON)</button>
@@ -2108,6 +2110,31 @@
           </select>
           <button class="btn btn-primary" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="shareImportModal" style="z-index:220;">
+    <div class="modal-content">
+      <button class="modal-close" id="closeShareImport">⌃</button>
+      <h3>📲 استيراد من مشاركة واتساب</h3>
+      <p style="font-size:12px;color:var(--nm-text-muted);background:var(--nm-bg);padding:8px;border-radius:var(--nm-radius-sm);box-shadow:var(--nm-shadow-inset);white-space:pre-wrap;max-height:100px;overflow:auto;" id="shareImportRawText"></p>
+      <p id="shareImportWarn" style="display:none;font-size:12px;color:var(--nm-danger);font-weight:700;margin-top:6px;"></p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+        <label style="font-size:13px;font-weight:700;">الموظف
+          <select id="shareImportEmp" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;"></select>
+        </label>
+        <label style="font-size:13px;font-weight:700;">اليوم (رقم في الشهر)
+          <input type="number" id="shareImportDay" min="1" max="31" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+        </label>
+        <label style="font-size:13px;font-weight:700;">الوردية
+          <select id="shareImportValue" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;"></select>
+        </label>
+      </div>
+      <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="shareImportSave">✔️ قبول وحفظ</button>
+        <button class="btn" id="shareImportReject" style="background:var(--nm-danger);color:#fff;">❌ رفض وإرسال رد</button>
+        <button class="btn btn-outline" id="shareImportCancel">إلغاء</button>
       </div>
     </div>
   </div>
@@ -2914,6 +2941,125 @@
       return m ? m[2] : null;
     }
 
+    // ===== استيراد من مشاركة واتساب (Web Share Target) =====
+    // القالب المطلوب من الموظف قبل ما يعمل مشاركة (Share) للرسالة:
+    //   اسم: أحمد
+    //   يوم: 12
+    //   وردية: 2          (أو "تبديل: 1-2" لو فيه تبديل، أو "إجازة" بدل السطر ده لو الطلب إجازة)
+    const SHARE_MESSAGE_TEMPLATE = 'اسم: \nيوم: \nوردية: (اكتب رقم الوردية 1 أو 2 أو 3، أو تبديل زي 1-2، أو اكتب "إجازة")';
+
+    function arDigitsToWestern(s) {
+      const map = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+      return (s || '').replace(/[٠-٩]/g, d => map[d]);
+    }
+
+    function parseSharedShiftText(text) {
+      const result = { employeeId: null, employeeName: null, day: null, value: null, isLeave: false, strict: false };
+      if (!text) return result;
+      const norm = arDigitsToWestern(text);
+
+      // 1) محاولة القراءة بالقالب الثابت (اسم: / يوم: / وردية: أو تبديل: أو إجازة)
+      const nameLine = norm.match(/اسم\s*[:\-]\s*(.+)/);
+      const dayLine = norm.match(/يوم\s*[:\-]\s*(\d{1,2})/);
+      const shiftLine = norm.match(/(?:وردية|تبديل)\s*[:\-]\s*(.+)/);
+      const hasLeaveWord = /إجاز/.test(norm);
+
+      if (nameLine || dayLine || shiftLine || hasLeaveWord) {
+        result.strict = true;
+        if (nameLine) {
+          const typedName = nameLine[1].trim().split('\n')[0].trim();
+          let match = deptEmployees.find(e => e.name === typedName) ||
+                      deptEmployees.find(e => e.name.includes(typedName) || typedName.includes(e.name));
+          if (match) { result.employeeId = match.id; result.employeeName = match.name; }
+        }
+        if (dayLine) result.day = parseInt(dayLine[1], 10);
+        if (hasLeaveWord) {
+          result.isLeave = true;
+          result.value = '';
+        } else if (shiftLine) {
+          const sv = shiftLine[1];
+          const sw = sv.match(/([1-3])\s*(?:->|-|إلى|الى|ل|لـ)\s*([1-3])/);
+          if (sw && sw[1] !== sw[2]) result.value = sw[1] + '>' + sw[2];
+          else {
+            const single = sv.match(/([1-3])/);
+            if (single) result.value = single[1];
+          }
+        }
+      }
+
+      // 2) لو القالب الثابت ما دّاش كل البيانات، نكمل بمحاولة تخمين حرة (fallback)
+      if (!result.employeeId) {
+        let bestMatch = null;
+        deptEmployees.forEach(emp => {
+          if (emp.name && norm.includes(emp.name)) {
+            if (!bestMatch || emp.name.length > bestMatch.name.length) bestMatch = emp;
+          }
+        });
+        if (bestMatch) { result.employeeId = bestMatch.id; result.employeeName = bestMatch.name; }
+      }
+      if (!result.day) {
+        let dayMatch = norm.match(/يوم\s*(\d{1,2})/) || norm.match(/بتاريخ\s*(\d{1,2})/) || norm.match(/(\d{1,2})[\/\-](\d{1,2})/);
+        if (dayMatch) result.day = parseInt(dayMatch[1], 10);
+      }
+      if (!result.value && !result.isLeave) {
+        if (hasLeaveWord) { result.isLeave = true; result.value = ''; }
+        else {
+          const swapMatch = norm.match(/([1-3])\s*(?:->|-|إلى|الى|ل|لـ)\s*([1-3])/);
+          if (swapMatch && swapMatch[1] !== swapMatch[2]) {
+            result.value = swapMatch[1] + '>' + swapMatch[2];
+          } else {
+            const single = norm.match(/وردية\s*([1-3])/) || norm.match(/\b([1-3])\b/);
+            if (single) result.value = single[1];
+          }
+        }
+      }
+      return result;
+    }
+
+    function openShareImportModal(rawText) {
+      const parsed = parseSharedShiftText(rawText);
+      document.getElementById('shareImportRawText').textContent = rawText || '(مفيش نص متاح)';
+      const warnEl = document.getElementById('shareImportWarn');
+      if (warnEl) {
+        warnEl.style.display = parsed.strict ? 'none' : 'block';
+        warnEl.textContent = 'الرسالة مش بالقالب المطلوب — راجع البيانات كويس قبل الحفظ، وابعت للموظفين نموذج الرسالة من القايمة الجانبية.';
+      }
+
+      const empSel = document.getElementById('shareImportEmp');
+      empSel.innerHTML = deptEmployees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('') || '<option value="">لا يوجد موظفين</option>';
+      if (parsed.employeeId) empSel.value = parsed.employeeId;
+
+      document.getElementById('shareImportDay').value = parsed.day || new Date().getDate();
+
+      const valSel = document.getElementById('shareImportValue');
+      const swapPairs = ['1>2', '1>3', '2>1', '2>3', '3>2', '3>1'];
+      valSel.innerHTML = `<option value="">إجازة / بدون وردية</option>` +
+        ['1', '2', '3'].map(v => `<option value="${v}">${v}</option>`).join('') +
+        `<optgroup label="تبديل وردية">${swapPairs.map(v => `<option value="${v}">${v.replace('>', '->')}</option>`).join('')}</optgroup>`;
+      valSel.value = parsed.isLeave ? '' : (parsed.value || '1');
+
+      document.getElementById('shareImportModal').classList.add('open');
+    }
+
+    function checkForSharedText() {
+      const params = new URLSearchParams(location.search);
+      const text = params.get('share_text') || params.get('text') || params.get('share_title') || params.get('title');
+      if (text) {
+        openDeptScheduleForShare();
+        openShareImportModal(text);
+        // ننضف الرابط عشان لو المستخدم عمل رفرش ما يفتحش نفس المشاركة تاني
+        history.replaceState(null, '', location.pathname);
+      }
+    }
+
+    function openDeptScheduleForShare() {
+      deptSchYear = currentYear !== undefined ? currentYear : new Date().getFullYear();
+      deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+      deptDailyDay = new Date().getDate();
+      renderDeptSchedule();
+      document.getElementById('deptScheduleModal').classList.add('open');
+    }
+
     function renderDeptEmpList() {
       const list = document.getElementById('deptEmpList');
       if (!list) return;
@@ -2925,6 +3071,7 @@
       const groupOptionsBase = '<option value="">بدون مجموعة</option>' + deptGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
       list.innerHTML = deptEmployees.map(emp => {
         const restTxt = emp.restDay !== undefined && emp.restDay !== '' ? 'راحة: ' + restLabels[Number(emp.restDay)] : 'بدون يوم راحة ثابت';
+        const phoneTxt = emp.phone ? ' • واتساب: ' + emp.phone : ' • بدون رقم واتساب';
         const actionHtml = deptReorderMode
           ? `<button type="button" class="mli-grip" data-emp="${emp.id}">☰</button>`
           : `<button type="button" class="mli-del" data-emp="${emp.id}">✕</button>`;
@@ -2937,12 +3084,25 @@
             <div style="display:flex;align-items:center;gap:6px;">
               <span class="mli-name"${empColor ? ` style="color:${empColor};"` : ''}>${emp.name}</span>
               ${groupSelectHtml}
+              <button type="button" class="mli-phone-edit" data-emp="${emp.id}" title="تعديل رقم واتساب" style="border:none;background:transparent;font-size:13px;cursor:pointer;">☎️</button>
             </div>
-            <span class="mli-sub">${restTxt}</span>
+            <span class="mli-sub">${restTxt}${phoneTxt}</span>
           </div>
           ${actionHtml}
         </div>`;
       }).join('');
+      list.querySelectorAll('.mli-phone-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const emp = deptEmployees.find(e => e.id === btn.dataset.emp);
+          if (!emp) return;
+          const val = prompt('رقم واتساب الموظف (بالصيغة الدولية بدون + مثلاً 201001234567):', emp.phone || '');
+          if (val !== null) {
+            emp.phone = val.trim();
+            saveData();
+            renderDeptEmpList();
+          }
+        });
+      });
       list.querySelectorAll('.mli-group-select').forEach(sel => {
         const emp = deptEmployees.find(e => e.id === sel.dataset.emp);
         if (emp && emp.groupId) sel.value = emp.groupId;
@@ -3119,6 +3279,11 @@
               if (val === '1' || val === '2' || val === '3') dayCounts[d][val]++;
               const numColor = { '1': '#ffffff', '2': '#bdbdbd', '3': '#2b2b2b' };
               const numText = { '1': '#000000', '2': '#0d3b8f', '3': '#ffe066' };
+              const swapTextOverride = { '2>3': '#ffb3b3', '3>2': '#7ec8ff', '1>3': '#e50000' };
+              const swapTextStroke = {
+                '2>3': '-webkit-text-stroke:1px #000000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;',
+                '1>3': '-webkit-text-stroke:1px #ffffff;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;'
+              };
               const numGlow = '';
               const swapMatch = /^([123])>([123])$/.exec(val);
               const selectHtml = `<select class="dept-cell ${swapMatch ? 'dc-swap' : (val === '1' ? 'dc-1' : (val === '2' ? 'dc-2' : (val === '3' ? 'dc-3' : 'dc-empty')))}" data-emp="${emp.id}" data-day="${d}"${swapMatch ? ' style="color:transparent;"' : ''}>${cellOptionsHtml(val)}</select>`;
@@ -3126,7 +3291,9 @@
                 const [, from, to] = swapMatch;
                 dayCounts[d][to]++;
                 const bg = `background-color:${numColor[to]};background-image:repeating-linear-gradient(45deg, ${numColor[from]} 0px, ${numColor[from]} 1.5px, transparent 1.5px, transparent 4px);`;
-                bodyRows += `<td class="${todayCls.trim()}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${numText[to]};${numGlow}">${to}</span></span></td>`;
+                const txtColor = swapTextOverride[val] || numText[to];
+                const txtStroke = swapTextStroke[val] || '';
+                bodyRows += `<td class="${todayCls.trim()}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${txtColor};${numGlow}${txtStroke}">${to}</span></span></td>`;
               } else {
                 bodyRows += `<td class="${todayCls.trim()}">${selectHtml}</td>`;
               }
@@ -3985,6 +4152,7 @@
     // ==================== ربط الأحداث ====================
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
+      checkForSharedText();
       ensureOfficialHolidaysTable();
       applyTheme();
       applyLanguage();
@@ -4084,6 +4252,73 @@
         document.getElementById('deptScheduleModal').classList.add('open');
       });
       document.getElementById('closeDeptSchedule').addEventListener('click', () => { document.getElementById('deptScheduleModal').classList.remove('open'); });
+      document.getElementById('menuShareImport').addEventListener('click', () => {
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+        const text = prompt('الصق نص رسالة الوردية من واتساب هنا:');
+        if (text) {
+          openDeptScheduleForShare();
+          openShareImportModal(text);
+        }
+      });
+      document.getElementById('menuCopyTemplate').addEventListener('click', () => {
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+        const copyFallback = () => { prompt('انسخ النص ده وابعته لموظفينك ليكتبوا بنفس الشكل:', SHARE_MESSAGE_TEMPLATE); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(SHARE_MESSAGE_TEMPLATE).then(() => toast('اتنسخ ✔️ ابعته لموظفينك على واتساب')).catch(copyFallback);
+        } else {
+          copyFallback();
+        }
+      });
+      document.getElementById('closeShareImport').addEventListener('click', () => { document.getElementById('shareImportModal').classList.remove('open'); });
+      document.getElementById('shareImportCancel').addEventListener('click', () => { document.getElementById('shareImportModal').classList.remove('open'); });
+      document.getElementById('shareImportSave').addEventListener('click', () => {
+        const empId = document.getElementById('shareImportEmp').value;
+        const day = parseInt(document.getElementById('shareImportDay').value, 10);
+        const val = document.getElementById('shareImportValue').value;
+        if (!empId) { toast('اختار موظف الأول', 'error'); return; }
+        if (!day || day < 1 || day > 31) { toast('اليوم مش صحيح', 'error'); return; }
+        const y = currentYear !== undefined ? currentYear : new Date().getFullYear();
+        const m = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+        const monthKey = deptMonthKey(y, m);
+        deptSchedule[monthKey] = deptSchedule[monthKey] || {};
+        deptSchedule[monthKey][empId] = deptSchedule[monthKey][empId] || {};
+        deptSchedule[monthKey][empId][day] = val;
+        saveData();
+        document.getElementById('shareImportModal').classList.remove('open');
+        toast('تم قبول الطلب وتحديث جدول القسم ✔️');
+        deptSchYear = y;
+        deptSchMonth = m;
+        if (document.getElementById('deptScheduleModal').classList.contains('open')) renderDeptSchedule();
+      });
+      function describeShareValue(val) {
+        if (val === '' || val === undefined || val === null) return 'طلب إجازة';
+        const sw = /^([123])>([123])$/.exec(val);
+        if (sw) return 'تبديل وردية من ' + sw[1] + ' إلى ' + sw[2];
+        return 'وردية رقم ' + val;
+      }
+      document.getElementById('shareImportReject').addEventListener('click', () => {
+        const empId = document.getElementById('shareImportEmp').value;
+        const day = parseInt(document.getElementById('shareImportDay').value, 10);
+        const val = document.getElementById('shareImportValue').value;
+        const emp = deptEmployees.find(e => e.id === empId);
+        if (!emp) { toast('اختار موظف الأول', 'error'); return; }
+        const reason = prompt('سبب الرفض (اختياري):', '');
+        if (reason === null) return; // المستخدم عمل إلغاء
+        const desc = describeShareValue(val);
+        const dayTxt = day ? ('يوم ' + day) : '';
+        let msg = `مرفوض طلبك (${desc}${dayTxt ? ' - ' + dayTxt : ''}).`;
+        if (reason && reason.trim()) msg += ' السبب: ' + reason.trim();
+        const phone = (emp.phone || '').replace(/[^0-9]/g, '');
+        if (phone) {
+          window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+        } else if (navigator.share) {
+          navigator.share({ text: msg }).catch(() => { prompt('انسخ رسالة الرفض وابعتها للموظف يدويًا:', msg); });
+        } else {
+          prompt('مفيش رقم واتساب مسجل للموظف — انسخ رسالة الرفض وابعتها يدويًا:', msg);
+        }
+        document.getElementById('shareImportModal').classList.remove('open');
+        toast('تم إرسال الرفض، والطلب متسجلش في الجدول');
+      });
       document.getElementById('deptSchPrev').addEventListener('click', () => {
         deptSchMonth--;
         if (deptSchMonth < 0) { deptSchMonth = 11; deptSchYear--; }
