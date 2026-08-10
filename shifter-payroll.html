@@ -2498,7 +2498,8 @@
       el.textContent = msg;
       el.className = 'toast show ' + type;
       clearTimeout(el._timeout);
-      el._timeout = setTimeout(() => { el.className = 'toast'; }, 2500);
+      const duration = msg && msg.length > 60 ? 6000 : 2500;
+      el._timeout = setTimeout(() => { el.className = 'toast'; }, duration);
     }
     function applyTheme() {
       document.documentElement.classList.toggle('dark-mode', darkMode);
@@ -3102,19 +3103,31 @@
       // عن طريق navigator.share لأنها مش ضمن قائمة الأنواع المسموح مشاركتها،
       // فبنجرب النوع ده الأول وبعدين نرجع لـ text/plain اللي مقبول بشكل أوسع.
       const mimeCandidates = ['application/json', 'text/plain'];
+      let lastError = null;
       for (const mime of mimeCandidates) {
         try {
           const blob = new Blob([jsonStr], { type: mime });
           const file = new File([blob], fileName, { type: mime });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: shareTitle, text: shareText }).catch((err) => {
-              if (err && err.name !== 'AbortError') downloadJsonFile(plainBlob(), fileName);
-            });
-            return;
+            try {
+              navigator.share({ files: [file], title: shareTitle, text: shareText }).catch((err) => {
+                if (err && err.name !== 'AbortError') {
+                  console.error('navigator.share rejected:', err);
+                  const detail = (err && (err.message || err.name)) ? (' — تفاصيل: ' + (err.name || '') + ' ' + (err.message || '')) : '';
+                  downloadJsonFile(plainBlob(), fileName, 'فشلت المشاركة المباشرة' + detail + '. تم تنزيل الملف بدل منها.');
+                }
+              });
+              return;
+            } catch (syncErr) {
+              console.error('navigator.share threw synchronously:', syncErr);
+              lastError = syncErr;
+              continue;
+            }
           }
-        } catch (e) { /* جرب النوع اللي بعده */ }
+        } catch (e) { lastError = e; }
       }
-      downloadJsonFile(plainBlob(), fileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+      const detail = lastError ? (' — تفاصيل: ' + (lastError.name || '') + ' ' + (lastError.message || '')) : '';
+      downloadJsonFile(plainBlob(), fileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة' + detail + '. تم تنزيل الملف، ابعته من واتساب يدوياً.');
     }
 
     function exportEmployeesTable() {
