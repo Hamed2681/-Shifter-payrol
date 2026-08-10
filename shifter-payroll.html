@@ -3072,6 +3072,33 @@
       document.getElementById('deptScheduleModal').classList.add('open');
     }
 
+    function downloadJsonFile(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      toast('تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
+    }
+
+    function shareJsonFile(jsonStr, fileName, shareTitle, shareText) {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      try {
+        const file = new File([blob], fileName, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: shareTitle, text: shareText }).catch((err) => {
+            if (err && err.name !== 'AbortError') downloadJsonFile(blob, fileName);
+          });
+          return;
+        }
+      } catch (e) { /* fall through to download */ }
+      downloadJsonFile(blob, fileName);
+    }
+
     function exportEmployeesTable() {
       if (deptEmployees.length === 0) { toast('لا يوجد موظفين لتصديرهم', 'error'); return; }
       const payload = {
@@ -3083,24 +3110,7 @@
       };
       const jsonStr = JSON.stringify(payload, null, 2);
       const fileName = 'shifter_employees_' + new Date().toISOString().slice(0, 10) + '.json';
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-
-      let file = null;
-      try { file = new File([blob], fileName, { type: 'application/json' }); } catch (e) {}
-
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: 'جدول الموظفين',
-          text: 'ملف تحديث جدول الموظفين — افتحه من داخل التطبيق بزرار "استيراد وتحديث".'
-        }).catch(() => {});
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName;
-        a.click();
-        toast('تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
-      }
+      shareJsonFile(jsonStr, fileName, 'جدول الموظفين', 'ملف تحديث جدول الموظفين — افتحه من داخل التطبيق بزرار "استيراد وتحديث".');
     }
 
     function importEmployeesTable(file) {
@@ -3161,7 +3171,10 @@
     }
 
     function exportScheduleTable() {
-      if (Object.keys(deptSchedule).length === 0) { toast('لا يوجد جدول ورديات لتصديره', 'error'); return; }
+      if (Object.keys(deptSchedule).some(mk => Object.keys(deptSchedule[mk] || {}).length > 0) === false) {
+        toast('لا يوجد جدول ورديات لتصديره', 'error');
+        return;
+      }
       const employeeNames = {};
       deptEmployees.forEach(e => { employeeNames[e.id] = e.name; });
       const payload = {
@@ -3173,24 +3186,7 @@
       };
       const jsonStr = JSON.stringify(payload, null, 2);
       const fileName = 'shifter_schedule_' + new Date().toISOString().slice(0, 10) + '.json';
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-
-      let file = null;
-      try { file = new File([blob], fileName, { type: 'application/json' }); } catch (e) {}
-
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: 'جدول الورديات',
-          text: 'ملف تحديث جدول الورديات — افتحه من داخل التطبيق بزرار "استيراد وتحديث الجدول".'
-        }).catch(() => {});
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName;
-        a.click();
-        toast('تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
-      }
+      shareJsonFile(jsonStr, fileName, 'جدول الورديات', 'ملف تحديث جدول الورديات — افتحه من داخل التطبيق بزرار "استيراد وتحديث الجدول".');
     }
 
     function importScheduleTable(file) {
