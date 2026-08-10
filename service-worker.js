@@ -24,6 +24,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // ===== استقبال مشاركة (Share Target) من واتساب — نص أو ملف JSON =====
+  const isShareTarget = event.request.method === 'POST' && url.pathname.endsWith('/shifter-payroll.html');
+  if (isShareTarget) {
+    event.respondWith(handleShareTarget(event));
+    return;
+  }
+
   if (event.request.method !== 'GET') return;
 
   const isHTML = event.request.mode === 'navigate' ||
@@ -57,3 +66,31 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+async function handleShareTarget(event) {
+  try {
+    const formData = await event.request.formData();
+    const file = formData.get('shared_file');
+    const text = formData.get('share_text') || formData.get('text') || '';
+    const title = formData.get('share_title') || formData.get('title') || '';
+
+    if (file && typeof file.text === 'function' && file.size > 0) {
+      // ملف (زي ملف تصدير جدول القسم JSON) — نخزنه في Cache Storage
+      // عشان صفحة التطبيق تقراه بعد ما تفتح
+      const cache = await caches.open('shifter-share-cache');
+      const fileText = await file.text();
+      await cache.put('shared-file-data', new Response(fileText));
+      return Response.redirect('./shifter-payroll.html?shared_kind=file', 303);
+    }
+
+    if (text || title) {
+      // نص عادي (رسالة وردية/تبديل/إجازة من واتساب)
+      const t = encodeURIComponent(text || title);
+      return Response.redirect('./shifter-payroll.html?share_text=' + t, 303);
+    }
+
+    return Response.redirect('./shifter-payroll.html', 303);
+  } catch (e) {
+    return Response.redirect('./shifter-payroll.html', 303);
+  }
+}
