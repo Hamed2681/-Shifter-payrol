@@ -3101,48 +3101,31 @@
         return;
       }
 
-      // كروم بيرفض أحياناً مشاركة ملفات بامتداد .json حتى لو غيّرنا نوع الـ MIME،
-      // لأن فحص "الملفات المسموح مشاركتها" بيعتمد على امتداد الاسم كمان.
-      // فبنجرب .json الأول، وبعدين نرجع لامتداد .txt (المحتوى فاضل JSON زي ما هو).
-      const candidates = [
-        { mime: 'application/json', name: jsonFileName },
-        { mime: 'text/plain', name: jsonFileName },
-        { mime: 'text/plain', name: txtFileName }
-      ];
-
-      let idx = 0;
-      let lastError = null;
-
-      function tryNext() {
-        if (idx >= candidates.length) {
-          const detail = lastError ? (' — تفاصيل: ' + (lastError.name || '') + ' ' + (lastError.message || '')) : '';
-          downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة' + detail + '. تم تنزيل الملف، ابعته من واتساب يدوياً.');
-          return;
-        }
-        const c = candidates[idx++];
-        try {
-          const blob = new Blob([jsonStr], { type: c.mime });
-          const file = new File([blob], c.name, { type: c.mime });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: shareTitle, text: shareText })
-              .then(() => { /* تمت المشاركة بنجاح */ })
-              .catch((err) => {
-                if (err && err.name === 'AbortError') return; // المستخدم قفل قائمة المشاركة بنفسه
-                console.error('navigator.share rejected for', c, err);
-                lastError = err;
-                tryNext();
-              });
-          } else {
-            tryNext();
-          }
-        } catch (e) {
-          console.error('navigator.share threw for', c, e);
-          lastError = e;
-          tryNext();
-        }
+      // navigator.share() بيستهلك "إذن اللمسة" (user gesture) من أول استدعاء ليها —
+      // فأي محاولة تانية بعد الرفض هترفض تلقائياً بخطأ "Must be handling a user gesture"
+      // حتى لو المستخدم لسه ضاغط. يعني لازم نختار أفضل محاولة واحدة ونعمل بيها الاستدعاء
+      // لمرة وحدة بس، بدل ما نجرب أكتر من امتداد/نوع بالتتابع.
+      // امتداد .txt أوسع قبولاً في فحص "الملفات المسموح مشاركتها" من .json.
+      let file;
+      try {
+        const blob = new Blob([jsonStr], { type: 'text/plain' });
+        file = new File([blob], txtFileName, { type: 'text/plain' });
+      } catch (e) {
+        downloadJsonFile(plainBlob(), jsonFileName, 'تعذّر تجهيز الملف للمشاركة. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        return;
       }
 
-      tryNext();
+      if (!(navigator.canShare && navigator.canShare({ files: [file] }))) {
+        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        return;
+      }
+
+      navigator.share({ files: [file], title: shareTitle, text: shareText }).catch((err) => {
+        if (err && err.name === 'AbortError') return; // المستخدم قفل قائمة المشاركة بنفسه، ده طبيعي
+        console.error('navigator.share rejected:', err);
+        const detail = (err && (err.message || err.name)) ? (' — تفاصيل: ' + (err.name || '') + ' ' + (err.message || '')) : '';
+        downloadJsonFile(plainBlob(), jsonFileName, 'فشلت المشاركة المباشرة' + detail + '. تم تنزيل الملف بدل منها.');
+      });
     }
 
     function exportEmployeesTable() {
