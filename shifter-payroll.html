@@ -2173,7 +2173,7 @@
           <button type="button" class="btn btn-primary" id="deptEmpExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة الموظفين (واتساب)</button>
           <button type="button" class="btn" id="deptEmpImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث</button>
         </div>
-        <input type="file" id="deptEmpImportFile" accept=".json,application/json" style="display:none" />
+        <input type="file" id="deptEmpImportFile" accept=".json,.txt,application/json,text/plain" style="display:none" />
         <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اضغط "مشاركة" لإرسال أسماء الموظفين + المجموعات (من غير جدول الورديات) لأي زميل معاه نفس التطبيق. جدول الورديات نفسه ليه زرار مشاركة/استيراد منفصل تحت.</p>
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
           <button type="button" class="btn" id="deptReorderToggle" style="padding:6px 12px;font-size:12px;">🔀 إعادة ترتيب</button>
@@ -2202,7 +2202,7 @@
         <button type="button" class="btn btn-primary" id="deptSchExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة جدول الورديات (واتساب)</button>
         <button type="button" class="btn" id="deptSchImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث الجدول</button>
       </div>
-      <input type="file" id="deptSchImportFile" accept=".json,application/json" style="display:none" />
+      <input type="file" id="deptSchImportFile" accept=".json,.txt,application/json,text/plain" style="display:none" />
       <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">ده بيصدّر جدول الورديات نفسه (كل الشهور) لوحده منفصل عن بيانات الموظفين. لازم أسماء الموظفين تكون متطابقة عند الطرفين عشان الجدول يتربط صح — لو موظف مش موجود عند المستلم، هيتضاف تلقائياً بالاسم بس من غير رقم واتساب أو مجموعة.</p>
       <div class="dept-sch-scroll">
         <div id="deptScheduleTable"></div>
@@ -3086,48 +3086,63 @@
       toast(reason || 'تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
     }
 
-    function shareJsonFile(jsonStr, fileName, shareTitle, shareText) {
+    function shareJsonFile(jsonStr, baseFileName, shareTitle, shareText) {
       const plainBlob = () => new Blob([jsonStr], { type: 'application/json' });
+      const jsonFileName = baseFileName;
+      const txtFileName = baseFileName.replace(/\.json$/i, '.txt');
 
       // تشخيص سبب عدم توفر المشاركة، عشان لو رجعنا للتنزيل نوضح السبب الحقيقي
       if (!window.isSecureContext) {
-        downloadJsonFile(plainBlob(), fileName, 'المشاركة المباشرة لواتساب محتاجة الموقع يكون شغال بـ https — لو بتفتح الملف مباشرة من جهازك ده مش هيشتغل. تم تنزيل الملف، ابعته يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'المشاركة المباشرة لواتساب محتاجة الموقع يكون شغال بـ https — لو بتفتح الملف مباشرة من جهازك ده مش هيشتغل. تم تنزيل الملف، ابعته يدوياً.');
         return;
       }
       if (!navigator.share) {
-        downloadJsonFile(plainBlob(), fileName, 'المتصفح ده مش بيدعم المشاركة المباشرة (Web Share API). تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح ده مش بيدعم المشاركة المباشرة (Web Share API). تم تنزيل الملف، ابعته من واتساب يدوياً.');
         return;
       }
 
-      // بعض المتصفحات (خصوصاً كروم أندرويد) بترفض مشاركة ملفات بنوع application/json
-      // عن طريق navigator.share لأنها مش ضمن قائمة الأنواع المسموح مشاركتها،
-      // فبنجرب النوع ده الأول وبعدين نرجع لـ text/plain اللي مقبول بشكل أوسع.
-      const mimeCandidates = ['application/json', 'text/plain'];
+      // كروم بيرفض أحياناً مشاركة ملفات بامتداد .json حتى لو غيّرنا نوع الـ MIME،
+      // لأن فحص "الملفات المسموح مشاركتها" بيعتمد على امتداد الاسم كمان.
+      // فبنجرب .json الأول، وبعدين نرجع لامتداد .txt (المحتوى فاضل JSON زي ما هو).
+      const candidates = [
+        { mime: 'application/json', name: jsonFileName },
+        { mime: 'text/plain', name: jsonFileName },
+        { mime: 'text/plain', name: txtFileName }
+      ];
+
+      let idx = 0;
       let lastError = null;
-      for (const mime of mimeCandidates) {
+
+      function tryNext() {
+        if (idx >= candidates.length) {
+          const detail = lastError ? (' — تفاصيل: ' + (lastError.name || '') + ' ' + (lastError.message || '')) : '';
+          downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة' + detail + '. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+          return;
+        }
+        const c = candidates[idx++];
         try {
-          const blob = new Blob([jsonStr], { type: mime });
-          const file = new File([blob], fileName, { type: mime });
+          const blob = new Blob([jsonStr], { type: c.mime });
+          const file = new File([blob], c.name, { type: c.mime });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-              navigator.share({ files: [file], title: shareTitle, text: shareText }).catch((err) => {
-                if (err && err.name !== 'AbortError') {
-                  console.error('navigator.share rejected:', err);
-                  const detail = (err && (err.message || err.name)) ? (' — تفاصيل: ' + (err.name || '') + ' ' + (err.message || '')) : '';
-                  downloadJsonFile(plainBlob(), fileName, 'فشلت المشاركة المباشرة' + detail + '. تم تنزيل الملف بدل منها.');
-                }
+            navigator.share({ files: [file], title: shareTitle, text: shareText })
+              .then(() => { /* تمت المشاركة بنجاح */ })
+              .catch((err) => {
+                if (err && err.name === 'AbortError') return; // المستخدم قفل قائمة المشاركة بنفسه
+                console.error('navigator.share rejected for', c, err);
+                lastError = err;
+                tryNext();
               });
-              return;
-            } catch (syncErr) {
-              console.error('navigator.share threw synchronously:', syncErr);
-              lastError = syncErr;
-              continue;
-            }
+          } else {
+            tryNext();
           }
-        } catch (e) { lastError = e; }
+        } catch (e) {
+          console.error('navigator.share threw for', c, e);
+          lastError = e;
+          tryNext();
+        }
       }
-      const detail = lastError ? (' — تفاصيل: ' + (lastError.name || '') + ' ' + (lastError.message || '')) : '';
-      downloadJsonFile(plainBlob(), fileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة' + detail + '. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+
+      tryNext();
     }
 
     function exportEmployeesTable() {
