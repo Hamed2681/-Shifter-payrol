@@ -2339,8 +2339,8 @@
     let schedule = {};
     let scheduleExtra = {};
     let selectedShiftId = null;
-    let companies = ['الشركة الرئيسية'];
-    let currentCompany = 0;
+    let companies = [{ id: 'default', name: 'الشركة الرئيسية' }];
+    let currentCompany = 'default';
     let currentYear = 2026;
     let currentMonth = 6;
     const ERASE_ID = '__erase__';
@@ -2606,23 +2606,96 @@
       if (themeBtn) themeBtn.title = dict[darkMode ? 'themeToggleLight' : 'themeToggleDark'];
     }
 
+    // إدارة الشركات (كل شركة عندها بيانات موظفين وجداول ورواتب منفصلة تماماً)
+    function migrateLegacyCompanyData() {
+      try {
+        const legacy = localStorage.getItem('shifterData');
+        const migrated = localStorage.getItem('shifterData_default');
+        if (legacy && !migrated) {
+          localStorage.setItem('shifterData_default', legacy);
+        }
+      } catch(e) {}
+    }
+    function loadCompaniesMeta() {
+      try {
+        const rawList = localStorage.getItem('shifterCompaniesList');
+        companies = rawList ? JSON.parse(rawList) : null;
+      } catch(e) { companies = null; }
+      if (!Array.isArray(companies) || companies.length === 0) {
+        companies = [{ id: 'default', name: 'الشركة الرئيسية' }];
+      }
+      try {
+        currentCompany = localStorage.getItem('shifterCurrentCompanyId') || companies[0].id;
+      } catch(e) { currentCompany = companies[0].id; }
+      if (!companies.find(c => c.id === currentCompany)) currentCompany = companies[0].id;
+    }
+    function saveCompaniesMeta() {
+      try {
+        localStorage.setItem('shifterCompaniesList', JSON.stringify(companies));
+        localStorage.setItem('shifterCurrentCompanyId', currentCompany);
+      } catch(e) {}
+    }
+    function getCurrentCompanyObj() {
+      return companies.find(c => c.id === currentCompany) || companies[0];
+    }
+    function renderCompanySelect() {
+      const sel = document.getElementById('companySelect');
+      if (!sel) return;
+      sel.innerHTML = '';
+      companies.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+      const addOpt = document.createElement('option');
+      addOpt.value = '__add_company__';
+      addOpt.textContent = '➕ إضافة شركة جديدة';
+      sel.appendChild(addOpt);
+      sel.value = currentCompany;
+    }
+    function switchToCompany(newId) {
+      if (!newId || newId === currentCompany) { renderCompanySelect(); return; }
+      saveData(); // احفظ بيانات الشركة الحالية تحت مفتاحها الخاص قبل ما نسيبها
+      currentCompany = newId;
+      saveCompaniesMeta();
+      location.reload();
+    }
+    function addNewCompany() {
+      const name = prompt('اسم الشركة الجديدة:', '');
+      if (!name || !name.trim()) { renderCompanySelect(); return; }
+      const newId = generateId();
+      companies.push({ id: newId, name: name.trim() });
+      saveData(); // احفظ بيانات الشركة الحالية الأول
+      currentCompany = newId;
+      saveCompaniesMeta();
+      location.reload();
+    }
+    function renameCurrentCompany() {
+      const comp = getCurrentCompanyObj();
+      const name = prompt('اسم الشركة:', comp.name);
+      if (!name || !name.trim()) return;
+      comp.name = name.trim();
+      saveCompaniesMeta();
+      renderCompanySelect();
+    }
+
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
-        localStorage.setItem('shifterData', JSON.stringify(data));
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
+        saveCompaniesMeta();
       } catch(e) {}
     }
     function loadData() {
       try {
-        const raw = localStorage.getItem('shifterData');
+        const raw = localStorage.getItem('shifterData_' + currentCompany);
         if (!raw) return false;
         const data = JSON.parse(raw);
         shifts = data.shifts || shifts;
         schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
-        companies = data.companies || companies;
-        currentCompany = data.currentCompany || 0;
         additionTypes = data.additionTypes || additionTypes;
         additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
         deductionTypes = data.deductionTypes || deductionTypes;
@@ -3244,9 +3317,11 @@
           });
 
           let daysUpdated = 0;
+          let lastDataMonthKey = null;
           Object.keys(incomingSchedule).forEach(monthKey => {
             const monthData = incomingSchedule[monthKey] || {};
             if (!deptSchedule[monthKey]) deptSchedule[monthKey] = {};
+            let monthHadData = false;
             Object.keys(monthData).forEach(oldEmpId => {
               const localEmpId = empIdMap[oldEmpId];
               if (!localEmpId) return;
@@ -3255,9 +3330,22 @@
               Object.keys(dayEntries).forEach(day => {
                 deptSchedule[monthKey][localEmpId][day] = dayEntries[day];
                 daysUpdated++;
+                monthHadData = true;
               });
             });
+            if (monthHadData) lastDataMonthKey = monthKey;
           });
+
+          // نوديه تلقائياً لآخر شهر فيه بيانات فعلية جوه الملف المستورد،
+          // عشان لو كان واقف على شهر تاني ميفتكرش إن التحديث ماحصلش.
+          if (lastDataMonthKey) {
+            const parts = lastDataMonthKey.split('-');
+            const y = parseInt(parts[0], 10), m0 = parseInt(parts[1], 10) - 1;
+            if (!isNaN(y) && !isNaN(m0)) {
+              deptSchYear = y;
+              deptSchMonth = m0;
+            }
+          }
 
           saveData();
           renderDeptEmpList();
@@ -4361,7 +4449,18 @@
 
     // ==================== ربط الأحداث ====================
     document.addEventListener('DOMContentLoaded', () => {
+      migrateLegacyCompanyData();
+      loadCompaniesMeta();
       loadData();
+      renderCompanySelect();
+      document.getElementById('companySelect').addEventListener('change', function() {
+        if (this.value === '__add_company__') {
+          addNewCompany();
+          return;
+        }
+        switchToCompany(this.value);
+      });
+      document.getElementById('editCompanyBtn').addEventListener('click', renameCurrentCompany);
       checkForSharedText();
       ensureOfficialHolidaysTable();
       applyTheme();
@@ -5047,7 +5146,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, companies, currentCompany, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -5066,8 +5165,6 @@
             shifts = data.shifts || shifts;
             schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
-            companies = data.companies || companies;
-            currentCompany = data.currentCompany || 0;
             additionTypes = data.additionTypes || additionTypes;
             additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
             deductionTypes = data.deductionTypes || deductionTypes;
@@ -5121,8 +5218,8 @@
       });
 
       document.getElementById('menuReset').addEventListener('click', () => {
-        if (confirm('هل أنت متأكد من مسح كل البيانات؟ لا يمكن التراجع!')) {
-          localStorage.removeItem('shifterData');
+        if (confirm('هل أنت متأكد من مسح كل بيانات الشركة الحالية؟ لا يمكن التراجع!')) {
+          localStorage.removeItem('shifterData_' + currentCompany);
           location.reload();
         }
       });
