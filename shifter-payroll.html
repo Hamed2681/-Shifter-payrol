@@ -1249,6 +1249,7 @@
       padding: 3px 0;
       -webkit-appearance: none;
       appearance: none;
+      pointer-events: none;
     }
     .dept-sch-table select.dept-cell.dc-empty {
       background: transparent;
@@ -1644,6 +1645,13 @@
     .custom-dd-item:last-child { border-bottom: none; }
     .custom-dd-item:active { background: rgba(255,255,255,0.10); }
     .custom-dd-item.selected { color: #6db4f2; font-weight: 700; }
+    .custom-dd-header {
+      padding: 10px 20px 4px;
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      font-weight: 700;
+    }
     .custom-dd-trigger {
       display: inline-flex;
       align-items: center;
@@ -2559,7 +2567,7 @@
       if (customDdMenuEl) { customDdMenuEl.remove(); customDdMenuEl = null; }
     }
 
-    function openCustomDropdown(triggerEl, options, currentValue, onSelect) {
+    function openCustomDropdown(triggerEl, items, currentValue, onSelect) {
       closeCustomDropdown();
       const overlay = document.createElement('div');
       overlay.className = 'custom-dd-overlay';
@@ -2569,14 +2577,21 @@
 
       const menu = document.createElement('div');
       menu.className = 'custom-dd-menu';
-      options.forEach(opt => {
+      items.forEach(it => {
+        if (it.header) {
+          const h = document.createElement('div');
+          h.className = 'custom-dd-header';
+          h.textContent = it.label;
+          menu.appendChild(h);
+          return;
+        }
         const item = document.createElement('div');
-        item.className = 'custom-dd-item' + (String(opt.value) === String(currentValue) ? ' selected' : '');
-        item.textContent = opt.label;
+        item.className = 'custom-dd-item' + (String(it.value) === String(currentValue) ? ' selected' : '');
+        item.textContent = it.label;
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           closeCustomDropdown();
-          onSelect(opt.value);
+          onSelect(it.value);
         });
         menu.appendChild(item);
       });
@@ -2598,10 +2613,26 @@
       menu.style.top = top + 'px';
     }
 
+    // بيحوّل عناصر <option>/<optgroup> بتاعة select لقائمة عناصر تفهمها openCustomDropdown
+    function buildDropdownItemsFromSelect(select) {
+      const items = [];
+      Array.from(select.children).forEach(child => {
+        if (child.tagName === 'OPTGROUP') {
+          items.push({ header: true, label: child.label });
+          Array.from(child.children).forEach(opt => {
+            items.push({ value: opt.value, label: opt.textContent });
+          });
+        } else if (child.tagName === 'OPTION') {
+          items.push({ value: child.value, label: child.textContent });
+        }
+      });
+      return items;
+    }
+
     // بيحوّل عنصر select عادي لزرار بيفتح القائمة المخصصة، وبيفضل الـ select
     // الأصلي موجود (مخفي) عشان كل الكود القديم اللي بيقرا/يكتب .value وبيسمع change يفضل شغال زي ما هو
-    function enhanceSelectAsCustomDropdown(selectId) {
-      const select = document.getElementById(selectId);
+    function enhanceSelectAsCustomDropdown(selectOrId) {
+      const select = typeof selectOrId === 'string' ? document.getElementById(selectOrId) : selectOrId;
       if (!select || select.dataset.ddEnhanced) return;
       select.dataset.ddEnhanced = '1';
 
@@ -2623,8 +2654,7 @@
       select.insertAdjacentElement('afterend', trigger);
 
       trigger.addEventListener('click', () => {
-        const opts = Array.from(select.options).map(o => ({ value: o.value, label: o.textContent }));
-        openCustomDropdown(trigger, opts, select.value, (val) => {
+        openCustomDropdown(trigger, buildDropdownItemsFromSelect(select), select.value, (val) => {
           select.value = val;
           renderTrigger();
           select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2635,6 +2665,20 @@
       });
 
       customDdEnhancedSelects.push({ select, renderTrigger });
+    }
+
+    // نسخة للقوائم اللي شكلها الخاص (خلفية ملوّنة) لازم يفضل زي ما هو —
+    // بنسيب الـ select ظاهر بشكله الأصلي كخلية/تريجر، وبس بنمنع القائمة الأصلية
+    // بتاعته من الفتح ونفتح بدالها القائمة المخصصة، والاختيار بيرجع يتطبق على نفس الـ select
+    function makeElementOpenCustomDropdown(clickTarget, select) {
+      clickTarget.style.cursor = 'pointer';
+      clickTarget.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCustomDropdown(clickTarget, buildDropdownItemsFromSelect(select), select.value, (val) => {
+          select.value = val;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
     }
 
     // بينادَى بعد أي تغيير برمجي لقيمة select (زي وقت تحميل البيانات أو تغيير اللغة)
@@ -3565,6 +3609,7 @@
           renderDeptEmpList();
           renderDeptSchedule();
         });
+        enhanceSelectAsCustomDropdown(sel);
       });
       if (deptReorderMode) {
         enableDeptDragReorder(list);
@@ -3779,6 +3824,9 @@
           saveData();
           renderDeptSchedule();
         });
+        // نفتح القائمة المخصصة بدل قائمة الـ select الأصلية، مع الحفاظ على شكل
+        // الخلية الملوّن زي ما هو تماماً (الـ select نفسه بيفضل هو الخلفية المرئية)
+        makeElementOpenCustomDropdown(sel.parentElement, sel);
       });
 
       const collapseBtn = document.getElementById('deptCollapseToggle');
