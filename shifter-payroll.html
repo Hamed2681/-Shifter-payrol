@@ -183,8 +183,10 @@
       border-radius: var(--nm-radius-sm);
       box-shadow: var(--nm-shadow-inset);
     }
-    .company-select select {
+    .company-select select { display: none; }
+    .company-select .custom-dd-trigger {
       flex: 1;
+      min-width: 0;
       background: transparent;
       border: none;
       color: var(--nm-text);
@@ -192,11 +194,9 @@
       font-size: 15px;
       padding: 4px 0;
       font-family: var(--nm-font);
-      outline: none;
     }
-    .company-select select option {
-      color: var(--nm-text);
-      background: var(--nm-bg);
+    .company-select .custom-dd-trigger .dd-caret {
+      color: var(--nm-text-muted);
     }
     .company-select .edit-icon {
       font-size: 18px;
@@ -1605,6 +1605,62 @@
         font-size: 13px;
       }
     }
+    /* قائمة منسدلة مخصصة (بديل شكل الـ select الأصلي) */
+    .custom-dd-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: transparent;
+    }
+    .custom-dd-menu {
+      position: fixed;
+      z-index: 9999;
+      min-width: 220px;
+      max-width: min(320px, 90vw);
+      max-height: 70vh;
+      overflow-y: auto;
+      background: rgba(28,28,32,0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+      padding: 4px 0;
+      animation: customDdIn .16s ease-out;
+    }
+    @keyframes customDdIn {
+      from { opacity: 0; transform: scale(.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .custom-dd-item {
+      padding: 15px 20px;
+      text-align: center;
+      color: #fff;
+      font-size: 15px;
+      font-family: var(--nm-font);
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      cursor: pointer;
+      user-select: none;
+    }
+    .custom-dd-item:last-child { border-bottom: none; }
+    .custom-dd-item:active { background: rgba(255,255,255,0.10); }
+    .custom-dd-item.selected { color: #6db4f2; font-weight: 700; }
+    .custom-dd-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .custom-dd-trigger .dd-caret {
+      font-size: 10px;
+      opacity: .7;
+      flex-shrink: 0;
+    }
+    .custom-dd-trigger .dd-trigger-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -1621,7 +1677,6 @@
     <div class="company-select">
       <span class="edit-icon" id="editCompanyBtn" data-i18n-title="editCompany" title="تعديل اسم الشركة">✏️</span>
       <select id="companySelect" aria-label="اختر الشركة"></select>
-      <span class="caret">▾</span>
     </div>
     <div class="top-actions">
       <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي">🌙</button>
@@ -2493,6 +2548,101 @@
     function getShiftColor(id) { const s=getShift(id); return s ? s.bgColor : '#64748b'; }
     function getShiftTextColor(id) { const s=getShift(id); return s ? s.textColor : '#ffffff'; }
     function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2,4); }
+
+    // ===== قائمة منسدلة مخصصة (تحل محل شكل الـ select الأصلي) =====
+    let customDdMenuEl = null;
+    let customDdOverlayEl = null;
+    const customDdEnhancedSelects = [];
+
+    function closeCustomDropdown() {
+      if (customDdOverlayEl) { customDdOverlayEl.remove(); customDdOverlayEl = null; }
+      if (customDdMenuEl) { customDdMenuEl.remove(); customDdMenuEl = null; }
+    }
+
+    function openCustomDropdown(triggerEl, options, currentValue, onSelect) {
+      closeCustomDropdown();
+      const overlay = document.createElement('div');
+      overlay.className = 'custom-dd-overlay';
+      overlay.addEventListener('click', closeCustomDropdown);
+      document.body.appendChild(overlay);
+      customDdOverlayEl = overlay;
+
+      const menu = document.createElement('div');
+      menu.className = 'custom-dd-menu';
+      options.forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'custom-dd-item' + (String(opt.value) === String(currentValue) ? ' selected' : '');
+        item.textContent = opt.label;
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeCustomDropdown();
+          onSelect(opt.value);
+        });
+        menu.appendChild(item);
+      });
+      document.body.appendChild(menu);
+      customDdMenuEl = menu;
+
+      const rect = triggerEl.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const margin = 8;
+      let left = rect.left + rect.width / 2 - menuRect.width / 2;
+      let top = rect.bottom + 8;
+      if (left < margin) left = margin;
+      if (left + menuRect.width > window.innerWidth - margin) left = window.innerWidth - margin - menuRect.width;
+      if (top + menuRect.height > window.innerHeight - margin) {
+        top = rect.top - menuRect.height - 8;
+        if (top < margin) top = margin;
+      }
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    // بيحوّل عنصر select عادي لزرار بيفتح القائمة المخصصة، وبيفضل الـ select
+    // الأصلي موجود (مخفي) عشان كل الكود القديم اللي بيقرا/يكتب .value وبيسمع change يفضل شغال زي ما هو
+    function enhanceSelectAsCustomDropdown(selectId) {
+      const select = document.getElementById(selectId);
+      if (!select || select.dataset.ddEnhanced) return;
+      select.dataset.ddEnhanced = '1';
+
+      const trigger = document.createElement('div');
+      trigger.className = (select.className ? select.className + ' ' : '') + 'custom-dd-trigger';
+      const inlineStyle = select.getAttribute('style');
+      if (inlineStyle) trigger.setAttribute('style', inlineStyle);
+      trigger.tabIndex = 0;
+      trigger.innerHTML = '<span class="dd-trigger-label"></span><span class="dd-caret">▾</span>';
+      const labelEl = trigger.querySelector('.dd-trigger-label');
+
+      function renderTrigger() {
+        const opt = select.options[select.selectedIndex];
+        labelEl.textContent = opt ? opt.textContent : '';
+      }
+      renderTrigger();
+
+      select.style.display = 'none';
+      select.insertAdjacentElement('afterend', trigger);
+
+      trigger.addEventListener('click', () => {
+        const opts = Array.from(select.options).map(o => ({ value: o.value, label: o.textContent }));
+        openCustomDropdown(trigger, opts, select.value, (val) => {
+          select.value = val;
+          renderTrigger();
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+      trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+      });
+
+      customDdEnhancedSelects.push({ select, renderTrigger });
+    }
+
+    // بينادَى بعد أي تغيير برمجي لقيمة select (زي وقت تحميل البيانات أو تغيير اللغة)
+    // عشان شكل الزرار يتزامن مع القيمة الفعلية
+    function refreshAllCustomDropdownTriggers() {
+      customDdEnhancedSelects.forEach(e => e.renderTrigger());
+    }
+    // =====================================================
     function toast(msg, type='') {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -2604,6 +2754,7 @@
       if (langSelect) langSelect.value = uiLang;
       const themeBtn = document.getElementById('themeToggleBtn');
       if (themeBtn) themeBtn.title = dict[darkMode ? 'themeToggleLight' : 'themeToggleDark'];
+      refreshAllCustomDropdownTriggers();
     }
 
     // إدارة الشركات (كل شركة عندها بيانات موظفين وجداول ورواتب منفصلة تماماً)
@@ -2653,6 +2804,8 @@
       addOpt.textContent = '➕ إضافة شركة جديدة';
       sel.appendChild(addOpt);
       sel.value = currentCompany;
+      enhanceSelectAsCustomDropdown('companySelect');
+      refreshAllCustomDropdownTriggers();
     }
     function switchToCompany(newId) {
       if (!newId || newId === currentCompany) { renderCompanySelect(); return; }
@@ -4493,6 +4646,12 @@
       document.getElementById('holidayAllowanceValue').value = holidayAllowanceValue > 0 ? holidayAllowanceValue : '';
       document.getElementById('appAllowanceValueInput').value = appAllowanceValueManual > 0 ? appAllowanceValueManual : '';
       document.getElementById('restAllowanceValueInput').value = restAllowanceValueManual > 0 ? restAllowanceValueManual : '';
+
+      // تحويل القوائم المنسدلة الثابتة لشكل القائمة العائمة المخصصة
+      ['calendarViewSelect', 'uiLanguage', 'numeralType', 'fontStyle', 'weekStart',
+       'holidayMode', 'appAllowanceMode', 'restAllowanceMode', 'newDedUnit',
+       'newDeptEmpRestDay', 'shareImportEmp', 'shareImportValue'].forEach(enhanceSelectAsCustomDropdown);
+      refreshAllCustomDropdownTriggers();
 
       const now = new Date();
       const defFrom = savedPayFrom || formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
