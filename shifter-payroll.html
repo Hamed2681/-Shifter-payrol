@@ -1706,6 +1706,7 @@
       </div>
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuDeptSchedule">📋 جدول القسم</button>
+      <button class="side-menu-item" id="menuImportMyShifts">🔄 استيراد ورديتي من جدول القسم</button>
       <button class="side-menu-item" id="menuShareImport">📲 استيراد رسالة تبديل</button>
       <button class="side-menu-item" id="menuSendEmpRequest">✉️ إرسال نموذج جاهز لموظف</button>
       <button class="side-menu-item" id="menuCopyTemplate">📋 نسخ نموذج الرسالة للموظفين</button>
@@ -2049,6 +2050,11 @@
           <label style="font-size:12px;display:none;" id="managerPasswordWrap">كلمة مرور تعديل جدول الموظفين
             <input type="password" id="managerPasswordInput" placeholder="كلمة مرور التعديل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
           </label>
+          <label style="font-size:12px;">أنا مين في جدول القسم؟ (عشان تقدر تستورد ورديتك للتقويم الشخصي)
+            <select id="myDeptEmpSelect" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
+              <option value="">— اختار اسمك —</option>
+            </select>
+          </label>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span data-i18n="languageLabel">اللغة</span>
@@ -2273,6 +2279,20 @@
   </div>
 
 
+
+  <div class="modal" id="pgPromptModal" style="z-index:230;">
+    <div class="modal-content" style="max-width:420px;">
+      <button class="modal-close" id="pgPromptClose">⌃</button>
+      <h3 id="pgPromptTitle">إدخال</h3>
+      <div class="input-field">
+        <input type="text" id="pgPromptInput" autocomplete="off" />
+      </div>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn btn-outline" id="pgPromptCancel">إلغاء</button>
+        <button class="btn btn-primary" id="pgPromptOk">حسنًا</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal" id="deptScheduleModal">
     <div class="modal-content" style="max-width:100%;">
@@ -2607,6 +2627,7 @@
     let managerName = '';
     let managerPhone = '';
     let managerPassword = '';
+    let myDeptEmpId = ''; // ربط المستخدم بسجّله في جدول القسم عشان يقدر يستورد ورديته للتقويم الشخصي
     let editUnlocked = false; // حالة قفل التعديل — مش بيتصدّر مع بيانات الشركة عمداً
     let darkMode = false;
     try { darkMode = localStorage.getItem('shifterTheme') === 'dark'; } catch(e) {}
@@ -2778,6 +2799,45 @@
       const duration = msg && msg.length > 60 ? 6000 : 2500;
       el._timeout = setTimeout(() => { el.className = 'toast'; }, duration);
     }
+    // بديل موثوق لـ window.prompt() اللي ممكن ميشتغلش جوه PWA متثبّت (standalone)
+    function pgPrompt(message, defaultValue) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('pgPromptModal');
+        const titleEl = document.getElementById('pgPromptTitle');
+        const input = document.getElementById('pgPromptInput');
+        const okBtn = document.getElementById('pgPromptOk');
+        const cancelBtn = document.getElementById('pgPromptCancel');
+        const closeBtn = document.getElementById('pgPromptClose');
+        const isPassword = /كلمة\s*مرور/.test(message || '');
+        titleEl.textContent = message || '';
+        input.value = defaultValue || '';
+        input.type = isPassword ? 'password' : 'text';
+        modal.classList.add('open');
+        setTimeout(() => input.focus(), 50);
+
+        let done = false;
+        function finish(value) {
+          if (done) return;
+          done = true;
+          modal.classList.remove('open');
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          closeBtn.removeEventListener('click', onCancel);
+          input.removeEventListener('keydown', onKeydown);
+          resolve(value);
+        }
+        function onOk() { finish(input.value); }
+        function onCancel() { finish(null); }
+        function onKeydown(e) {
+          if (e.key === 'Enter') { e.preventDefault(); finish(input.value); }
+          else if (e.key === 'Escape') { finish(null); }
+        }
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        closeBtn.addEventListener('click', onCancel);
+        input.addEventListener('keydown', onKeydown);
+      });
+    }
     function applyTheme() {
       document.documentElement.classList.toggle('dark-mode', darkMode);
       const btn = document.getElementById('themeToggleBtn');
@@ -2928,6 +2988,14 @@
       if (!wrap) return;
       wrap.style.display = isManagerIdentity() ? 'block' : 'none';
     }
+    function refreshMyDeptEmpSelect() {
+      const sel = document.getElementById('myDeptEmpSelect');
+      if (!sel) return;
+      const opts = ['<option value="">— اختار اسمك —</option>']
+        .concat(deptEmployees.map(e => `<option value="${e.id}" ${e.id === myDeptEmpId ? 'selected' : ''}>${e.name}</option>`));
+      sel.innerHTML = opts.join('');
+      sel.value = myDeptEmpId || '';
+    }
     function canEditDeptSchedule() {
       return editUnlocked;
     }
@@ -2953,7 +3021,7 @@
         notice.style.display = 'block';
       }
     }
-    function toggleDeptEditLock() {
+    async function toggleDeptEditLock() {
       if (canEditDeptSchedule()) {
         editUnlocked = false;
         saveEditUnlockedState();
@@ -2967,7 +3035,7 @@
         toast('محتاج المدير يسجّل كلمة مرور التعديل في الإعدادات ⚙️ الأول', 'error');
         return;
       }
-      const pass = prompt('كلمة مرور تعديل جدول الموظفين:');
+      const pass = await pgPrompt('كلمة مرور تعديل جدول الموظفين:');
       if (pass === null) return;
       if (pass === managerPassword) {
         editUnlocked = true;
@@ -3008,8 +3076,8 @@
       saveCompaniesMeta();
       location.reload();
     }
-    function addNewCompany() {
-      const name = prompt('اسم الشركة الجديدة:', '');
+    async function addNewCompany() {
+      const name = await pgPrompt('اسم الشركة الجديدة:', '');
       if (!name || !name.trim()) { renderCompanySelect(); return; }
       const newId = generateId();
       companies.push({ id: newId, name: name.trim() });
@@ -3018,9 +3086,9 @@
       saveCompaniesMeta();
       location.reload();
     }
-    function renameCurrentCompany() {
+    async function renameCurrentCompany() {
       const comp = getCurrentCompanyObj();
-      const name = prompt('اسم الشركة:', comp.name);
+      const name = await pgPrompt('اسم الشركة:', comp.name);
       if (!name || !name.trim()) return;
       comp.name = name.trim();
       saveCompaniesMeta();
@@ -3030,7 +3098,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3081,6 +3149,7 @@
         managerName = data.managerName || '';
         managerPhone = data.managerPhone || '';
         managerPassword = data.managerPassword || '';
+        myDeptEmpId = data.myDeptEmpId || '';
         if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
           currentYear = data.currentYear;
           currentMonth = data.currentMonth;
@@ -3374,6 +3443,56 @@
     }
 
     function deptMonthKey(y, m) { return y + '-' + (m + 1); }
+
+    // استيراد ورديات المستخدم الشهر الحالي من جدول القسم للتقويم الشخصي
+    // - الأرقام 1/2/3 في جدول القسم بتتحول دايمًا لأول 3 ورديات في قائمة الورديات بنفس الترتيب
+    // - في حالة التبديل (مثلاً 1>2) بناخد الوردية النهائية بعد التبديل
+    // - أي يوم عنده وردية متسجلة بالفعل في التقويم الشخصي بيتسيب زي ما هو ومنستوردهوش
+    function importMyShiftsFromDeptSchedule() {
+      if (!myDeptEmpId) {
+        toast('حدّد الأول مين حضرتك في جدول القسم — من الإعدادات ⚙️', 'error');
+        document.getElementById('settingsModal').classList.add('open');
+        refreshMyDeptEmpSelect();
+        return;
+      }
+      const emp = deptEmployees.find(e => e.id === myDeptEmpId);
+      if (!emp) {
+        toast('اسمك المحدد في الإعدادات مش موجود في جدول القسم دلوقتي — راجع الإعدادات ⚙️', 'error');
+        return;
+      }
+      if (shifts.length < 3) {
+        toast('محتاج على الأقل 3 ورديات معرّفة في التقويم عشان الاستيراد يشتغل صح', 'error');
+        return;
+      }
+      const monthKey = deptMonthKey(currentYear, currentMonth);
+      const monthData = (deptSchedule[monthKey] && deptSchedule[monthKey][myDeptEmpId]) || {};
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      let imported = 0, skippedConflict = 0, skippedNoData = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (schedule[dateStr]) { skippedConflict++; continue; }
+        const val = monthData[d] || monthData[String(d)];
+        if (!val) { skippedNoData++; continue; }
+        const swapMatch = /^([123])>([123])$/.exec(val);
+        const effectiveNum = swapMatch ? swapMatch[2] : (/^[123]$/.test(val) ? val : null);
+        if (!effectiveNum) { skippedNoData++; continue; }
+        const targetShift = shifts[Number(effectiveNum) - 1];
+        if (!targetShift) { skippedNoData++; continue; }
+        schedule[dateStr] = targetShift.id;
+        imported++;
+      }
+
+      saveData();
+      renderCalendar();
+      if (typeof renderStats === 'function') renderStats();
+
+      if (imported === 0) {
+        toast('مفيش أيام جديدة اتستوردت — إما محدّش سجّل وردياتك في جدول القسم الشهر ده، أو كل الأيام متسجلة عندك بالفعل', 'error');
+      } else {
+        toast(`تم استيراد ${imported} يوم ✔️` + (skippedConflict ? ` — اتسيب ${skippedConflict} يوم كان متسجل عندك بالفعل` : ''));
+      }
+    }
     function deptCellEffectiveNum(val) {
       if (val === '1' || val === '2' || val === '3') return val;
       const m = /^([123])>([123])$/.exec(val || '');
@@ -3748,10 +3867,10 @@
         </div>`;
       }).join('');
       list.querySelectorAll('.mli-phone-edit').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const emp = deptEmployees.find(e => e.id === btn.dataset.emp);
           if (!emp) return;
-          const val = prompt('رقم واتساب الموظف (بالصيغة الدولية بدون + مثلاً 201001234567):', emp.phone || '');
+          const val = await pgPrompt('رقم واتساب الموظف (بالصيغة الدولية بدون + مثلاً 201001234567):', emp.phone || '');
           if (val !== null) {
             emp.phone = val.trim();
             saveData();
@@ -4948,9 +5067,13 @@
       });
       document.getElementById('deptEditLockBtn').addEventListener('click', toggleDeptEditLock);
       document.getElementById('closeDeptSchedule').addEventListener('click', () => { document.getElementById('deptScheduleModal').classList.remove('open'); });
-      document.getElementById('menuShareImport').addEventListener('click', () => {
+      document.getElementById('menuImportMyShifts').addEventListener('click', () => {
         document.getElementById('sideMenuOverlay').classList.remove('open');
-        const text = prompt('الصق نص رسالة الوردية من واتساب هنا:');
+        importMyShiftsFromDeptSchedule();
+      });
+      document.getElementById('menuShareImport').addEventListener('click', async () => {
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+        const text = await pgPrompt('الصق نص رسالة الوردية من واتساب هنا:');
         if (text) {
           openDeptScheduleForShare();
           openShareImportModal(text);
@@ -4958,7 +5081,7 @@
       });
       document.getElementById('menuCopyTemplate').addEventListener('click', () => {
         document.getElementById('sideMenuOverlay').classList.remove('open');
-        const copyFallback = () => { prompt('انسخ النص ده وابعته لموظفينك ليكتبوا بنفس الشكل:', SHARE_MESSAGE_TEMPLATE); };
+        const copyFallback = () => { pgPrompt('انسخ النص ده وابعته لموظفينك ليكتبوا بنفس الشكل:', SHARE_MESSAGE_TEMPLATE); };
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(SHARE_MESSAGE_TEMPLATE).then(() => toast('اتنسخ ✔️ ابعته لموظفينك على واتساب')).catch(copyFallback);
         } else {
@@ -5083,9 +5206,9 @@
         if (targetPhone) {
           window.open('https://wa.me/' + targetPhone + '?text=' + encodeURIComponent(msg), '_blank');
         } else if (navigator.share) {
-          navigator.share({ text: msg }).catch(() => { prompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg); });
+          navigator.share({ text: msg }).catch(() => { pgPrompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg); });
         } else {
-          prompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg);
+          pgPrompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg);
         }
         document.getElementById('sendEmpRequestModal').classList.remove('open');
         toast('تم تجهيز الرسالة ✔️');
@@ -5119,13 +5242,13 @@
         if (sw) return 'تبديل وردية من ' + sw[1] + ' إلى ' + sw[2];
         return 'وردية رقم ' + val;
       }
-      document.getElementById('shareImportReject').addEventListener('click', () => {
+      document.getElementById('shareImportReject').addEventListener('click', async () => {
         const empId = document.getElementById('shareImportEmp').value;
         const day = parseInt(document.getElementById('shareImportDay').value, 10);
         const val = document.getElementById('shareImportValue').value;
         const emp = deptEmployees.find(e => e.id === empId);
         if (!emp) { toast('اختار موظف الأول', 'error'); return; }
-        const reason = prompt('سبب الرفض (اختياري):', '');
+        const reason = await pgPrompt('سبب الرفض (اختياري):', '');
         if (reason === null) return; // المستخدم عمل إلغاء
         const desc = describeShareValue(val);
         const dayTxt = day ? ('يوم ' + day) : '';
@@ -5135,9 +5258,9 @@
         if (phone) {
           window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
         } else if (navigator.share) {
-          navigator.share({ text: msg }).catch(() => { prompt('انسخ رسالة الرفض وابعتها للموظف يدويًا:', msg); });
+          navigator.share({ text: msg }).catch(() => { pgPrompt('انسخ رسالة الرفض وابعتها للموظف يدويًا:', msg); });
         } else {
-          prompt('مفيش رقم واتساب مسجل للموظف — انسخ رسالة الرفض وابعتها يدويًا:', msg);
+          pgPrompt('مفيش رقم واتساب مسجل للموظف — انسخ رسالة الرفض وابعتها يدويًا:', msg);
         }
         document.getElementById('shareImportModal').classList.remove('open');
         toast('تم إرسال الرفض، والطلب متسجلش في الجدول');
@@ -5276,6 +5399,7 @@
         document.getElementById('managerPhoneInput').value = managerPhone;
         document.getElementById('managerPasswordInput').value = managerPassword;
         refreshManagerPasswordFieldVisibility();
+        refreshMyDeptEmpSelect();
         document.getElementById('settingsModal').classList.add('open');
       });
       document.getElementById('myNameInput').addEventListener('input', function() {
@@ -5296,6 +5420,7 @@
       });
       document.getElementById('managerPhoneInput').addEventListener('change', function() { managerPhone = this.value.replace(/[^0-9]/g, ''); this.value = managerPhone; saveData(); });
       document.getElementById('managerPasswordInput').addEventListener('change', function() { managerPassword = this.value; saveData(); });
+      document.getElementById('myDeptEmpSelect').addEventListener('change', function() { myDeptEmpId = this.value; saveData(); });
       document.getElementById('closeSettings').addEventListener('click', () => { document.getElementById('settingsModal').classList.remove('open'); });
 
       document.getElementById('closeConfig').addEventListener('click', () => { document.getElementById('shiftConfigModal').classList.remove('open'); });
@@ -5690,7 +5815,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -5747,6 +5872,7 @@
             managerName = data.managerName || '';
             managerPhone = data.managerPhone || '';
             managerPassword = data.managerPassword || '';
+            myDeptEmpId = data.myDeptEmpId || '';
             if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
               currentYear = data.currentYear;
               currentMonth = data.currentMonth;
