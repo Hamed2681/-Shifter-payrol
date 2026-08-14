@@ -5167,7 +5167,6 @@
       });
       document.getElementById('deptEmpExportBtn').addEventListener('click', exportEmployeesTable);
       document.getElementById('deptEmpImportBtn').addEventListener('click', () => {
-        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تستورد وتحدّث', 'error'); return; }
         document.getElementById('deptEmpImportFile').click();
       });
       document.getElementById('deptEmpImportFile').addEventListener('change', function(e) {
@@ -5177,7 +5176,6 @@
       });
       document.getElementById('deptSchExportBtn').addEventListener('click', exportScheduleTable);
       document.getElementById('deptSchImportBtn').addEventListener('click', () => {
-        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تستورد وتحدّث', 'error'); return; }
         document.getElementById('deptSchImportFile').click();
       });
       document.getElementById('deptSchImportFile').addEventListener('change', function(e) {
