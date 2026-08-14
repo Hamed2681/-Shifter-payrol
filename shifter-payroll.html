@@ -1707,6 +1707,7 @@
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuDeptSchedule">📋 جدول القسم</button>
       <button class="side-menu-item" id="menuShareImport">📲 استيراد رسالة تبديل</button>
+      <button class="side-menu-item" id="menuSendEmpRequest">✉️ إرسال نموذج جاهز لموظف</button>
       <button class="side-menu-item" id="menuCopyTemplate">📋 نسخ نموذج الرسالة للموظفين</button>
       <div class="side-menu-divider"></div>
       <button class="side-menu-item" id="menuExport" data-i18n="menuExport">📤 تصدير البيانات (JSON)</button>
@@ -2028,6 +2029,27 @@
       <button class="modal-close" id="closeSettings">⌃</button>
       <h3 data-i18n="settingsModalTitle">الإعدادات</h3>
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span style="font-weight:700;">✉️ بيانات إرسال الطلبات</span>
+          <label style="font-size:12px;">اسمك (لو هتبعت طلب لمديرك)
+            <input type="text" id="myNameInput" placeholder="اسمك بالكامل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">رقم واتساب حضرتك (بالصيغة الدولية بدون +)
+            <input type="text" id="myPhoneInput" placeholder="مثلاً 201001234567" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">أرقام واتساب إضافية لحضرتك (افصل بينهم بفاصلة ,)
+            <input type="text" id="myExtraPhonesInput" placeholder="مثلاً 201001234567, 201009876543" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">اسم مدير القسم
+            <input type="text" id="managerNameInput" placeholder="اسم المدير" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">رقم موبايل مدير القسم (المرتبط بواتساب، بدون +)
+            <input type="text" id="managerPhoneInput" placeholder="مثلاً 201001234567" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;display:none;" id="managerPasswordWrap">كلمة مرور تعديل جدول الموظفين
+            <input type="password" id="managerPasswordInput" placeholder="كلمة مرور التعديل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+        </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span data-i18n="languageLabel">اللغة</span>
           <select id="uiLanguage" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
@@ -2202,10 +2224,64 @@
     </div>
   </div>
 
+  <div class="modal" id="sendEmpRequestModal" style="z-index:220;">
+    <div class="modal-content">
+      <button class="modal-close" id="closeSendEmpRequest">⌃</button>
+      <h3>✉️ إرسال نموذج جاهز</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button type="button" class="btn" id="sendReqDirManager" style="flex:1;padding:8px;font-size:12px;">👔 أنا المدير (لموظف)</button>
+        <button type="button" class="btn" id="sendReqDirEmployee" style="flex:1;padding:8px;font-size:12px;">🧑‍💼 أنا موظف (لمديري)</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button type="button" class="btn" id="sendReqTypeLeave" style="flex:1;padding:8px;font-size:13px;">🏖️ طلب إجازة</button>
+        <button type="button" class="btn" id="sendReqTypeSwap" style="flex:1;padding:8px;font-size:13px;">🔄 تبديل وردية</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="font-size:13px;font-weight:700;" id="sendReqEmpWrap">الموظف
+          <select id="sendReqEmp" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;"></select>
+        </label>
+        <label style="font-size:13px;font-weight:700;display:none;" id="sendReqMyNameWrap">اسمك
+          <input type="text" id="sendReqMyName" placeholder="اسمك بالكامل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+        </label>
+        <label style="font-size:13px;font-weight:700;">اليوم (رقم في الشهر)
+          <input type="number" id="sendReqDay" min="1" max="31" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+        </label>
+        <div id="sendReqSwapFields" style="display:none;gap:10px;">
+          <label style="font-size:13px;font-weight:700;flex:1;">من وردية
+            <select id="sendReqFrom" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            </select>
+          </label>
+          <label style="font-size:13px;font-weight:700;flex:1;">إلى وردية
+            <select id="sendReqTo" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            </select>
+          </label>
+        </div>
+        <p style="font-size:12px;color:var(--nm-text-muted);background:var(--nm-bg);padding:8px;border-radius:var(--nm-radius-sm);box-shadow:var(--nm-shadow-inset);" id="sendReqPreview"></p>
+        <p id="sendReqNoManagerWarn" style="display:none;font-size:12px;color:var(--nm-danger);font-weight:700;">محتاج تسجّل اسم ورقم واتساب مديرك في الإعدادات ⚙️ الأول.</p>
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;" id="sendReqUpdateScheduleWrap">
+          <input type="checkbox" id="sendReqUpdateSchedule" checked />
+          تحديث جدول القسم بنفس القيمة كمان
+        </label>
+      </div>
+      <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="sendReqSendBtn">📲 إرسال واتساب</button>
+        <button class="btn btn-outline" id="sendReqCancel">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+
+
   <div class="modal" id="deptScheduleModal">
     <div class="modal-content" style="max-width:100%;">
       <button class="modal-close" id="closeDeptSchedule">⌃</button>
-      <h3>📋 جدول القسم</h3>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <h3 style="margin:0;">📋 جدول القسم</h3>
+        <button type="button" id="deptEditLockBtn" style="display:none;border:none;background:transparent;font-size:18px;cursor:pointer;" title="تعديل وضع القفل"></button>
+      </div>
+      <p id="deptViewOnlyNotice" style="display:none;text-align:center;font-size:12px;color:var(--nm-text-muted);margin:4px 0 10px;">🔒 وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تعدّل</p>
       <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
         <button class="nav-arrow" id="deptSchPrev">›</button>
         <span id="deptSchLabel" style="font-weight:700;min-width:120px;text-align:center;">—</span>
@@ -2525,6 +2601,13 @@
     let savedStatsTo = null;
     let savedLeaveFrom = null;
     let savedLeaveTo = null;
+    let myName = '';
+    let myPhone = '';
+    let myExtraPhones = '';
+    let managerName = '';
+    let managerPhone = '';
+    let managerPassword = '';
+    let editUnlocked = false; // حالة قفل التعديل — مش بيتصدّر مع بيانات الشركة عمداً
     let darkMode = false;
     try { darkMode = localStorage.getItem('shifterTheme') === 'dark'; } catch(e) {}
     let uiLang = 'ar';
@@ -2833,6 +2916,73 @@
     function getCurrentCompanyObj() {
       return companies.find(c => c.id === currentCompany) || companies[0];
     }
+
+    // ===== قفل تعديل جدول الموظفين — أي حد معاه كلمة المرور يقدر يعدّل =====
+    function isManagerIdentity() {
+      const a = (myName || '').trim().toLowerCase();
+      const b = (managerName || '').trim().toLowerCase();
+      return !!a && !!b && a === b;
+    }
+    function refreshManagerPasswordFieldVisibility() {
+      const wrap = document.getElementById('managerPasswordWrap');
+      if (!wrap) return;
+      wrap.style.display = isManagerIdentity() ? 'block' : 'none';
+    }
+    function canEditDeptSchedule() {
+      return editUnlocked;
+    }
+    function loadEditUnlockedState() {
+      try { editUnlocked = localStorage.getItem('shifterEditUnlocked_' + currentCompany) === '1'; }
+      catch(e) { editUnlocked = false; }
+    }
+    function saveEditUnlockedState() {
+      try { localStorage.setItem('shifterEditUnlocked_' + currentCompany, editUnlocked ? '1' : '0'); } catch(e) {}
+    }
+    function renderDeptEditLock() {
+      const btn = document.getElementById('deptEditLockBtn');
+      const notice = document.getElementById('deptViewOnlyNotice');
+      if (!btn || !notice) return;
+      btn.style.display = 'inline-block';
+      if (canEditDeptSchedule()) {
+        btn.textContent = '🔓';
+        btn.title = 'وضع التعديل مفتوح — اضغط للقفل';
+        notice.style.display = 'none';
+      } else {
+        btn.textContent = '🔒';
+        btn.title = 'وضع العرض فقط — اضغط وادخل كلمة المرور عشان تعدّل';
+        notice.style.display = 'block';
+      }
+    }
+    function toggleDeptEditLock() {
+      if (canEditDeptSchedule()) {
+        editUnlocked = false;
+        saveEditUnlockedState();
+        renderDeptEditLock();
+        renderDeptEmpList();
+        renderDeptGroupsList();
+        renderDeptSchedule();
+        return;
+      }
+      if (!managerPassword) {
+        toast('محتاج المدير يسجّل كلمة مرور التعديل في الإعدادات ⚙️ الأول', 'error');
+        return;
+      }
+      const pass = prompt('كلمة مرور تعديل جدول الموظفين:');
+      if (pass === null) return;
+      if (pass === managerPassword) {
+        editUnlocked = true;
+        saveEditUnlockedState();
+        renderDeptEditLock();
+        renderDeptEmpList();
+        renderDeptGroupsList();
+        renderDeptSchedule();
+        toast('اتفتح وضع التعديل ✔️');
+      } else {
+        toast('كلمة المرور غلط', 'error');
+      }
+    }
+    // =====================================================
+
     function renderCompanySelect() {
       const sel = document.getElementById('companySelect');
       if (!sel) return;
@@ -2880,7 +3030,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -2925,6 +3075,12 @@
         savedStatsTo = data.savedStatsTo || null;
         savedLeaveFrom = data.savedLeaveFrom || null;
         savedLeaveTo = data.savedLeaveTo || null;
+        myName = data.myName || '';
+        myPhone = data.myPhone || '';
+        myExtraPhones = data.myExtraPhones || '';
+        managerName = data.managerName || '';
+        managerPhone = data.managerPhone || '';
+        managerPassword = data.managerPassword || '';
         if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
           currentYear = data.currentYear;
           currentMonth = data.currentMonth;
@@ -3340,6 +3496,7 @@
       deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
       deptDailyDay = new Date().getDate();
       renderDeptSchedule();
+      renderDeptEditLock();
       document.getElementById('deptScheduleModal').classList.add('open');
     }
 
@@ -3558,6 +3715,7 @@
     function renderDeptEmpList() {
       const list = document.getElementById('deptEmpList');
       if (!list) return;
+      const locked = !canEditDeptSchedule();
       if (deptEmployees.length === 0) {
         list.innerHTML = '<div class="mini-list-empty">لا يوجد موظفين — ضيف موظف من الأعلى</div>';
         return;
@@ -3567,19 +3725,22 @@
       list.innerHTML = deptEmployees.map(emp => {
         const restTxt = emp.restDay !== undefined && emp.restDay !== '' ? 'راحة: ' + restLabels[Number(emp.restDay)] : 'بدون يوم راحة ثابت';
         const phoneTxt = emp.phone ? ' • واتساب: ' + emp.phone : ' • بدون رقم واتساب';
-        const actionHtml = deptReorderMode
-          ? `<button type="button" class="mli-grip" data-emp="${emp.id}">☰</button>`
-          : `<button type="button" class="mli-del" data-emp="${emp.id}">✕</button>`;
+        const actionHtml = locked
+          ? ''
+          : (deptReorderMode
+            ? `<button type="button" class="mli-grip" data-emp="${emp.id}">☰</button>`
+            : `<button type="button" class="mli-del" data-emp="${emp.id}">✕</button>`);
         const empColor = getDeptGroupColor(emp);
         const groupSelectHtml = deptGroups.length
-          ? `<select class="mli-group-select" data-emp="${emp.id}" style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:100px;flex-shrink:0;">${groupOptionsBase}</select>`
+          ? `<select class="mli-group-select" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:100px;flex-shrink:0;">${groupOptionsBase}</select>`
           : '';
+        const phoneEditHtml = locked ? '' : `<button type="button" class="mli-phone-edit" data-emp="${emp.id}" title="تعديل رقم واتساب" style="border:none;background:transparent;font-size:13px;cursor:pointer;">☎️</button>`;
         return `<div class="mini-list-item" data-emp-id="${emp.id}">
           <div class="mli-info">
             <div style="display:flex;align-items:center;gap:6px;">
               <span class="mli-name"${empColor ? ` style="color:${empColor};"` : ''}>${emp.name}</span>
               ${groupSelectHtml}
-              <button type="button" class="mli-phone-edit" data-emp="${emp.id}" title="تعديل رقم واتساب" style="border:none;background:transparent;font-size:13px;cursor:pointer;">☎️</button>
+              ${phoneEditHtml}
             </div>
             <span class="mli-sub">${restTxt}${phoneTxt}</span>
           </div>
@@ -3601,36 +3762,41 @@
       list.querySelectorAll('.mli-group-select').forEach(sel => {
         const emp = deptEmployees.find(e => e.id === sel.dataset.emp);
         if (emp && emp.groupId) sel.value = emp.groupId;
-        sel.addEventListener('change', () => {
-          const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
-          if (!empRef) return;
-          if (sel.value) empRef.groupId = sel.value; else delete empRef.groupId;
-          saveData();
-          renderDeptEmpList();
-          renderDeptSchedule();
-        });
-        enhanceSelectAsCustomDropdown(sel);
-      });
-      if (deptReorderMode) {
-        enableDeptDragReorder(list);
-      } else {
-        list.querySelectorAll('.mli-del').forEach(btn => {
-          btn.addEventListener('click', () => {
-            if (!confirm('حذف هذا الموظف من جدول القسم نهائياً؟ (هيتحذف من كل الشهور)')) return;
-            const empId = btn.dataset.emp;
-            deptEmployees = deptEmployees.filter(e => e.id !== empId);
-            Object.keys(deptSchedule).forEach(mk => { delete deptSchedule[mk][empId]; });
+        if (!locked) {
+          sel.addEventListener('change', () => {
+            const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
+            if (!empRef) return;
+            if (sel.value) empRef.groupId = sel.value; else delete empRef.groupId;
             saveData();
             renderDeptEmpList();
             renderDeptSchedule();
           });
-        });
+          enhanceSelectAsCustomDropdown(sel);
+        }
+      });
+      if (!locked) {
+        if (deptReorderMode) {
+          enableDeptDragReorder(list);
+        } else {
+          list.querySelectorAll('.mli-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+              if (!confirm('حذف هذا الموظف من جدول القسم نهائياً؟ (هيتحذف من كل الشهور)')) return;
+              const empId = btn.dataset.emp;
+              deptEmployees = deptEmployees.filter(e => e.id !== empId);
+              Object.keys(deptSchedule).forEach(mk => { delete deptSchedule[mk][empId]; });
+              saveData();
+              renderDeptEmpList();
+              renderDeptSchedule();
+            });
+          });
+        }
       }
     }
 
     function renderDeptGroupsList() {
       const list = document.getElementById('deptGroupsList');
       if (!list) return;
+      const locked = !canEditDeptSchedule();
       if (deptGroups.length === 0) {
         list.innerHTML = '<div class="mini-list-empty">لا يوجد مجموعات — ضيف مجموعة من الأعلى</div>';
         return;
@@ -3641,21 +3807,23 @@
             <span style="width:16px;height:16px;border-radius:50%;background:${g.color};flex-shrink:0;box-shadow:var(--nm-shadow-sm);"></span>
             <span class="mli-name" style="color:${g.color};">${g.name}</span>
           </div>
-          <button type="button" class="mli-del" data-group="${g.id}">✕</button>
+          ${locked ? '' : `<button type="button" class="mli-del" data-group="${g.id}">✕</button>`}
         </div>
       `).join('');
-      list.querySelectorAll('.mli-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!confirm('حذف هذه المجموعة؟ الموظفين اللي فيها هيرجعوا بدون لون مجموعة.')) return;
-          const gid = btn.dataset.group;
-          deptGroups = deptGroups.filter(g => g.id !== gid);
-          deptEmployees.forEach(e => { if (e.groupId === gid) delete e.groupId; });
-          saveData();
-          renderDeptGroupsList();
-          renderDeptEmpList();
-          renderDeptSchedule();
+      if (!locked) {
+        list.querySelectorAll('.mli-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!confirm('حذف هذه المجموعة؟ الموظفين اللي فيها هيرجعوا بدون لون مجموعة.')) return;
+            const gid = btn.dataset.group;
+            deptGroups = deptGroups.filter(g => g.id !== gid);
+            deptEmployees.forEach(e => { if (e.groupId === gid) delete e.groupId; });
+            saveData();
+            renderDeptGroupsList();
+            renderDeptEmpList();
+            renderDeptSchedule();
+          });
         });
-      });
+      }
     }
 
     function enableDeptDragReorder(list) {
@@ -3824,9 +3992,17 @@
           saveData();
           renderDeptSchedule();
         });
-        // نفتح القائمة المخصصة بدل قائمة الـ select الأصلية، مع الحفاظ على شكل
-        // الخلية الملوّن زي ما هو تماماً (الـ select نفسه بيفضل هو الخلفية المرئية)
-        makeElementOpenCustomDropdown(sel.parentElement, sel);
+        if (canEditDeptSchedule()) {
+          // نفتح القائمة المخصصة بدل قائمة الـ select الأصلية، مع الحفاظ على شكل
+          // الخلية الملوّن زي ما هو تماماً (الـ select نفسه بيفضل هو الخلفية المرئية)
+          makeElementOpenCustomDropdown(sel.parentElement, sel);
+        } else {
+          sel.parentElement.style.cursor = 'default';
+          sel.parentElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تعدّل', 'error');
+          });
+        }
       });
 
       const collapseBtn = document.getElementById('deptCollapseToggle');
@@ -4653,6 +4829,7 @@
       migrateLegacyCompanyData();
       loadCompaniesMeta();
       loadData();
+      loadEditUnlockedState();
       renderCompanySelect();
       document.getElementById('companySelect').addEventListener('change', function() {
         if (this.value === '__add_company__') {
@@ -4698,7 +4875,8 @@
       // تحويل القوائم المنسدلة الثابتة لشكل القائمة العائمة المخصصة
       ['calendarViewSelect', 'uiLanguage', 'numeralType', 'fontStyle', 'weekStart',
        'holidayMode', 'appAllowanceMode', 'restAllowanceMode', 'newDedUnit',
-       'newDeptEmpRestDay', 'shareImportEmp', 'shareImportValue'].forEach(enhanceSelectAsCustomDropdown);
+       'newDeptEmpRestDay', 'shareImportEmp', 'shareImportValue',
+       'sendReqEmp', 'sendReqFrom', 'sendReqTo'].forEach(enhanceSelectAsCustomDropdown);
       refreshAllCustomDropdownTriggers();
 
       const now = new Date();
@@ -4765,8 +4943,10 @@
         deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
         deptDailyDay = new Date().getDate();
         renderDeptSchedule();
+        renderDeptEditLock();
         document.getElementById('deptScheduleModal').classList.add('open');
       });
+      document.getElementById('deptEditLockBtn').addEventListener('click', toggleDeptEditLock);
       document.getElementById('closeDeptSchedule').addEventListener('click', () => { document.getElementById('deptScheduleModal').classList.remove('open'); });
       document.getElementById('menuShareImport').addEventListener('click', () => {
         document.getElementById('sideMenuOverlay').classList.remove('open');
@@ -4785,6 +4965,133 @@
           copyFallback();
         }
       });
+
+      // ===== إرسال نموذج جاهز (إجازة / تبديل وردية) - مدير لموظف أو موظف لمديره =====
+      let sendReqType = 'leave'; // 'leave' | 'swap'
+      let sendReqDirection = 'toEmployee'; // 'toEmployee' (مدير يبعت لموظف) | 'toManager' (موظف يبعت لمديره)
+
+      function updateSendReqTypeButtons() {
+        const leaveBtn = document.getElementById('sendReqTypeLeave');
+        const swapBtn = document.getElementById('sendReqTypeSwap');
+        leaveBtn.classList.toggle('btn-primary', sendReqType === 'leave');
+        swapBtn.classList.toggle('btn-primary', sendReqType === 'swap');
+        document.getElementById('sendReqSwapFields').style.display = sendReqType === 'swap' ? 'flex' : 'none';
+      }
+      function updateSendReqDirectionButtons() {
+        const mgrBtn = document.getElementById('sendReqDirManager');
+        const empBtn = document.getElementById('sendReqDirEmployee');
+        mgrBtn.classList.toggle('btn-primary', sendReqDirection === 'toEmployee');
+        empBtn.classList.toggle('btn-primary', sendReqDirection === 'toManager');
+        document.getElementById('sendReqEmpWrap').style.display = sendReqDirection === 'toEmployee' ? 'block' : 'none';
+        document.getElementById('sendReqMyNameWrap').style.display = sendReqDirection === 'toManager' ? 'block' : 'none';
+        document.getElementById('sendReqUpdateScheduleWrap').style.display = sendReqDirection === 'toEmployee' ? 'flex' : 'none';
+        const noMgr = sendReqDirection === 'toManager' && !managerPhone;
+        document.getElementById('sendReqNoManagerWarn').style.display = noMgr ? 'block' : 'none';
+        document.getElementById('sendReqSendBtn').disabled = noMgr;
+      }
+      function currentSenderName() {
+        if (sendReqDirection === 'toEmployee') {
+          const empId = document.getElementById('sendReqEmp').value;
+          const emp = deptEmployees.find(e => e.id === empId);
+          return emp ? emp.name : '';
+        }
+        return document.getElementById('sendReqMyName').value.trim();
+      }
+      function buildSendReqMessage() {
+        const name = currentSenderName();
+        const day = parseInt(document.getElementById('sendReqDay').value, 10) || '';
+        const y = currentYear !== undefined ? currentYear : new Date().getFullYear();
+        const m = (currentMonth !== undefined ? currentMonth : new Date().getMonth()) + 1;
+        if (sendReqType === 'leave') {
+          return `${name} إجازة يوم ${day}/${m}`;
+        }
+        const from = document.getElementById('sendReqFrom').value;
+        const to = document.getElementById('sendReqTo').value;
+        return `${name} من وردية[${from}] إلى وردية[${to}] يوم ${day}/${m}`;
+      }
+      function renderSendReqPreview() {
+        document.getElementById('sendReqPreview').textContent = buildSendReqMessage();
+      }
+      function openSendEmpRequestModal() {
+        const empSel = document.getElementById('sendReqEmp');
+        empSel.innerHTML = deptEmployees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('') || '<option value="">لا يوجد موظفين</option>';
+        refreshAllCustomDropdownTriggers();
+        document.getElementById('sendReqMyName').value = myName;
+        const y = currentYear !== undefined ? currentYear : new Date().getFullYear();
+        const m = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+        const defDay = (deptSchYear === y && deptSchMonth === m) ? (deptDailyDay || new Date().getDate()) : 1;
+        document.getElementById('sendReqDay').value = defDay;
+        sendReqType = 'leave';
+        sendReqDirection = deptEmployees.length === 0 ? 'toManager' : 'toEmployee';
+        updateSendReqTypeButtons();
+        updateSendReqDirectionButtons();
+        renderSendReqPreview();
+        document.getElementById('sendEmpRequestModal').classList.add('open');
+      }
+      document.getElementById('menuSendEmpRequest').addEventListener('click', () => {
+        document.getElementById('sideMenuOverlay').classList.remove('open');
+        openSendEmpRequestModal();
+      });
+      document.getElementById('sendReqTypeLeave').addEventListener('click', () => { sendReqType = 'leave'; updateSendReqTypeButtons(); renderSendReqPreview(); });
+      document.getElementById('sendReqTypeSwap').addEventListener('click', () => { sendReqType = 'swap'; updateSendReqTypeButtons(); renderSendReqPreview(); });
+      document.getElementById('sendReqDirManager').addEventListener('click', () => {
+        if (deptEmployees.length === 0) { toast('ضيف موظفين في جدول القسم الأول', 'error'); return; }
+        sendReqDirection = 'toEmployee'; updateSendReqDirectionButtons(); renderSendReqPreview();
+      });
+      document.getElementById('sendReqDirEmployee').addEventListener('click', () => {
+        sendReqDirection = 'toManager'; updateSendReqDirectionButtons(); renderSendReqPreview();
+      });
+      ['sendReqEmp', 'sendReqDay', 'sendReqFrom', 'sendReqTo', 'sendReqMyName'].forEach(id => {
+        document.getElementById(id).addEventListener('input', renderSendReqPreview);
+        document.getElementById(id).addEventListener('change', renderSendReqPreview);
+      });
+      document.getElementById('closeSendEmpRequest').addEventListener('click', () => { document.getElementById('sendEmpRequestModal').classList.remove('open'); });
+      document.getElementById('sendReqCancel').addEventListener('click', () => { document.getElementById('sendEmpRequestModal').classList.remove('open'); });
+      document.getElementById('sendReqSendBtn').addEventListener('click', () => {
+        const day = parseInt(document.getElementById('sendReqDay').value, 10);
+        if (!day || day < 1 || day > 31) { toast('اليوم مش صحيح', 'error'); return; }
+
+        let targetPhone = '';
+        let empId = null;
+        if (sendReqDirection === 'toEmployee') {
+          empId = document.getElementById('sendReqEmp').value;
+          const emp = deptEmployees.find(e => e.id === empId);
+          if (!emp) { toast('اختار موظف الأول', 'error'); return; }
+          targetPhone = (emp.phone || '').replace(/[^0-9]/g, '');
+        } else {
+          const nm = document.getElementById('sendReqMyName').value.trim();
+          if (!nm) { toast('اكتب اسمك الأول', 'error'); return; }
+          myName = nm; saveData();
+          if (!managerPhone) { toast('محتاج تسجّل رقم واتساب مديرك في الإعدادات ⚙️ الأول', 'error'); return; }
+          targetPhone = managerPhone;
+        }
+
+        const msg = buildSendReqMessage();
+
+        if (sendReqDirection === 'toEmployee' && document.getElementById('sendReqUpdateSchedule').checked) {
+          const y = currentYear !== undefined ? currentYear : new Date().getFullYear();
+          const m = currentMonth !== undefined ? currentMonth : new Date().getMonth();
+          const monthKey = deptMonthKey(y, m);
+          const val = sendReqType === 'leave' ? '' : (document.getElementById('sendReqFrom').value + '>' + document.getElementById('sendReqTo').value);
+          deptSchedule[monthKey] = deptSchedule[monthKey] || {};
+          deptSchedule[monthKey][empId] = deptSchedule[monthKey][empId] || {};
+          if (val) deptSchedule[monthKey][empId][day] = val; else delete deptSchedule[monthKey][empId][day];
+          saveData();
+          if (document.getElementById('deptScheduleModal').classList.contains('open')) { deptSchYear = y; deptSchMonth = m; renderDeptSchedule(); }
+        }
+
+        if (targetPhone) {
+          window.open('https://wa.me/' + targetPhone + '?text=' + encodeURIComponent(msg), '_blank');
+        } else if (navigator.share) {
+          navigator.share({ text: msg }).catch(() => { prompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg); });
+        } else {
+          prompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg);
+        }
+        document.getElementById('sendEmpRequestModal').classList.remove('open');
+        toast('تم تجهيز الرسالة ✔️');
+      });
+      // =====================================================
+
       document.getElementById('closeShareImport').addEventListener('click', () => { document.getElementById('shareImportModal').classList.remove('open'); });
       document.getElementById('shareImportCancel').addEventListener('click', () => { document.getElementById('shareImportModal').classList.remove('open'); });
       document.getElementById('shareImportSave').addEventListener('click', () => {
@@ -4846,6 +5153,7 @@
         renderDeptSchedule();
       });
       document.getElementById('addDeptEmp').addEventListener('click', () => {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تضيف موظفين', 'error'); return; }
         const nameInput = document.getElementById('newDeptEmpName');
         const restDaySelect = document.getElementById('newDeptEmpRestDay');
         const name = nameInput.value.trim();
@@ -4859,6 +5167,7 @@
       });
       document.getElementById('deptEmpExportBtn').addEventListener('click', exportEmployeesTable);
       document.getElementById('deptEmpImportBtn').addEventListener('click', () => {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تستورد وتحدّث', 'error'); return; }
         document.getElementById('deptEmpImportFile').click();
       });
       document.getElementById('deptEmpImportFile').addEventListener('change', function(e) {
@@ -4868,6 +5177,7 @@
       });
       document.getElementById('deptSchExportBtn').addEventListener('click', exportScheduleTable);
       document.getElementById('deptSchImportBtn').addEventListener('click', () => {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تستورد وتحدّث', 'error'); return; }
         document.getElementById('deptSchImportFile').click();
       });
       document.getElementById('deptSchImportFile').addEventListener('change', function(e) {
@@ -4876,6 +5186,7 @@
         this.value = '';
       });
       document.getElementById('deptReorderToggle').addEventListener('click', function() {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان ترتّب', 'error'); return; }
         deptReorderMode = !deptReorderMode;
         this.textContent = deptReorderMode ? '✅ تم' : '🔀 إعادة ترتيب';
         renderDeptEmpList();
@@ -4893,6 +5204,7 @@
         wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
       });
       document.getElementById('addDeptGroup').addEventListener('click', () => {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تضيف مجموعات', 'error'); return; }
         const nameInput = document.getElementById('deptGroupNameInput');
         const colorInput = document.getElementById('deptGroupColorInput');
         const name = nameInput.value.trim();
@@ -4958,7 +5270,34 @@
       document.getElementById('createShift').addEventListener('click', () => { document.getElementById('shiftsModal').classList.remove('open'); openShiftConfig(); });
       document.getElementById('importShifts').addEventListener('click', () => { document.getElementById('importFile').click(); });
 
-      document.getElementById('settingsBtn').addEventListener('click', () => { document.getElementById('settingsModal').classList.add('open'); });
+      document.getElementById('settingsBtn').addEventListener('click', () => {
+        document.getElementById('myNameInput').value = myName;
+        document.getElementById('myPhoneInput').value = myPhone;
+        document.getElementById('myExtraPhonesInput').value = myExtraPhones;
+        document.getElementById('managerNameInput').value = managerName;
+        document.getElementById('managerPhoneInput').value = managerPhone;
+        document.getElementById('managerPasswordInput').value = managerPassword;
+        refreshManagerPasswordFieldVisibility();
+        document.getElementById('settingsModal').classList.add('open');
+      });
+      document.getElementById('myNameInput').addEventListener('input', function() {
+        myName = this.value.trim();
+        saveData();
+        refreshManagerPasswordFieldVisibility();
+      });
+      document.getElementById('myPhoneInput').addEventListener('change', function() { myPhone = this.value.replace(/[^0-9]/g, ''); this.value = myPhone; saveData(); });
+      document.getElementById('myExtraPhonesInput').addEventListener('change', function() {
+        myExtraPhones = this.value.split(',').map(p => p.replace(/[^0-9]/g, '')).filter(Boolean).join(', ');
+        this.value = myExtraPhones;
+        saveData();
+      });
+      document.getElementById('managerNameInput').addEventListener('input', function() {
+        managerName = this.value.trim();
+        saveData();
+        refreshManagerPasswordFieldVisibility();
+      });
+      document.getElementById('managerPhoneInput').addEventListener('change', function() { managerPhone = this.value.replace(/[^0-9]/g, ''); this.value = managerPhone; saveData(); });
+      document.getElementById('managerPasswordInput').addEventListener('change', function() { managerPassword = this.value; saveData(); });
       document.getElementById('closeSettings').addEventListener('click', () => { document.getElementById('settingsModal').classList.remove('open'); });
 
       document.getElementById('closeConfig').addEventListener('click', () => { document.getElementById('shiftConfigModal').classList.remove('open'); });
@@ -5353,7 +5692,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -5404,6 +5743,12 @@
             savedStatsTo = data.savedStatsTo || null;
             savedLeaveFrom = data.savedLeaveFrom || null;
             savedLeaveTo = data.savedLeaveTo || null;
+            myName = data.myName || '';
+            myPhone = data.myPhone || '';
+            myExtraPhones = data.myExtraPhones || '';
+            managerName = data.managerName || '';
+            managerPhone = data.managerPhone || '';
+            managerPassword = data.managerPassword || '';
             if (typeof data.currentYear === 'number' && typeof data.currentMonth === 'number' && data.currentMonth >= 0 && data.currentMonth <= 11) {
               currentYear = data.currentYear;
               currentMonth = data.currentMonth;
