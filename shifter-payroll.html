@@ -1291,6 +1291,58 @@
       z-index: 5;
     }
 
+    /* ===== نمط الجدول لكل موظف (أسفل الاسم) ===== */
+    .emp-pattern-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+    }
+    .emp-pattern-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .emp-pattern-cell .epc-label {
+      font-size: 9px;
+      color: var(--nm-text-muted);
+    }
+    .emp-pattern-cell select {
+      width: 100%;
+      min-width: 30px;
+      text-align: center;
+      border: none;
+      font-family: var(--nm-font);
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 4px;
+      padding: 4px 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .emp-pattern-cell select.ep-empty {
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+    .emp-pattern-cell select.ep-1 {
+      background: #ffffff;
+      color: #000000;
+    }
+    .emp-pattern-cell select.ep-2 {
+      background: #bdbdbd;
+      color: #000000;
+    }
+    .emp-pattern-cell select.ep-3 {
+      background: #2b2b2b;
+      color: #ffffff;
+    }
+    .emp-pattern-cell select.ep-rest {
+      background: #123a5c;
+      color: #ffffff;
+    }
+
     /* ===== Side Menu ===== */
     .side-menu-overlay {
       position: fixed;
@@ -2357,6 +2409,9 @@
         <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار لون للمجموعة، وبعد كده حدد مجموعة كل موظف من القائمة اللي جنب اسمه. اسم الموظف هيتلون بلون مجموعته في القائمة والجدول والتوزيع اليومي.</p>
       </div>
       <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 10px;">اختار رقم الوردية (١، ٢، ٣) لكل يوم من القائمة المنسدلة — البيانات بتتحفظ تلقائياً ولكل شهر جدول منفصل. يوم الراحة الأسبوعي بيتظلل تلقائياً بالأسود في صف الموظف.</p>
+      <div style="margin-bottom:8px;">
+        <button type="button" class="btn btn-primary" id="genScheduleBtn" style="width:100%;padding:10px 16px;">🧮 توليد الجدول تلقائياً حسب نمط كل موظف</button>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
         <button type="button" class="btn btn-primary" id="deptSchExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة جدول الورديات (واتساب)</button>
         <button type="button" class="btn" id="deptSchImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث الجدول</button>
@@ -2394,6 +2449,22 @@
           <span class="dept-daily-row-title">🛌 راحات</span>
           <span class="dept-daily-row-names" id="deptDailyRests">—</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="genScheduleModal">
+    <div class="modal-content" style="max-width:420px;">
+      <button class="modal-close" id="closeGenSchedule">⌃</button>
+      <h3 style="margin:0 0 6px;">🧮 توليد الجدول تلقائياً</h3>
+      <p style="font-size:11px;color:var(--nm-text-muted);margin:0 0 14px;">هيتم ملء خانات الشهر المعروض حالياً بداية من التاريخ اللي هتحدده، لكل موظف حسب نمط الجدول الخاص بيه (من قائمة الموظفين). الأيام قبل التاريخ ده مش هتتغير.</p>
+      <div class="input-field">
+        <label>تاريخ البداية</label>
+        <input type="date" id="genScheduleStartDate" />
+      </div>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn btn-outline" id="cancelGenSchedule">إلغاء</button>
+        <button class="btn btn-primary" id="confirmGenSchedule">توليد</button>
       </div>
     </div>
   </div>
@@ -2490,10 +2561,14 @@
     // جميع الوظائف محفوظة كما هي - نفس الكود من النسخة السابقة
     // البيانات الافتراضية
     let shifts = [
-      { id: 'shift1', name: 'وردية أولى', abbr: 'أولى', bgColor: '#4f46e5', textColor: '#ffffff', textSize: 36, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 200, overtimeRate: 30, mealAllowance: 20, shiftAllowance: 15, isAnnualLeave: false, isAbsence: false, customAdditions: [] },
-      { id: 'shift2', name: 'وردية تانية', abbr: 'تانية', bgColor: '#22c55e', textColor: '#ffffff', textSize: 34, startTime: '16:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 220, overtimeRate: 35, mealAllowance: 25, shiftAllowance: 20, isAnnualLeave: false, isAbsence: false, customAdditions: [] },
-      { id: 'shift3', name: 'إجازة اعتيادية', abbr: 'إجازة', bgColor: '#f59e0b', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 0, currency: 'ج.م', dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, isAnnualLeave: true, isAbsence: false, customAdditions: [] },
-      { id: 'shift4', name: 'غياب', abbr: 'غياب', bgColor: '#ef4444', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 0, currency: 'ج.م', dayIncome: 0, overtimeRate: 0, mealAllowance: 0, shiftAllowance: 0, isAnnualLeave: false, isAbsence: true, customAdditions: [] }
+      { id: 'shift1', name: 'اولى', abbr: '1', bgColor: '#ffffff', textColor: '#000000', textSize: 30, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift2', name: 'تانية', abbr: '2', bgColor: '#bdbdbd', textColor: '#2b2b2b', textSize: 30, startTime: '16:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift3', name: 'تالتة', abbr: '3', bgColor: '#1c1c1c', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '08:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift4', name: 'راحة', abbr: 'R', bgColor: '#000000', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift5', name: 'اعتيادي', abbr: 'اعتيادي', bgColor: '#5ec8e6', textColor: '#3b0764', textSize: 22, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: true, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift6', name: 'عطلة', abbr: 'عطلة', bgColor: '#0e6655', textColor: '#ffffff', textSize: 24, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift7', name: 'بدل عطلة', abbr: 'ب عطلة', bgColor: '#1e3a8a', textColor: '#ffffff', textSize: 20, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: true, customAdditions: [] },
+      { id: 'shift8', name: 'غياب', abbr: 'غ', bgColor: '#a92f24', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 296, overtimeRate: 0, isAnnualLeave: false, isAbsence: true, isHolidayComp: false, customAdditions: [] }
     ];
     let schedule = {};
     let scheduleExtra = {};
@@ -3854,7 +3929,43 @@
           ? `<select class="mli-group-select" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:100px;flex-shrink:0;">${groupOptionsBase}</select>`
           : '';
         const phoneEditHtml = locked ? '' : `<button type="button" class="mli-phone-edit" data-emp="${emp.id}" title="تعديل رقم واتساب" style="border:none;background:transparent;font-size:13px;cursor:pointer;">☎️</button>`;
-        return `<div class="mini-list-item" data-emp-id="${emp.id}">
+        const schedModeVal = emp.schedMode || 'custom';
+        const isPreset = schedModeVal !== 'custom';
+        const presetOptions = [
+          ['10-123', '10 أيام (1-2-3)'],
+          ['10-321', '10 أيام (3-2-1)'],
+          ['7-123', '7 أيام (1-2-3)'],
+          ['7-321', '7 أيام (3-2-1)'],
+          ['rest-123', 'بعد الراحة (1-2-3)'],
+          ['rest-321', 'بعد الراحة (3-2-1)'],
+        ];
+        const presetSelectHtml = `<select class="emp-sched-preset" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:150px;">${presetOptions.map(([v, l]) => `<option value="${v}" ${schedModeVal === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+        const schedTypeSelectHtml = `<select class="emp-sched-type" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);">
+              <option value="preset" ${isPreset ? 'selected' : ''}>قائمة جاهزة</option>
+              <option value="custom" ${!isPreset ? 'selected' : ''}>نمط مخصص (أسفل)</option>
+            </select>`;
+        const schedControlsHtml = `<div class="emp-sched-controls" data-emp-sched="${emp.id}" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:10px;color:var(--nm-text-muted);">نمط الجدول:</span>
+            ${schedTypeSelectHtml}
+            <span class="emp-sched-preset-wrap" data-emp-preset-wrap="${emp.id}" style="${isPreset ? '' : 'display:none;'}">${presetSelectHtml}</span>
+          </div>`;
+        const patternDayLabels = ['سبت', 'حد', 'اثنين', 'ثلا', 'اربع', 'خميس', 'جمعة'];
+        const patternVal = (i) => (Array.isArray(emp.pattern) && emp.pattern[i]) ? emp.pattern[i] : '';
+        const patternOptClass = (v) => v === '1' ? 'ep-1' : v === '2' ? 'ep-2' : v === '3' ? 'ep-3' : v === 'rest' ? 'ep-rest' : 'ep-empty';
+        const patternRowHtml = `<div class="emp-pattern-row" data-emp-pattern="${emp.id}" style="${isPreset ? 'display:none;' : ''}">${patternDayLabels.map((lbl, i) => {
+          const v = patternVal(i);
+          return `<div class="emp-pattern-cell">
+            <span class="epc-label">${lbl}</span>
+            <select class="${patternOptClass(v)}" data-emp="${emp.id}" data-day-idx="${i}" ${locked ? 'disabled' : ''}>
+              <option value="" ${v === '' ? 'selected' : ''}>—</option>
+              <option value="1" ${v === '1' ? 'selected' : ''}>1</option>
+              <option value="2" ${v === '2' ? 'selected' : ''}>2</option>
+              <option value="3" ${v === '3' ? 'selected' : ''}>3</option>
+              <option value="rest" ${v === 'rest' ? 'selected' : ''}>راحة</option>
+            </select>
+          </div>`;
+        }).join('')}</div>`;
+        return `<div class="mini-list-item" data-emp-id="${emp.id}" style="flex-wrap:wrap;">
           <div class="mli-info">
             <div style="display:flex;align-items:center;gap:6px;">
               <span class="mli-name"${empColor ? ` style="color:${empColor};"` : ''}>${emp.name}</span>
@@ -3862,6 +3973,8 @@
               ${phoneEditHtml}
             </div>
             <span class="mli-sub">${restTxt}${phoneTxt}</span>
+            ${schedControlsHtml}
+            ${patternRowHtml}
           </div>
           ${actionHtml}
         </div>`;
@@ -3893,6 +4006,44 @@
           enhanceSelectAsCustomDropdown(sel);
         }
       });
+      if (!locked) {
+        list.querySelectorAll('.emp-pattern-cell select').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
+            if (!empRef) return;
+            if (!Array.isArray(empRef.pattern) || empRef.pattern.length !== 7) empRef.pattern = ['', '', '', '', '', '', ''];
+            empRef.pattern[Number(sel.dataset.dayIdx)] = sel.value;
+            saveData();
+            const cls = sel.value === '1' ? 'ep-1' : sel.value === '2' ? 'ep-2' : sel.value === '3' ? 'ep-3' : sel.value === 'rest' ? 'ep-rest' : 'ep-empty';
+            sel.className = cls;
+          });
+        });
+        list.querySelectorAll('.emp-sched-type').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
+            if (!empRef) return;
+            if (sel.value === 'custom') {
+              empRef.schedMode = 'custom';
+            } else {
+              const presetWrap = list.querySelector(`.emp-sched-preset-wrap[data-emp-preset-wrap="${empRef.id}"]`);
+              const presetSel = presetWrap ? presetWrap.querySelector('.emp-sched-preset') : null;
+              empRef.schedMode = (presetSel && presetSel.value) || '10-123';
+            }
+            saveData();
+            renderDeptEmpList();
+          });
+          enhanceSelectAsCustomDropdown(sel);
+        });
+        list.querySelectorAll('.emp-sched-preset').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
+            if (!empRef) return;
+            empRef.schedMode = sel.value;
+            saveData();
+          });
+          enhanceSelectAsCustomDropdown(sel);
+        });
+      }
       if (!locked) {
         if (deptReorderMode) {
           enableDeptDragReorder(list);
@@ -4138,6 +4289,72 @@
     }
 
     function daysInDeptMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+
+    // توليد جدول الشهر المعروض حالياً تلقائياً — كل موظف حسب نمط الجدول الخاص بيه (emp.schedMode)
+    // بداية من startDateStr (yyyy-mm-dd) — الأيام قبل التاريخ ده بتفضل زي ما هي
+    function generateDeptScheduleFromPattern(startDateStr) {
+      if (!startDateStr) { toast('اختار تاريخ البداية', 'error'); return; }
+      if (deptEmployees.length === 0) { toast('مفيش موظفين لتوليد الجدول لهم', 'error'); return; }
+      const startDate = new Date(startDateStr + 'T00:00:00');
+      if (isNaN(startDate.getTime())) { toast('تاريخ غير صحيح', 'error'); return; }
+      const daysInMonth = daysInDeptMonth(deptSchYear, deptSchMonth);
+      const monthKey = deptMonthKey(deptSchYear, deptSchMonth);
+      if (!deptSchedule[monthKey]) deptSchedule[monthKey] = {};
+      const monthData = deptSchedule[monthKey];
+      let skippedNoRest = 0, skippedNoPattern = 0;
+
+      deptEmployees.forEach(emp => {
+        const mode = emp.schedMode || 'custom';
+        if (!monthData[emp.id]) monthData[emp.id] = {};
+
+        if (mode.startsWith('10-') || mode.startsWith('7-')) {
+          const blockSize = mode.startsWith('10-') ? 10 : 7;
+          const cycle = mode.endsWith('321') ? [3, 2, 1] : [1, 2, 3];
+          for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(deptSchYear, deptSchMonth, d);
+            if (date < startDate) continue;
+            const diffDays = Math.floor((date - startDate) / 86400000);
+            const block = Math.floor(diffDays / blockSize);
+            monthData[emp.id][d] = String(cycle[block % 3]);
+          }
+        } else if (mode.startsWith('rest-')) {
+          if (emp.restDay === undefined || emp.restDay === '') { skippedNoRest++; return; }
+          const seq = mode.endsWith('321') ? [3, 2, 1] : [1, 2, 3];
+          let seqIdx = 0;
+          for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(deptSchYear, deptSchMonth, d);
+            if (date < startDate) continue;
+            const dow = date.getDay();
+            if (dow === Number(emp.restDay)) {
+              delete monthData[emp.id][d];
+              seqIdx = (seqIdx + 1) % 3;
+            } else {
+              monthData[emp.id][d] = String(seq[seqIdx]);
+            }
+          }
+        } else {
+          // نمط مخصص — حسب النمط الأسبوعي المحدد أسفل الموظف (سبت=0 ... جمعة=6)
+          const pattern = Array.isArray(emp.pattern) ? emp.pattern : [];
+          if (!pattern.some(v => v)) { skippedNoPattern++; return; }
+          for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(deptSchYear, deptSchMonth, d);
+            if (date < startDate) continue;
+            const dow = date.getDay();
+            const pIdx = (dow + 1) % 7;
+            const val = pattern[pIdx] || '';
+            if (val === '' || val === 'rest') delete monthData[emp.id][d];
+            else monthData[emp.id][d] = val;
+          }
+        }
+      });
+
+      if (skippedNoRest > 0) toast(skippedNoRest + ' موظف من غير يوم راحة ثابت اتجاهلوا في التوليد', 'error');
+      if (skippedNoPattern > 0) toast(skippedNoPattern + ' موظف من غير نمط مخصص محدد اتجاهلوا في التوليد', 'error');
+
+      saveData();
+      renderDeptSchedule();
+      toast('تم توليد الجدول');
+    }
 
     function renderDeptDailyCard() {
       const label = document.getElementById('deptDailyLabel');
@@ -5067,6 +5284,22 @@
       });
       document.getElementById('deptEditLockBtn').addEventListener('click', toggleDeptEditLock);
       document.getElementById('closeDeptSchedule').addEventListener('click', () => { document.getElementById('deptScheduleModal').classList.remove('open'); });
+
+      // ===== توليد الجدول تلقائياً (حسب نمط كل موظف) =====
+      document.getElementById('genScheduleBtn').addEventListener('click', () => {
+        if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تولّد الجدول', 'error'); return; }
+        const d = document.getElementById('genScheduleStartDate');
+        d.value = formatDate(new Date(deptSchYear, deptSchMonth, 1));
+        document.getElementById('genScheduleModal').classList.add('open');
+      });
+      document.getElementById('closeGenSchedule').addEventListener('click', () => { document.getElementById('genScheduleModal').classList.remove('open'); });
+      document.getElementById('cancelGenSchedule').addEventListener('click', () => { document.getElementById('genScheduleModal').classList.remove('open'); });
+      document.getElementById('confirmGenSchedule').addEventListener('click', () => {
+        const val = document.getElementById('genScheduleStartDate').value;
+        generateDeptScheduleFromPattern(val);
+        document.getElementById('genScheduleModal').classList.remove('open');
+      });
+
       document.getElementById('menuImportMyShifts').addEventListener('click', () => {
         document.getElementById('sideMenuOverlay').classList.remove('open');
         importMyShiftsFromDeptSchedule();
@@ -5281,7 +5514,7 @@
         const restDaySelect = document.getElementById('newDeptEmpRestDay');
         const name = nameInput.value.trim();
         if (!name) { toast('أدخل اسم الموظف', 'error'); return; }
-        deptEmployees.push({ id: generateId(), name, restDay: restDaySelect.value });
+        deptEmployees.push({ id: generateId(), name, restDay: restDaySelect.value, pattern: ['', '', '', '', '', '', ''], schedMode: 'custom' });
         nameInput.value = '';
         restDaySelect.value = '';
         saveData();
