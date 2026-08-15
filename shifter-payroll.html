@@ -1290,6 +1290,9 @@
     .dept-sch-table tfoot .dept-sticky-col {
       z-index: 5;
     }
+    .dept-sch-table td.dept-future-col {
+      opacity: 0.4;
+    }
 
     /* ===== نمط الجدول لكل موظف (أسفل الاسم) ===== */
     .emp-pattern-row {
@@ -3522,6 +3525,7 @@
     // استيراد ورديات المستخدم الشهر الحالي من جدول القسم للتقويم الشخصي
     // - الأرقام 1/2/3 في جدول القسم بتتحول دايمًا لأول 3 ورديات في قائمة الورديات بنفس الترتيب
     // - في حالة التبديل (مثلاً 1>2) بناخد الوردية النهائية بعد التبديل
+    // - أيام الراحة الأسبوعية الثابتة (المحسوبة من restDay الموظف) بتتسحب كمان، وبتتحول للوردية الرابعة في القائمة (المفروض تبقى "راحة")
     // - أي يوم عنده وردية متسجلة بالفعل في التقويم الشخصي بيتسيب زي ما هو ومنستوردهوش
     function importMyShiftsFromDeptSchedule() {
       if (!myDeptEmpId) {
@@ -3542,13 +3546,27 @@
       const monthKey = deptMonthKey(currentYear, currentMonth);
       const monthData = (deptSchedule[monthKey] && deptSchedule[monthKey][myDeptEmpId]) || {};
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
 
-      let imported = 0, skippedConflict = 0, skippedNoData = 0;
+      let imported = 0, importedRest = 0, skippedConflict = 0, skippedNoData = 0, skippedRestNoShift = 0;
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         if (schedule[dateStr]) { skippedConflict++; continue; }
         const val = monthData[d] || monthData[String(d)];
-        if (!val) { skippedNoData++; continue; }
+        if (!val) {
+          const dow = new Date(currentYear, currentMonth, d).getDay();
+          if (restDay !== null && dow === restDay) {
+            if (shifts[3]) {
+              schedule[dateStr] = shifts[3].id;
+              importedRest++;
+            } else {
+              skippedRestNoShift++;
+            }
+          } else {
+            skippedNoData++;
+          }
+          continue;
+        }
         const swapMatch = /^([123])>([123])$/.exec(val);
         const effectiveNum = swapMatch ? swapMatch[2] : (/^[123]$/.test(val) ? val : null);
         if (!effectiveNum) { skippedNoData++; continue; }
@@ -3562,10 +3580,16 @@
       renderCalendar();
       if (typeof renderStats === 'function') renderStats();
 
-      if (imported === 0) {
+      if (imported === 0 && importedRest === 0) {
         toast('مفيش أيام جديدة اتستوردت — إما محدّش سجّل وردياتك في جدول القسم الشهر ده، أو كل الأيام متسجلة عندك بالفعل', 'error');
       } else {
-        toast(`تم استيراد ${imported} يوم ✔️` + (skippedConflict ? ` — اتسيب ${skippedConflict} يوم كان متسجل عندك بالفعل` : ''));
+        let msg = `تم استيراد ${imported + importedRest} يوم ✔️`;
+        if (importedRest) msg += ` (منهم ${importedRest} يوم راحة)`;
+        if (skippedConflict) msg += ` — اتسيب ${skippedConflict} يوم كان متسجل عندك بالفعل`;
+        toast(msg);
+      }
+      if (skippedRestNoShift > 0) {
+        toast(skippedRestNoShift + ' يوم راحة اتجاهل — محتاج وردية رابعة (راحة) معرّفة في التقويم عشان تتسحب أيام الراحة', 'error');
       }
     }
     function deptCellEffectiveNum(val) {
@@ -4222,6 +4246,7 @@
       const todayDate = new Date();
       const isCurrentMonth = deptSchYear === todayDate.getFullYear() && deptSchMonth === todayDate.getMonth();
       const todayDayNum = todayDate.getDate();
+      const todayMidnight = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
       let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}"></span></button>الموظف</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
@@ -4264,8 +4289,9 @@
             const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
             const isRest = restDay !== null && dow === restDay;
             const todayCls = isCurrentMonth && d === todayDayNum ? ' dept-today-col' : '';
+            const futureCls = new Date(deptSchYear, deptSchMonth, d).getTime() > todayMidnight.getTime() ? ' dept-future-col' : '';
             if (isRest) {
-              bodyRows += `<td class="dept-rest-day${todayCls}"></td>`;
+              bodyRows += `<td class="dept-rest-day${todayCls}${futureCls}"></td>`;
             } else {
               if (val === '1' || val === '2' || val === '3') dayCounts[d][val]++;
               const numColor = { '1': '#ffffff', '2': '#bdbdbd', '3': '#2b2b2b' };
@@ -4284,9 +4310,9 @@
                 const bg = `background-color:${numColor[to]};background-image:repeating-linear-gradient(45deg, ${numColor[from]} 0px, ${numColor[from]} 1.5px, transparent 1.5px, transparent 4px);`;
                 const txtColor = swapTextOverride[val] || numText[to];
                 const txtStroke = swapTextStroke[val] || '';
-                bodyRows += `<td class="${todayCls.trim()}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${txtColor};${numGlow}${txtStroke}">${to}</span></span></td>`;
+                bodyRows += `<td class="${todayCls.trim()}${futureCls}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${txtColor};${numGlow}${txtStroke}">${to}</span></span></td>`;
               } else {
-                bodyRows += `<td class="${todayCls.trim()}">${selectHtml}</td>`;
+                bodyRows += `<td class="${todayCls.trim()}${futureCls}">${selectHtml}</td>`;
               }
             }
           }
