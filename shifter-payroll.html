@@ -3969,9 +3969,15 @@
         list.innerHTML = '<div class="mini-list-empty">لا يوجد موظفين — ضيف موظف من الأعلى</div>';
         return;
       }
+      const hiddenGroupIds = new Set(deptGroups.filter(g => g.hidden).map(g => g.id));
+      const visibleEmployees = deptEmployees.filter(emp => !(emp.groupId && hiddenGroupIds.has(emp.groupId)));
+      if (visibleEmployees.length === 0) {
+        list.innerHTML = '<div class="mini-list-empty">كل الموظفين محجوبين — اعرض مجموعة على الأقل من "مجموعات القسم"</div>';
+        return;
+      }
       const restLabels = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
       const groupOptionsBase = '<option value="">بدون مجموعة</option>' + deptGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-      list.innerHTML = deptEmployees.map(emp => {
+      list.innerHTML = visibleEmployees.map(emp => {
         const restTxt = emp.restDay !== undefined && emp.restDay !== '' ? 'راحة: ' + restLabels[Number(emp.restDay)] : 'بدون يوم راحة ثابت';
         const phoneTxt = emp.phone ? ' • واتساب: ' + emp.phone : ' • بدون رقم واتساب';
         const actionHtml = locked
@@ -4224,7 +4230,18 @@
             dragEl.style.transform = '';
             dragEl.classList.remove('dragging');
             const newOrder = Array.from(list.children).map(el => el.dataset.empId);
-            deptEmployees.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+            const newOrderSet = new Set(newOrder);
+            const reordered = [];
+            let ptr = 0;
+            deptEmployees.forEach(emp => {
+              if (newOrderSet.has(emp.id)) {
+                reordered.push(deptEmployees.find(e => e.id === newOrder[ptr]));
+                ptr++;
+              } else {
+                reordered.push(emp);
+              }
+            });
+            deptEmployees = reordered;
             saveData();
             renderDeptSchedule();
           }
@@ -4252,7 +4269,7 @@
       const todayDate = new Date();
       const isCurrentMonth = deptSchYear === todayDate.getFullYear() && deptSchMonth === todayDate.getMonth();
       const todayDayNum = todayDate.getDate();
-      let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}"></span></button>الموظف</th>`;
+      let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}"></span></button><button type="button" id="deptSchResetBtn" title="تصفير جدول الشهر ده" style="border:none;background:transparent;font-size:13px;cursor:pointer;padding:0 2px;">🗑️</button>الموظف</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
         const todayCls = isCurrentMonth && d === todayDayNum ? ' dept-today-col' : '';
@@ -4370,6 +4387,20 @@
         });
       }
 
+      const resetBtn = document.getElementById('deptSchResetBtn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          if (!canEditDeptSchedule()) { toast('وضع العرض فقط — اضغط 🔒 وادخل كلمة المرور عشان تصفّر الجدول', 'error'); return; }
+          const monthLbl = document.getElementById('deptSchLabel');
+          const lblTxt = monthLbl ? monthLbl.textContent : '';
+          if (!confirm(`تصفير جدول ${lblTxt} بالكامل؟ كل الورديات المسجلة للشهر ده هتتمسح لكل الموظفين. الإجراء ده لا يمكن التراجع عنه!`)) return;
+          deptSchedule[monthKey] = {};
+          saveData();
+          renderDeptSchedule();
+          toast('تم تصفير جدول الشهر ✔️');
+        });
+      }
+
       renderDeptEmpList();
       renderDeptGroupsList();
       renderDeptDailyCard();
@@ -4470,6 +4501,7 @@
 
       const monthKey = deptMonthKey(y, m);
       const monthData = deptSchedule[monthKey] || {};
+      const hiddenGroupIds = new Set(deptGroups.filter(g => g.hidden).map(g => g.id));
 
       const cols = { '1': [], '2': [], '3': [] };
       const leaves = [];
@@ -4479,16 +4511,17 @@
         const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
         const empColor = getDeptGroupColor(emp);
         const empGroupId = emp.groupId || '';
+        const empHidden = empGroupId && hiddenGroupIds.has(empGroupId);
         if (restDay !== null && dow === restDay) {
-          rests.push({ name: emp.name, color: empColor, groupId: empGroupId });
+          rests.push({ name: emp.name, color: empColor, groupId: empGroupId, hidden: empHidden });
           return;
         }
         const val = (monthData[emp.id] || {})[d] || '';
         const effNum = deptCellEffectiveNum(val);
         if (effNum) {
-          cols[effNum].push({ name: emp.name, color: empColor, groupId: empGroupId, swap: val.includes('>') ? val : null });
+          cols[effNum].push({ name: emp.name, color: empColor, groupId: empGroupId, swap: val.includes('>') ? val : null, hidden: empHidden });
         } else {
-          leaves.push({ name: emp.name, color: empColor, groupId: empGroupId });
+          leaves.push({ name: emp.name, color: empColor, groupId: empGroupId, hidden: empHidden });
         }
       });
 
@@ -4506,9 +4539,15 @@
       const sortedLeaves = sortByGroup(leaves);
       const sortedRests = sortByGroup(rests);
 
+      function itemStyle(it) {
+        const parts = [];
+        if (it.color) parts.push(`color:${it.color};`);
+        if (it.hidden) parts.push('opacity:.4;');
+        return parts.length ? ` style="${parts.join('')}"` : '';
+      }
       function renderCol(el, items) {
         el.innerHTML = items.length
-          ? items.map(it => `<div class="dept-daily-col-name"${it.color ? ` style="color:${it.color};"` : ''}>${it.name}</div>`).join('')
+          ? items.map(it => `<div class="dept-daily-col-name"${itemStyle(it)}>${it.name}</div>`).join('')
           : '<div class="dept-daily-col-empty">—</div>';
       }
       renderCol(col1, cols['1']);
@@ -4516,7 +4555,7 @@
       renderCol(col3, cols['3']);
       function joinColored(items) {
         return items.length
-          ? items.map(it => `<span${it.color ? ` style="color:${it.color};"` : ''}>${it.name}</span>`).join('، ')
+          ? items.map(it => `<span${itemStyle(it)}>${it.name}</span>`).join('، ')
           : '—';
       }
       leavesEl.innerHTML = joinColored(sortedLeaves);
