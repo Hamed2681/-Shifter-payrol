@@ -3940,6 +3940,12 @@
           ['rest-321', 'بعد الراحة (3-2-1)'],
         ];
         const presetSelectHtml = `<select class="emp-sched-preset" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:150px;">${presetOptions.map(([v, l]) => `<option value="${v}" ${schedModeVal === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+        const startShiftVal = [1, 2, 3].includes(Number(emp.schedStartShift)) ? Number(emp.schedStartShift) : 1;
+        const startShiftSelectHtml = `<select class="emp-sched-start" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);max-width:80px;">
+              <option value="1" ${startShiftVal === 1 ? 'selected' : ''}>يبدأ بـ 1</option>
+              <option value="2" ${startShiftVal === 2 ? 'selected' : ''}>يبدأ بـ 2</option>
+              <option value="3" ${startShiftVal === 3 ? 'selected' : ''}>يبدأ بـ 3</option>
+            </select>`;
         const schedTypeSelectHtml = `<select class="emp-sched-type" data-emp="${emp.id}" ${locked ? 'disabled' : ''} style="font-size:11px;padding:2px 4px;border:none;border-radius:6px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-sm-inset);">
               <option value="preset" ${isPreset ? 'selected' : ''}>قائمة جاهزة</option>
               <option value="custom" ${!isPreset ? 'selected' : ''}>نمط مخصص (أسفل)</option>
@@ -3947,7 +3953,7 @@
         const schedControlsHtml = `<div class="emp-sched-controls" data-emp-sched="${emp.id}" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;">
             <span style="font-size:10px;color:var(--nm-text-muted);">نمط الجدول:</span>
             ${schedTypeSelectHtml}
-            <span class="emp-sched-preset-wrap" data-emp-preset-wrap="${emp.id}" style="${isPreset ? '' : 'display:none;'}">${presetSelectHtml}</span>
+            <span class="emp-sched-preset-wrap" data-emp-preset-wrap="${emp.id}" style="display:flex;gap:6px;flex-wrap:wrap;${isPreset ? '' : 'display:none;'}">${presetSelectHtml}${startShiftSelectHtml}</span>
           </div>`;
         const patternDayLabels = ['سبت', 'حد', 'اثنين', 'ثلا', 'اربع', 'خميس', 'جمعة'];
         const patternVal = (i) => (Array.isArray(emp.pattern) && emp.pattern[i]) ? emp.pattern[i] : '';
@@ -4043,6 +4049,15 @@
           });
           enhanceSelectAsCustomDropdown(sel);
         });
+        list.querySelectorAll('.emp-sched-start').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const empRef = deptEmployees.find(e => e.id === sel.dataset.emp);
+            if (!empRef) return;
+            empRef.schedStartShift = Number(sel.value);
+            saveData();
+          });
+          enhanceSelectAsCustomDropdown(sel);
+        });
       }
       if (!locked) {
         if (deptReorderMode) {
@@ -4075,11 +4090,24 @@
         <div class="mini-list-item">
           <div class="mli-info" style="display:flex;flex-direction:row;align-items:center;gap:8px;">
             <span style="width:16px;height:16px;border-radius:50%;background:${g.color};flex-shrink:0;box-shadow:var(--nm-shadow-sm);"></span>
-            <span class="mli-name" style="color:${g.color};">${g.name}</span>
+            <span class="mli-name" style="color:${g.color};${g.hidden ? 'opacity:.5;' : ''}">${g.name}</span>
           </div>
-          ${locked ? '' : `<button type="button" class="mli-del" data-group="${g.id}">✕</button>`}
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button type="button" class="mli-group-vis" data-group="${g.id}" title="${g.hidden ? 'إظهار المجموعة في جدول الورديات' : 'حجب المجموعة من جدول الورديات'}" style="border:none;background:transparent;font-size:15px;cursor:pointer;">${g.hidden ? '🚫' : '👁️'}</button>
+            ${locked ? '' : `<button type="button" class="mli-del" data-group="${g.id}">✕</button>`}
+          </div>
         </div>
       `).join('');
+      list.querySelectorAll('.mli-group-vis').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const g = deptGroups.find(x => x.id === btn.dataset.group);
+          if (!g) return;
+          g.hidden = !g.hidden;
+          saveData();
+          renderDeptGroupsList();
+          renderDeptSchedule();
+        });
+      });
       if (!locked) {
         list.querySelectorAll('.mli-del').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -4193,11 +4221,15 @@
       let bodyRows = '';
       const dayCounts = {};
       for (let d = 1; d <= daysInMonth; d++) dayCounts[d] = { '1': 0, '2': 0, '3': 0 };
+      const hiddenGroupIds = new Set(deptGroups.filter(g => g.hidden).map(g => g.id));
+      const visibleEmployees = deptEmployees.filter(emp => !(emp.groupId && hiddenGroupIds.has(emp.groupId)));
 
       if (deptEmployees.length === 0) {
         bodyRows = `<tr><td colspan="${daysInMonth + 1}" style="padding:16px;color:var(--nm-text-muted);">لا يوجد موظفين — ضيف موظف من الأعلى</td></tr>`;
+      } else if (visibleEmployees.length === 0) {
+        bodyRows = `<tr><td colspan="${daysInMonth + 1}" style="padding:16px;color:var(--nm-text-muted);">كل الموظفين محجوبين — اعرض مجموعة على الأقل من "مجموعات القسم"</td></tr>`;
       } else {
-        deptEmployees.forEach(emp => {
+        visibleEmployees.forEach(emp => {
           const empDays = monthData[emp.id] || {};
           const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
           const empColor = getDeptGroupColor(emp);
@@ -4310,17 +4342,20 @@
         if (mode.startsWith('10-') || mode.startsWith('7-')) {
           const blockSize = mode.startsWith('10-') ? 10 : 7;
           const cycle = mode.endsWith('321') ? [3, 2, 1] : [1, 2, 3];
+          const startShift = [1, 2, 3].includes(Number(emp.schedStartShift)) ? Number(emp.schedStartShift) : 1;
+          const startIdx = cycle.indexOf(startShift);
           for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(deptSchYear, deptSchMonth, d);
             if (date < startDate) continue;
             const diffDays = Math.floor((date - startDate) / 86400000);
             const block = Math.floor(diffDays / blockSize);
-            monthData[emp.id][d] = String(cycle[block % 3]);
+            monthData[emp.id][d] = String(cycle[(startIdx + block) % 3]);
           }
         } else if (mode.startsWith('rest-')) {
           if (emp.restDay === undefined || emp.restDay === '') { skippedNoRest++; return; }
           const seq = mode.endsWith('321') ? [3, 2, 1] : [1, 2, 3];
-          let seqIdx = 0;
+          const startShift = [1, 2, 3].includes(Number(emp.schedStartShift)) ? Number(emp.schedStartShift) : 1;
+          let seqIdx = seq.indexOf(startShift);
           for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(deptSchYear, deptSchMonth, d);
             if (date < startDate) continue;
@@ -5514,7 +5549,7 @@
         const restDaySelect = document.getElementById('newDeptEmpRestDay');
         const name = nameInput.value.trim();
         if (!name) { toast('أدخل اسم الموظف', 'error'); return; }
-        deptEmployees.push({ id: generateId(), name, restDay: restDaySelect.value, pattern: ['', '', '', '', '', '', ''], schedMode: 'custom' });
+        deptEmployees.push({ id: generateId(), name, restDay: restDaySelect.value, pattern: ['', '', '', '', '', '', ''], schedMode: 'custom', schedStartShift: 1 });
         nameInput.value = '';
         restDaySelect.value = '';
         saveData();
