@@ -2324,7 +2324,7 @@
         </label>
       </div>
       <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="sendReqSendBtn">📲 إرسال واتساب</button>
+        <button class="btn btn-primary" id="sendReqSendBtn">📤 إرسال الرسالة</button>
         <button class="btn btn-outline" id="sendReqCancel">إلغاء</button>
       </div>
     </div>
@@ -2381,7 +2381,7 @@
       </div>
       <div id="deptEmpListWrap" style="display:none;">
         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary" id="deptEmpExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة الموظفين (واتساب)</button>
+          <button type="button" class="btn btn-primary" id="deptEmpExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة الموظفين</button>
           <button type="button" class="btn" id="deptEmpImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث</button>
         </div>
         <input type="file" id="deptEmpImportFile" accept=".json,.txt,application/json,text/plain" style="display:none" />
@@ -2413,7 +2413,7 @@
         <button type="button" class="btn btn-primary" id="genScheduleBtn" style="width:100%;padding:10px 16px;">🧮 توليد الجدول تلقائياً حسب نمط كل موظف</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-primary" id="deptSchExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة جدول الورديات (واتساب)</button>
+        <button type="button" class="btn btn-primary" id="deptSchExportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📤 مشاركة جدول الورديات</button>
         <button type="button" class="btn" id="deptSchImportBtn" style="flex:1;min-width:130px;padding:8px 10px;font-size:12px;">📥 استيراد وتحديث الجدول</button>
       </div>
       <input type="file" id="deptSchImportFile" accept=".json,.txt,application/json,text/plain" style="display:none" />
@@ -3694,6 +3694,31 @@
       document.getElementById('deptScheduleModal').classList.add('open');
     }
 
+    // مشاركة رسالة نصية بأسهل طريقة متاحة — بتفتح قائمة المشاركة العامة للجهاز
+    // (اللي فيها واتساب وتليجرام والرسائل والإيميل وغيرهم) بدل ما تفرض واتساب بعينه.
+    // لو المتصفح مش بيدعم المشاركة العامة، بترجع لرقم واتساب (لو معروف) وبعدين نسخ للحافظة.
+    async function shareTextGeneric(msg, phoneFallback) {
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: msg });
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return; // المستخدم قفل قائمة المشاركة بنفسه
+          // فشلت المشاركة العامة لأي سبب تاني -> نكمل للطريقة الاحتياطية تحت
+        }
+      }
+      if (phoneFallback) {
+        window.open('https://wa.me/' + phoneFallback + '?text=' + encodeURIComponent(msg), '_blank');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(msg);
+        toast('اتنسخت الرسالة ✔️ الصقها في أي تطبيق تحب تبعت بيه');
+      } catch (e) {
+        pgPrompt('انسخ الرسالة وابعتها يدوياً:', msg);
+      }
+    }
+
     function downloadJsonFile(blob, fileName, reason) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3704,7 +3729,7 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 3000);
-      toast(reason || 'تم تنزيل الملف — ابعته من واتساب كمرفق يدوياً');
+      toast(reason || 'تم تنزيل الملف — ابعته كمرفق من أي تطبيق تحب يدوياً');
     }
 
     function shareJsonFile(jsonStr, baseFileName, shareTitle, shareText) {
@@ -3714,11 +3739,11 @@
 
       // تشخيص سبب عدم توفر المشاركة، عشان لو رجعنا للتنزيل نوضح السبب الحقيقي
       if (!window.isSecureContext) {
-        downloadJsonFile(plainBlob(), jsonFileName, 'المشاركة المباشرة لواتساب محتاجة الموقع يكون شغال بـ https — لو بتفتح الملف مباشرة من جهازك ده مش هيشتغل. تم تنزيل الملف، ابعته يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'المشاركة المباشرة محتاجة الموقع يكون شغال بـ https — لو بتفتح الملف مباشرة من جهازك ده مش هيشتغل. تم تنزيل الملف، ابعته يدوياً.');
         return;
       }
       if (!navigator.share) {
-        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح ده مش بيدعم المشاركة المباشرة (Web Share API). تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح ده مش بيدعم المشاركة المباشرة (Web Share API). تم تنزيل الملف، ابعته لأي حد تحب يدوياً.');
         return;
       }
 
@@ -3732,12 +3757,12 @@
         const blob = new Blob([jsonStr], { type: 'text/plain' });
         file = new File([blob], txtFileName, { type: 'text/plain' });
       } catch (e) {
-        downloadJsonFile(plainBlob(), jsonFileName, 'تعذّر تجهيز الملف للمشاركة. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'تعذّر تجهيز الملف للمشاركة. تم تنزيل الملف، ابعته يدوياً.');
         return;
       }
 
       if (!(navigator.canShare && navigator.canShare({ files: [file] }))) {
-        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة. تم تنزيل الملف، ابعته من واتساب يدوياً.');
+        downloadJsonFile(plainBlob(), jsonFileName, 'المتصفح مش بيدعم مشاركة الملفات دي مباشرة. تم تنزيل الملف، ابعته لأي حد تحب يدوياً.');
         return;
       }
 
@@ -5438,7 +5463,7 @@
       });
       document.getElementById('closeSendEmpRequest').addEventListener('click', () => { document.getElementById('sendEmpRequestModal').classList.remove('open'); });
       document.getElementById('sendReqCancel').addEventListener('click', () => { document.getElementById('sendEmpRequestModal').classList.remove('open'); });
-      document.getElementById('sendReqSendBtn').addEventListener('click', () => {
+      document.getElementById('sendReqSendBtn').addEventListener('click', async () => {
         const day = parseInt(document.getElementById('sendReqDay').value, 10);
         if (!day || day < 1 || day > 31) { toast('اليوم مش صحيح', 'error'); return; }
 
@@ -5453,8 +5478,7 @@
           const nm = document.getElementById('sendReqMyName').value.trim();
           if (!nm) { toast('اكتب اسمك الأول', 'error'); return; }
           myName = nm; saveData();
-          if (!managerPhone) { toast('محتاج تسجّل رقم واتساب مديرك في الإعدادات ⚙️ الأول', 'error'); return; }
-          targetPhone = managerPhone;
+          targetPhone = managerPhone || '';
         }
 
         const msg = buildSendReqMessage();
@@ -5471,13 +5495,7 @@
           if (document.getElementById('deptScheduleModal').classList.contains('open')) { deptSchYear = y; deptSchMonth = m; renderDeptSchedule(); }
         }
 
-        if (targetPhone) {
-          window.open('https://wa.me/' + targetPhone + '?text=' + encodeURIComponent(msg), '_blank');
-        } else if (navigator.share) {
-          navigator.share({ text: msg }).catch(() => { pgPrompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg); });
-        } else {
-          pgPrompt('مفيش رقم واتساب مسجل — انسخ الرسالة وابعتها يدوياً:', msg);
-        }
+        await shareTextGeneric(msg, targetPhone);
         document.getElementById('sendEmpRequestModal').classList.remove('open');
         toast('تم تجهيز الرسالة ✔️');
       });
@@ -5523,13 +5541,7 @@
         let msg = `مرفوض طلبك (${desc}${dayTxt ? ' - ' + dayTxt : ''}).`;
         if (reason && reason.trim()) msg += ' السبب: ' + reason.trim();
         const phone = (emp.phone || '').replace(/[^0-9]/g, '');
-        if (phone) {
-          window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
-        } else if (navigator.share) {
-          navigator.share({ text: msg }).catch(() => { pgPrompt('انسخ رسالة الرفض وابعتها للموظف يدويًا:', msg); });
-        } else {
-          pgPrompt('مفيش رقم واتساب مسجل للموظف — انسخ رسالة الرفض وابعتها يدويًا:', msg);
-        }
+        await shareTextGeneric(msg, phone);
         document.getElementById('shareImportModal').classList.remove('open');
         toast('تم إرسال الرفض، والطلب متسجلش في الجدول');
       });
