@@ -532,6 +532,9 @@
       opacity: 0.35;
       box-shadow: none;
     }
+    .day.future-day {
+      opacity: 0.4;
+    }
     .day .num-top {
       position: absolute;
       top: 3px;
@@ -606,6 +609,9 @@
     }
     .day-row.other {
       opacity: 0.35;
+    }
+    .day-row.future-day {
+      opacity: 0.4;
     }
     .day-row .dr-date {
       display: flex;
@@ -1289,9 +1295,6 @@
     }
     .dept-sch-table tfoot .dept-sticky-col {
       z-index: 5;
-    }
-    .dept-sch-table td.dept-future-col {
-      opacity: 0.4;
     }
 
     /* ===== نمط الجدول لكل موظف (أسفل الاسم) ===== */
@@ -3347,6 +3350,8 @@
       const list = document.getElementById('calendarList');
       list.innerHTML = '';
       const { assignments: holidayCompAssignments } = computeHolidayCompAssignments();
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
 
       const total = firstDay + days;
       const rows = Math.ceil(total / 7);
@@ -3357,9 +3362,10 @@
         const dateStr = dateObj ? formatDate(dateObj) : '';
         const shiftId = dateStr ? schedule[dateStr] : null;
         const extraIds = dateStr ? (scheduleExtra[dateStr] || []) : [];
+        const isFuture = dateObj ? dateObj.getTime() > todayMidnight.getTime() : false;
 
         const dayEl = document.createElement('div');
-        dayEl.className = 'day' + (isOther ? ' other' : '');
+        dayEl.className = 'day' + (isOther ? ' other' : '') + (isFuture ? ' future-day' : '');
         if (!isOther) {
           dayEl.dataset.date = dateStr;
           dayEl.addEventListener('click', () => handleDayTap(dateStr));
@@ -3405,7 +3411,7 @@
 
         if (!isOther) {
           const row = document.createElement('div');
-          row.className = 'day-row';
+          row.className = 'day-row' + (isFuture ? ' future-day' : '');
           const weekday = new Date(year, month, dayNum).toLocaleString(translations[uiLang].locale, { weekday:'short' });
           const hAssignRow = holidayCompAssignments[dateStr];
           const extraLabelHtml = extraIds.length > 0 ? ` <small style="opacity:0.85;">(+${extraIds.map(id => getShiftLabel(id)).join('+')})</small>` : '';
@@ -4246,7 +4252,6 @@
       const todayDate = new Date();
       const isCurrentMonth = deptSchYear === todayDate.getFullYear() && deptSchMonth === todayDate.getMonth();
       const todayDayNum = todayDate.getDate();
-      const todayMidnight = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
       let headerRow = `<tr><th class="dept-sticky-col"><button type="button" class="dept-collapse-toggle" id="deptCollapseToggle"><span class="dept-collapse-arrow${deptCollapsed ? ' collapsed' : ''}"></span></button>الموظف</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
@@ -4289,9 +4294,8 @@
             const dow = new Date(deptSchYear, deptSchMonth, d).getDay();
             const isRest = restDay !== null && dow === restDay;
             const todayCls = isCurrentMonth && d === todayDayNum ? ' dept-today-col' : '';
-            const futureCls = new Date(deptSchYear, deptSchMonth, d).getTime() > todayMidnight.getTime() ? ' dept-future-col' : '';
             if (isRest) {
-              bodyRows += `<td class="dept-rest-day${todayCls}${futureCls}"></td>`;
+              bodyRows += `<td class="dept-rest-day${todayCls}"></td>`;
             } else {
               if (val === '1' || val === '2' || val === '3') dayCounts[d][val]++;
               const numColor = { '1': '#ffffff', '2': '#bdbdbd', '3': '#2b2b2b' };
@@ -4310,9 +4314,9 @@
                 const bg = `background-color:${numColor[to]};background-image:repeating-linear-gradient(45deg, ${numColor[from]} 0px, ${numColor[from]} 1.5px, transparent 1.5px, transparent 4px);`;
                 const txtColor = swapTextOverride[val] || numText[to];
                 const txtStroke = swapTextStroke[val] || '';
-                bodyRows += `<td class="${todayCls.trim()}${futureCls}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${txtColor};${numGlow}${txtStroke}">${to}</span></span></td>`;
+                bodyRows += `<td class="${todayCls.trim()}"><span class="dept-cell-wrap" style="position:relative;display:inline-block;${bg}border-radius:4px;">${selectHtml}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:800;font-size:16px;color:${txtColor};${numGlow}${txtStroke}">${to}</span></span></td>`;
               } else {
-                bodyRows += `<td class="${todayCls.trim()}${futureCls}">${selectHtml}</td>`;
+                bodyRows += `<td class="${todayCls.trim()}">${selectHtml}</td>`;
               }
             }
           }
