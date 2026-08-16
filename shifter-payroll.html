@@ -127,7 +127,7 @@
       padding: 10px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       border-bottom: 1px solid rgba(163, 177, 198, 0.3);
       flex: 0 0 auto;
       min-height: 60px;
@@ -139,11 +139,12 @@
       gap: 6px;
       background: var(--nm-bg);
       border: none;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: var(--nm-radius-sm);
       cursor: pointer;
       box-shadow: var(--nm-shadow-sm);
       transition: all 0.2s;
+      flex-shrink: 0;
     }
     .logo:active {
       box-shadow: var(--nm-shadow-sm-inset);
@@ -171,13 +172,13 @@
     }
 
     .company-select {
-      flex: 1;
+      flex: 3;
       min-width: 0;
       display: flex;
       align-items: center;
       gap: 8px;
       background: var(--nm-bg);
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: var(--nm-radius-sm);
       box-shadow: var(--nm-shadow-inset);
     }
@@ -211,13 +212,14 @@
 
     .top-actions {
       display: flex;
-      gap: 6px;
+      gap: 4px;
+      flex-shrink: 0;
     }
     .icon-btn {
       background: var(--nm-bg);
       border: none;
       color: var(--nm-text-muted);
-      padding: 8px 10px;
+      padding: 8px 9px;
       border-radius: var(--nm-radius-full);
       font-size: 20px;
       cursor: pointer;
@@ -1673,7 +1675,7 @@
       position: fixed;
       z-index: 9999;
       min-width: 220px;
-      max-width: min(320px, 90vw);
+      max-width: min(380px, 92vw);
       max-height: 70vh;
       overflow-y: auto;
       background: rgba(28,28,32,0.94);
@@ -1743,7 +1745,6 @@
       <select id="companySelect" aria-label="اختر الشركة"></select>
     </div>
     <div class="top-actions">
-      <button class="icon-btn" id="themeToggleBtn" title="الوضع الليلي">🌙</button>
       <button class="icon-btn" id="settingsBtn" data-i18n-title="settingsTooltip" title="الإعدادات">⚙️</button>
       <button class="icon-btn" id="menuBtn" data-i18n-title="menuTooltip" title="القائمة">☰</button>
     </div>
@@ -1983,6 +1984,7 @@
           <span>❌ خصم الغياب (تلقائي من التقويم)</span>
           <span id="absenceDeduction" style="font-weight:700;">0.00 ج.م</span>
         </div>
+        <div id="autoDeductionRows"></div>
         <div id="deductionsRows"></div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-danger);font-weight:800;margin-top:4px;">
           <span>إجمالي الخصومات</span>
@@ -2107,6 +2109,13 @@
           </label>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span data-i18n="appearanceLabel">المظهر</span>
+          <select id="appearanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="light" data-i18n="appearanceLight">☀️ الوضع النهاري</option>
+            <option value="dark" data-i18n="appearanceDark">🌙 الوضع الليلي</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span data-i18n="languageLabel">اللغة</span>
           <select id="uiLanguage" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
             <option value="ar">العربية</option>
@@ -2184,20 +2193,25 @@
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="font-weight:700;margin-bottom:10px;">➖ بنود الخصم من المرتب</div>
 
-        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin-bottom:6px;">1️⃣ تحسب تلقائياً</div>
-        <p style="font-size:12px;color:var(--nm-text-muted);margin:0 0 4px;">قيم الغياب والجزاءات بتتظبط في قسم "❌ الغياب والجزاءات" في آخر الصفحة.</p>
+        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin-bottom:6px;">1️⃣ تحسب تلقائياً (من الشيفتات، زى الغياب والمرضي)</div>
+        <div id="autoDeductionTypesList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <input type="text" id="newAutoDedLabel" placeholder="اسم البند (مثال: 🤒 مرضي)" style="flex:1;min-width:160px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <button class="btn btn-primary" id="addAutoDedType" style="padding:10px 16px;">➕ إضافة</button>
+        </div>
+        <p style="font-size:12px;color:var(--nm-text-muted);margin:8px 0 0;">قيمة كل بند تُضبط من إعدادات كل شيفت، وتُجمع تلقائياً حسب أيام الحضور بالشيفت ده في الفترة المحسوبة. أما خصم الغياب نفسه (الجزاءات التصاعدية) فبيتظبط من قسم "❌ الغياب والجزاءات" في آخر الصفحة.</p>
 
         <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin:16px 0 6px;border-top:1px solid rgba(163,177,198,0.3);padding-top:12px;">2️⃣ تخصم كإجمالي من المرتب</div>
         <div id="deductionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          <input type="number" id="newDedValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           <select id="newDedUnit" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
             <option value="amount">مبلغ (ج.م)</option>
             <option value="hours">ساعات × متوسط أجر الساعة</option>
           </select>
           <button class="btn btn-primary" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
+        <p style="font-size:11px;color:var(--nm-text-muted);margin:6px 0 0;">قيمة كل بند بتتحدد وقت حساب المرتب نفسه، مش هنا.</p>
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
@@ -2558,6 +2572,8 @@
           <input type="checkbox" id="isHolidayComp" style="accent-color:var(--nm-primary);" />
           <label style="font-size:13px;">🎉 تُحسب كبدل عطلة رسمية (تُخصم تلقائياً من رصيد العطلات بالترتيب)</label>
         </div>
+        <div style="font-weight:700;margin:12px 0 8px;font-size:13px;color:var(--nm-text-muted);">➖ بنود الخصم التلقائية لهذه الوردية</div>
+        <div id="customDeductionFields"></div>
       </div>
       <div class="ct-panel" data-ct="actions">
         <p style="color:var(--nm-text-muted);margin-bottom:12px;">حذف أو نسخ الشيفت</p>
@@ -2699,6 +2715,9 @@
       { id: 'meal', name: '🍽️ بدل الوجبة', enabled: false },
       { id: 'shift', name: '🌙 بدل الوردية', enabled: false }
     ];
+    let autoDeductionTypes = [
+      { id: 'sick', name: '🤒 مرضي', enabled: false }
+    ];
     function getShiftAllowanceValue(shift, typeId) {
       if (!shift) return 0;
       if (typeId === 'meal') return shift.mealAllowance || 0;
@@ -2710,6 +2729,14 @@
       if (typeId === 'shift') { shiftData.shiftAllowance = value; return; }
       if (!shiftData.autoAllowances) shiftData.autoAllowances = {};
       shiftData.autoAllowances[typeId] = value;
+    }
+    function getShiftDeductionValue(shift, typeId) {
+      if (!shift) return 0;
+      return (shift.autoDeductions && shift.autoDeductions[typeId]) || 0;
+    }
+    function setShiftDeductionValue(shiftData, typeId, value) {
+      if (!shiftData.autoDeductions) shiftData.autoDeductions = {};
+      shiftData.autoDeductions[typeId] = value;
     }
     let savedPayFrom = null;
     let savedPayTo = null;
@@ -2970,6 +2997,9 @@
         tabStats: 'إحصائيات',
         tabPayroll: 'المرتب',
         settingsModalTitle: 'الإعدادات',
+        appearanceLabel: 'المظهر',
+        appearanceLight: '☀️ الوضع النهاري',
+        appearanceDark: '🌙 الوضع الليلي',
         languageLabel: 'اللغة',
         numeralTypeLabel: 'نوع الأرقام',
         numeralTypeAr: 'عربي (١٢٣)',
@@ -3009,6 +3039,9 @@
         tabStats: 'Stats',
         tabPayroll: 'Payroll',
         settingsModalTitle: 'Settings',
+        appearanceLabel: 'Appearance',
+        appearanceLight: '☀️ Light mode',
+        appearanceDark: '🌙 Dark mode',
         languageLabel: 'Language',
         numeralTypeLabel: 'Numeral type',
         numeralTypeAr: 'Arabic (١٢٣)',
@@ -3205,7 +3238,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3240,6 +3273,9 @@
         autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
           { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
           { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
+        ];
+        autoDeductionTypes = Array.isArray(data.autoDeductionTypes) && data.autoDeductionTypes.length ? data.autoDeductionTypes : [
+          { id: 'sick', name: '🤒 مرضي', enabled: false }
         ];
         deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
         deptGroups = Array.isArray(data.deptGroups) ? data.deptGroups : [];
@@ -4778,6 +4814,8 @@
       let totalIncome = 0, totalDeductions = 0, daysWorked = 0;
       const allowanceTotals = {};
       autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
+      const autoDeductionTotals = {};
+      autoDeductionTypes.forEach(t => { autoDeductionTotals[t.id] = 0; });
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
@@ -4794,6 +4832,9 @@
           if (shift && shift.isAbsence) {
             const fallback = parseFloat(document.getElementById('absenceDayValue').value) || 0;
             totalDeductions += (shift.dayIncome && shift.dayIncome > 0) ? shift.dayIncome : fallback;
+          }
+          if (shift) {
+            autoDeductionTypes.forEach(t => { autoDeductionTotals[t.id] += getShiftDeductionValue(shift, t.id); });
           }
         }
         current.setDate(current.getDate() + 1);
@@ -4859,6 +4900,19 @@
         }
       });
       totalDeductions += deductionsTotal;
+
+      const autoDeductionRowsEl = document.getElementById('autoDeductionRows');
+      if (autoDeductionRowsEl) {
+        autoDeductionRowsEl.innerHTML = autoDeductionTypes.map(t => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;opacity:${t.enabled ? '1' : '0.5'};">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} ${t.enabled ? '(تلقائي)' : '(غير مفعّل من الإعدادات)'}</span>
+            <span style="font-weight:700;flex-shrink:0;">${(autoDeductionTotals[t.id] || 0).toFixed(2)} ج.م</span>
+          </div>`).join('');
+      }
+      let autoDeductionsTotal = 0;
+      autoDeductionTypes.forEach(t => { if (t.enabled) autoDeductionsTotal += autoDeductionTotals[t.id] || 0; });
+      totalDeductions += autoDeductionsTotal;
+
       document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
       document.getElementById('absenceDeduction').textContent = (totalDeductions > 0 ? totalDeductions.toFixed(2) : '0.00') + ' ج.م';
 
@@ -5005,6 +5059,16 @@
       }).join('');
     }
 
+    function renderShiftAutoDeductionFields(shift) {
+      const container = document.getElementById('customDeductionFields');
+      if (!container) return;
+      if (autoDeductionTypes.length === 0) { container.innerHTML = '<div class="mini-list-empty">لا توجد بنود خصم تلقائية — أضِفها من صفحة الإعدادات</div>'; return; }
+      container.innerHTML = autoDeductionTypes.map(t => {
+        const val = getShiftDeductionValue(shift, t.id);
+        return `<div class="input-field"><label>${t.name} / يوم</label><input type="number" class="autoDedValueInput" data-type-id="${t.id}" value="${val}" step="0.01" /></div>`;
+      }).join('');
+    }
+
     function openShiftConfig(shiftId = null) {
       const modal = document.getElementById('shiftConfigModal');
       modal.classList.add('open');
@@ -5028,6 +5092,7 @@
         document.getElementById('dayIncome').value = shift.dayIncome || 0;
         document.getElementById('overtimeRate').value = shift.overtimeRate || 0;
         renderShiftAutoAllowanceFields(shift);
+        renderShiftAutoDeductionFields(shift);
         document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
         document.getElementById('isAbsence').checked = shift.isAbsence || false;
         document.getElementById('isHolidayComp').checked = shift.isHolidayComp || false;
@@ -5051,6 +5116,7 @@
         document.getElementById('dayIncome').value = 0;
         document.getElementById('overtimeRate').value = 0;
         renderShiftAutoAllowanceFields(null);
+        renderShiftAutoDeductionFields(null);
         document.getElementById('isAnnualLeave').checked = false;
         document.getElementById('isAbsence').checked = false;
         document.getElementById('isHolidayComp').checked = false;
@@ -5104,6 +5170,11 @@
         autoAllowValues[inp.dataset.typeId] = parseFloat(inp.value) || 0;
       });
       autoAllowanceTypes.forEach(t => { setShiftAllowanceValue(shiftData, t.id, autoAllowValues[t.id] || 0); });
+      const autoDedValues = {};
+      document.querySelectorAll('#customDeductionFields .autoDedValueInput').forEach(inp => {
+        autoDedValues[inp.dataset.typeId] = parseFloat(inp.value) || 0;
+      });
+      autoDeductionTypes.forEach(t => { setShiftDeductionValue(shiftData, t.id, autoDedValues[t.id] || 0); });
       if (editingShiftId) {
         const idx = shifts.findIndex(s => s.id === editingShiftId);
         if (idx !== -1) shifts[idx] = { ...shifts[idx], ...shiftData };
@@ -5346,8 +5417,8 @@
         applyFontChoice();
         try { localStorage.setItem('shifterFont', fontChoice); } catch(e) {}
       });
-      document.getElementById('themeToggleBtn').addEventListener('click', () => {
-        darkMode = !darkMode;
+      document.getElementById('appearanceMode').addEventListener('change', function() {
+        darkMode = this.value === 'dark';
         applyTheme();
         try { localStorage.setItem('shifterTheme', darkMode ? 'dark' : 'light'); } catch(e) {}
       });
@@ -5376,8 +5447,8 @@
       document.getElementById('restAllowanceValueInput').value = restAllowanceValueManual > 0 ? restAllowanceValueManual : '';
 
       // تحويل القوائم المنسدلة الثابتة لشكل القائمة العائمة المخصصة
-      ['calendarViewSelect', 'uiLanguage', 'numeralType', 'fontStyle', 'weekStart',
-       'holidayMode', 'appAllowanceMode', 'restAllowanceMode', 'newDedUnit',
+      ['calendarViewSelect', 'appearanceMode', 'uiLanguage', 'numeralType', 'fontStyle', 'weekStart',
+       'myRoleInput', 'holidayMode', 'appAllowanceMode', 'restAllowanceMode', 'newDedUnit',
        'newDeptEmpRestDay', 'shareImportEmp', 'shareImportValue',
        'sendReqEmp', 'sendReqFrom', 'sendReqTo'].forEach(enhanceSelectAsCustomDropdown);
       refreshAllCustomDropdownTriggers();
@@ -5782,12 +5853,14 @@
         document.getElementById('myNameInput').value = myName;
         document.getElementById('myPhoneInput').value = myPhone;
         document.getElementById('myRoleInput').value = myRole || 'worker';
+        document.getElementById('appearanceMode').value = darkMode ? 'dark' : 'light';
         document.getElementById('myExtraPhonesInput').value = myExtraPhones;
         document.getElementById('managerNameInput').value = managerName;
         document.getElementById('managerPhoneInput').value = managerPhone;
         document.getElementById('managerPasswordInput').value = managerPassword;
         refreshManagerPasswordFieldVisibility();
         refreshMyDeptEmpSelect();
+        refreshAllCustomDropdownTriggers();
         document.getElementById('settingsModal').classList.add('open');
       });
       document.getElementById('myNameInput').addEventListener('input', function() {
@@ -5956,16 +6029,59 @@
         toast('تم إضافة البند');
       });
 
+      function renderAutoDeductionTypes() {
+        const list = document.getElementById('autoDeductionTypesList');
+        if (!list) return;
+        if (autoDeductionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد بنود خصم تلقائية</div>'; return; }
+        list.innerHTML = autoDeductionTypes.map((t, idx) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+            <input type="checkbox" class="autoDedEnableCb" data-idx="${idx}" ${t.enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <input type="text" class="autoDedNameInput" data-idx="${idx}" value="${(t.name || '').replace(/"/g, '&quot;')}" style="flex:1;min-width:0;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+            <button class="mli-del autoDedDeleteBtn" data-idx="${idx}">✕</button>
+          </div>`).join('');
+        list.querySelectorAll('.autoDedEnableCb').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = parseInt(cb.dataset.idx);
+            if (autoDeductionTypes[idx]) { autoDeductionTypes[idx].enabled = cb.checked; saveData(); calculatePayroll(); }
+          });
+        });
+        list.querySelectorAll('.autoDedNameInput').forEach(inp => {
+          inp.addEventListener('change', () => {
+            const idx = parseInt(inp.dataset.idx);
+            const val = inp.value.trim();
+            if (autoDeductionTypes[idx] && val) { autoDeductionTypes[idx].name = val; saveData(); calculatePayroll(); }
+          });
+        });
+        list.querySelectorAll('.autoDedDeleteBtn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.idx);
+            if (!confirm('حذف هذا البند نهائياً؟')) return;
+            autoDeductionTypes.splice(idx, 1);
+            saveData();
+            renderAutoDeductionTypes();
+            calculatePayroll();
+          });
+        });
+      }
+      renderAutoDeductionTypes();
+      document.getElementById('addAutoDedType').addEventListener('click', () => {
+        const labelInput = document.getElementById('newAutoDedLabel');
+        const label = labelInput.value.trim();
+        if (!label) { toast('أدخل اسم البند', 'error'); return; }
+        autoDeductionTypes.push({ id: generateId(), name: label, enabled: true });
+        labelInput.value = '';
+        saveData();
+        renderAutoDeductionTypes();
+        calculatePayroll();
+        toast('تم إضافة البند');
+      });
+
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
         const unit = document.getElementById('newDedUnit').value;
-        const valInput = document.getElementById('newDedValue');
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        const val = valInput.value;
-        if (val === '') { toast('أدخل قيمة البند', 'error'); return; }
-        deductionTypes.push({ id: generateId(), label, unit, value: parseFloat(val) || 0, enabled: true });
+        deductionTypes.push({ id: generateId(), label, unit, value: 0, enabled: true });
         document.getElementById('newDedLabel').value = '';
-        valInput.value = '';
         saveData();
         renderDeductionTypes();
         toast('تم إضافة البند');
@@ -5974,7 +6090,7 @@
         const list = document.getElementById('deductionTypesList');
         if (deductionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد خصومات</div>'; return; }
         list.innerHTML = deductionTypes.map((d, idx) =>
-          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span><span class="mli-sub">${d.unit === 'amount' ? d.value + ' ج.م' : d.value + ' ساعة'}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
+          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span><span class="mli-sub">${d.unit === 'amount' ? 'مبلغ (ج.م)' : 'ساعات × متوسط أجر الساعة'}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
         ).join('');
         list.querySelectorAll('.mli-del').forEach(el => {
           el.addEventListener('click', () => {
@@ -6208,7 +6324,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6249,6 +6365,9 @@
             autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
               { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
               { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
+            ];
+            autoDeductionTypes = Array.isArray(data.autoDeductionTypes) && data.autoDeductionTypes.length ? data.autoDeductionTypes : [
+              { id: 'sick', name: '🤒 مرضي', enabled: false }
             ];
             deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
             deptGroups = Array.isArray(data.deptGroups) ? data.deptGroups : [];
