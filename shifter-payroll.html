@@ -1980,10 +1980,6 @@
 
       <div class="card">
         <div class="card-title">➖ الخصومات</div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>❌ خصم الغياب (تلقائي من التقويم)</span>
-          <span id="absenceDeduction" style="font-weight:700;">0.00 ج.م</span>
-        </div>
         <div id="autoDeductionRows"></div>
         <div id="deductionsRows"></div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-danger);font-weight:800;margin-top:4px;">
@@ -4837,9 +4833,9 @@
       }
       const autoAllowanceRowsEl = document.getElementById('autoAllowanceRows');
       if (autoAllowanceRowsEl) {
-        autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.map(t => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;opacity:${t.enabled ? '1' : '0.5'};">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} ${t.enabled ? '(تلقائي)' : '(غير مفعّل من الإعدادات)'}</span>
+        autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.filter(t => t.enabled).map(t => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} (تلقائي)</span>
             <span style="font-weight:700;flex-shrink:0;">${(allowanceTotals[t.id] || 0).toFixed(2)} ج.م</span>
           </div>`).join('');
       }
@@ -4899,9 +4895,9 @@
 
       const autoDeductionRowsEl = document.getElementById('autoDeductionRows');
       if (autoDeductionRowsEl) {
-        autoDeductionRowsEl.innerHTML = autoDeductionTypes.map(t => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;opacity:${t.enabled ? '1' : '0.5'};">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} ${t.enabled ? '(تلقائي)' : '(غير مفعّل من الإعدادات)'}</span>
+        autoDeductionRowsEl.innerHTML = autoDeductionTypes.filter(t => t.enabled).map(t => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} (تلقائي)</span>
             <span style="font-weight:700;flex-shrink:0;">${(autoDeductionTotals[t.id] || 0).toFixed(2)} ج.م</span>
           </div>`).join('');
       }
@@ -4910,7 +4906,6 @@
       totalDeductions += autoDeductionsTotal;
 
       document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
-      document.getElementById('absenceDeduction').textContent = (totalDeductions > 0 ? totalDeductions.toFixed(2) : '0.00') + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
       if (additionTypes.length === 0) addRows.innerHTML = '';
