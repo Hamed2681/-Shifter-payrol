@@ -12,9 +12,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Shifter Payroll" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script>
     (function() {
       try {
@@ -43,7 +40,8 @@
       --nm-radius: 16px;
       --nm-radius-sm: 10px;
       --nm-radius-full: 9999px;
-      --nm-font: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      --nm-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
+      --nm-font-alt: Tahoma, Arial, 'Segoe UI', sans-serif;
       --nm-text: #273449;
       --nm-text-muted: #7c8798;
       --nm-primary: #50b5d3;
@@ -2131,8 +2129,8 @@
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span data-i18n="fontStyleLabel">شكل الخط</span>
           <select id="fontStyle" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-            <option value="Cairo" data-i18n="fontStyleCairo">Cairo (افتراضي)</option>
-            <option value="Tahoma" data-i18n="fontStyleTahoma">Tahoma (خط النظام)</option>
+            <option value="Cairo" data-i18n="fontStyleCairo">الخط الافتراضي</option>
+            <option value="Tahoma" data-i18n="fontStyleTahoma">Tahoma</option>
           </select>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;">
@@ -2714,6 +2712,15 @@
     try { darkMode = localStorage.getItem('shifterTheme') === 'dark'; } catch(e) {}
     let uiLang = 'ar';
     try { uiLang = localStorage.getItem('shifterLang') === 'en' ? 'en' : 'ar'; } catch(e) {}
+    // اختيار شكل الخط — 'Cairo' = خط النظام الافتراضي (خط عربي واضح متوفر على كل الأجهزة بدون نت)، 'Tahoma' = طاهوما
+    let fontChoice = 'Cairo';
+    try { fontChoice = localStorage.getItem('shifterFont') === 'Tahoma' ? 'Tahoma' : 'Cairo'; } catch(e) {}
+    function applyFontChoice() {
+      const stack = fontChoice === 'Tahoma'
+        ? "Tahoma, Arial, 'Segoe UI', sans-serif"
+        : "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans Arabic', Tahoma, Arial, sans-serif";
+      document.documentElement.style.setProperty('--nm-font', stack);
+    }
 
     // مساعدات
     function formatDate(d) {
@@ -2950,8 +2957,8 @@
         numeralTypeAr: 'عربي (١٢٣)',
         numeralTypeEn: 'إنجليزي (123)',
         fontStyleLabel: 'شكل الخط',
-        fontStyleCairo: 'Cairo (افتراضي)',
-        fontStyleTahoma: 'Tahoma (خط النظام)',
+        fontStyleCairo: 'الخط الافتراضي',
+        fontStyleTahoma: 'Tahoma',
         weekStartLabel: 'بداية الأسبوع',
         weekStartSat: 'السبت',
         weekStartSun: 'الأحد',
@@ -2989,8 +2996,8 @@
         numeralTypeAr: 'Arabic (١٢٣)',
         numeralTypeEn: 'English (123)',
         fontStyleLabel: 'Font',
-        fontStyleCairo: 'Cairo (default)',
-        fontStyleTahoma: 'Tahoma (system font)',
+        fontStyleCairo: 'Default font',
+        fontStyleTahoma: 'Tahoma',
         weekStartLabel: 'Week starts on',
         weekStartSat: 'Saturday',
         weekStartSun: 'Sunday',
@@ -4610,18 +4617,22 @@
       const stats = calculateStats(mode, year, month, fromDate, toDate);
       const body = document.getElementById('statsBody');
       body.innerHTML = '';
-      let totalShifts = 0, totalIncomeAll = 0;
+      let totalShifts = 0;
       Object.entries(stats.shiftCounts).forEach(([id, count]) => {
         const shift = getShift(id);
         const income = shift ? (shift.dayIncome || 0) * count : 0;
         totalShifts += count;
-        if (!shift || !shift.isAbsence) totalIncomeAll += income;
         const row = document.createElement('div');
         row.className = 'stats-row';
         row.innerHTML = `<span>${shift ? shift.name : id}</span><span>${count}</span><span>${shift ? (shift.hours || 0) * count + ' ساعة' : ''}</span><span style="text-align:center;font-weight:700;">${income.toFixed(2)}</span>`;
         body.appendChild(row);
       });
+      // إجمالي الدخل الأساسي (بدون بدلات) — بييجي من calculateStats مباشرة، اللي بيحسبه مرة واحدة بس ليوم-ليوم
+      // (بدل ما نعيد حسابه تاني هنا من shiftCounts، عشان نضمن مصدر واحد للرقم ده)
+      const totalIncomeAll = stats.totalIncome;
       const avgDayWage = stats.totalDays > 0 ? totalIncomeAll / stats.totalDays : 0;
+      // كل نوع بدل من autoAllowanceTypes بيتجمع مرة واحدة بس هنا (من stats.allowanceTotals، المحسوبة مرة واحدة في calculateStats)
+      // مفيش أي مكان تاني في الصفحة دي بيضيف البدلات دي تاني فوق بعضها
       const totalAllowances = autoAllowanceTypes.reduce((sum, t) => sum + (t.enabled ? (stats.allowanceTotals[t.id] || 0) : 0), 0);
       const totalIncomeWithAllowances = totalIncomeAll + totalAllowances;
       let globalText = `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الأيام</span><span>${stats.totalDays}</span></div>`;
@@ -5308,6 +5319,13 @@
       ensureOfficialHolidaysTable();
       applyTheme();
       applyLanguage();
+      applyFontChoice();
+      document.getElementById('fontStyle').value = fontChoice;
+      document.getElementById('fontStyle').addEventListener('change', function() {
+        fontChoice = this.value === 'Tahoma' ? 'Tahoma' : 'Cairo';
+        applyFontChoice();
+        try { localStorage.setItem('shifterFont', fontChoice); } catch(e) {}
+      });
       document.getElementById('themeToggleBtn').addEventListener('click', () => {
         darkMode = !darkMode;
         applyTheme();
