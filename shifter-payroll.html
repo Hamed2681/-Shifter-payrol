@@ -2205,10 +2205,6 @@
         <div id="deductionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          <select id="newDedUnit" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-            <option value="amount">مبلغ (ج.م)</option>
-            <option value="hours">ساعات × متوسط أجر الساعة</option>
-          </select>
           <button class="btn btn-primary" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
         <p style="font-size:11px;color:var(--nm-text-muted);margin:6px 0 0;">قيمة كل بند بتتحدد وقت حساب المرتب نفسه، مش هنا.</p>
@@ -5448,7 +5444,7 @@
 
       // تحويل القوائم المنسدلة الثابتة لشكل القائمة العائمة المخصصة
       ['calendarViewSelect', 'appearanceMode', 'uiLanguage', 'numeralType', 'fontStyle', 'weekStart',
-       'myRoleInput', 'holidayMode', 'appAllowanceMode', 'restAllowanceMode', 'newDedUnit',
+       'myRoleInput', 'holidayMode', 'appAllowanceMode', 'restAllowanceMode',
        'newDeptEmpRestDay', 'shareImportEmp', 'shareImportValue',
        'sendReqEmp', 'sendReqFrom', 'sendReqTo'].forEach(enhanceSelectAsCustomDropdown);
       refreshAllCustomDropdownTriggers();
@@ -6078,9 +6074,8 @@
 
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
-        const unit = document.getElementById('newDedUnit').value;
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        deductionTypes.push({ id: generateId(), label, unit, value: 0, enabled: true });
+        deductionTypes.push({ id: generateId(), label, unit: 'amount', value: 0, enabled: true });
         document.getElementById('newDedLabel').value = '';
         saveData();
         renderDeductionTypes();
@@ -6090,7 +6085,7 @@
         const list = document.getElementById('deductionTypesList');
         if (deductionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد خصومات</div>'; return; }
         list.innerHTML = deductionTypes.map((d, idx) =>
-          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span><span class="mli-sub">${d.unit === 'amount' ? 'مبلغ (ج.م)' : 'ساعات × متوسط أجر الساعة'}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
+          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
         ).join('');
         list.querySelectorAll('.mli-del').forEach(el => {
           el.addEventListener('click', () => {
