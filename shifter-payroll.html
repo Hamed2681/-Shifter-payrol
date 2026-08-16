@@ -2085,31 +2085,25 @@
     <div class="modal-content">
       <button class="modal-close" id="closeSettings">⌃</button>
       <h3 data-i18n="settingsModalTitle">الإعدادات</h3>
+
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
         <div style="display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span style="font-weight:700;">✉️ بيانات إرسال الطلبات</span>
-          <label style="font-size:12px;">اسمك (لو هتبعت طلب لمديرك)
+          <span style="font-weight:700;">👤 بياناتك</span>
+          <label style="font-size:12px;">اسم المستخدم
             <input type="text" id="myNameInput" placeholder="اسمك بالكامل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
           </label>
-          <label style="font-size:12px;">رقم واتساب حضرتك (بالصيغة الدولية بدون +)
+          <label style="font-size:12px;">رقم الموبايل
             <input type="text" id="myPhoneInput" placeholder="مثلاً 201001234567" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
           </label>
-          <label style="font-size:12px;">أرقام واتساب إضافية لحضرتك (افصل بينهم بفاصلة ,)
-            <input type="text" id="myExtraPhonesInput" placeholder="مثلاً 201001234567, 201009876543" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
-          </label>
-          <label style="font-size:12px;">اسم مدير القسم
-            <input type="text" id="managerNameInput" placeholder="اسم المدير" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
-          </label>
-          <label style="font-size:12px;">رقم موبايل مدير القسم (المرتبط بواتساب، بدون +)
-            <input type="text" id="managerPhoneInput" placeholder="مثلاً 201001234567" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
-          </label>
-          <label style="font-size:12px;display:none;" id="managerPasswordWrap">كلمة مرور تعديل جدول الموظفين
-            <input type="password" id="managerPasswordInput" placeholder="كلمة مرور التعديل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
-          </label>
-          <label style="font-size:12px;">أنا مين في جدول القسم؟ (عشان تقدر تستورد ورديتك للتقويم الشخصي)
-            <select id="myDeptEmpSelect" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
-              <option value="">— اختار اسمك —</option>
+          <label style="font-size:12px;">الوظيفة
+            <select id="myRoleInput" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
+              <option value="worker">عامل/فنى</option>
+              <option value="supervisor">مشرف وردية</option>
+              <option value="manager">مدير قسم</option>
             </select>
+          </label>
+          <label style="font-size:12px;display:none;" id="managerPasswordWrap">كلمة مرور جدول القسم
+            <input type="password" id="managerPasswordInput" placeholder="كلمة مرور التعديل" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
           </label>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
@@ -2148,19 +2142,37 @@
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
-        <div style="font-weight:700;margin-bottom:8px;">🔄 بنود تلقائية (تُحسب من الشيفتات وأيام الحضور الفعلي)</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 0;">
+          <span style="font-weight:700;">✉️ بيانات إرسال الطلبات</span>
+          <label style="font-size:12px;">أرقام واتساب إضافية لحضرتك (افصل بينهم بفاصلة ,)
+            <input type="text" id="myExtraPhonesInput" placeholder="مثلاً 201001234567, 201009876543" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">اسم مدير القسم
+            <input type="text" id="managerNameInput" placeholder="اسم المدير" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">رقم موبايل مدير القسم (المرتبط بواتساب، بدون +)
+            <input type="text" id="managerPhoneInput" placeholder="مثلاً 201001234567" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;" />
+          </label>
+          <label style="font-size:12px;">أنا مين في جدول القسم؟ (عشان تقدر تستورد ورديتك للتقويم الشخصي)
+            <select id="myDeptEmpSelect" style="width:100%;padding:8px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);margin-top:4px;">
+              <option value="">— اختار اسمك —</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:10px;">➕ بنود تضاف إلى المرتب</div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin-bottom:6px;">1️⃣ تحسب على أيام الحضور</div>
         <div id="autoAllowanceTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newAutoAllowLabel" placeholder="اسم البند (مثال: 🚗 بدل انتقال يومي)" style="flex:1;min-width:160px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
           <button class="btn btn-primary" id="addAutoAllowType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
         <p style="font-size:12px;color:var(--nm-text-muted);margin:8px 0 0;">قيمة كل بند تُضبط من إعدادات كل شيفت، وتُجمع تلقائياً حسب أيام الحضور الفعلية في الفترة المحسوبة.</p>
-      </div>
 
-      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-weight:700;">✍️ بنود إجمالية (تُضاف يدوياً للمرتب)</span>
-        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin:16px 0 6px;border-top:1px solid rgba(163,177,198,0.3);padding-top:12px;">2️⃣ تضاف كإجمالي على المرتب</div>
         <div id="additionTypesList"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <input type="text" id="newAddLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
@@ -2170,38 +2182,29 @@
       </div>
 
       <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
-        <div style="font-weight:700;margin-bottom:8px;">🎉 العطلات الرسمية (بدل العطلة)</div>
+        <div style="font-weight:700;margin-bottom:10px;">➖ بنود الخصم من المرتب</div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin-bottom:6px;">1️⃣ تحسب تلقائياً</div>
+        <p style="font-size:12px;color:var(--nm-text-muted);margin:0 0 4px;">قيم الغياب والجزاءات بتتظبط في قسم "❌ الغياب والجزاءات" في آخر الصفحة.</p>
+
+        <div style="font-size:12px;font-weight:700;color:var(--nm-text-muted);margin:16px 0 6px;border-top:1px solid rgba(163,177,198,0.3);padding-top:12px;">2️⃣ تخصم كإجمالي من المرتب</div>
+        <div id="deductionTypesList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <input type="number" id="newDedValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+          <select id="newDedUnit" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="amount">مبلغ (ج.م)</option>
+            <option value="hours">ساعات × متوسط أجر الساعة</option>
+          </select>
+          <button class="btn btn-primary" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:8px;">📊 طريقة حساب البدلات</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>طريقة حساب العطلة</span>
+          <span>طريقة حساب بدل العطلة</span>
           <select id="holidayMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-            <option value="1_0">يوم دخل</option>
-            <option value="2_0">يومين دخل</option>
-            <option value="3_0">ثلاثة أيام دخل</option>
-            <option value="0_1">يوم إجازة</option>
-            <option value="0_2">يومين إجازة</option>
-            <option value="0_3">ثلاثة أيام إجازة</option>
-            <option value="1_1">يوم إجازة + يوم دخل</option>
-            <option value="2_1">يوم إجازة + يومين دخل</option>
-            <option value="1_2">يومين إجازة + يوم دخل</option>
-          </select>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>طريقة حساب بدل التطبيق</span>
-          <select id="appAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-            <option value="1_0">يوم دخل</option>
-            <option value="2_0">يومين دخل</option>
-            <option value="3_0">ثلاثة أيام دخل</option>
-            <option value="0_1">يوم إجازة</option>
-            <option value="0_2">يومين إجازة</option>
-            <option value="0_3">ثلاثة أيام إجازة</option>
-            <option value="1_1">يوم إجازة + يوم دخل</option>
-            <option value="2_1">يوم إجازة + يومين دخل</option>
-            <option value="1_2">يومين إجازة + يوم دخل</option>
-          </select>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>طريقة حساب بدل الراحة</span>
-          <select id="restAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
             <option value="1_0">يوم دخل</option>
             <option value="2_0">يومين دخل</option>
             <option value="3_0">ثلاثة أيام دخل</option>
@@ -2217,9 +2220,37 @@
           <span>قيمة بدل العطلة</span>
           <input type="number" id="holidayAllowanceValue" min="0" step="0.01" placeholder="مثال: 100" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
         </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>طريقة حساب بدل التطبيق</span>
+          <select id="appAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="1_0">يوم دخل</option>
+            <option value="2_0">يومين دخل</option>
+            <option value="3_0">ثلاثة أيام دخل</option>
+            <option value="0_1">يوم إجازة</option>
+            <option value="0_2">يومين إجازة</option>
+            <option value="0_3">ثلاثة أيام إجازة</option>
+            <option value="1_1">يوم إجازة + يوم دخل</option>
+            <option value="2_1">يوم إجازة + يومين دخل</option>
+            <option value="1_2">يومين إجازة + يوم دخل</option>
+          </select>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span>قيمة بدل التطبيق</span>
           <input type="number" id="appAllowanceValueInput" min="0" step="0.01" placeholder="مثال: 100" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
+          <span>طريقة حساب بدل الراحة</span>
+          <select id="restAllowanceMode" style="padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
+            <option value="1_0">يوم دخل</option>
+            <option value="2_0">يومين دخل</option>
+            <option value="3_0">ثلاثة أيام دخل</option>
+            <option value="0_1">يوم إجازة</option>
+            <option value="0_2">يومين إجازة</option>
+            <option value="0_3">ثلاثة أيام إجازة</option>
+            <option value="1_1">يوم إجازة + يوم دخل</option>
+            <option value="2_1">يوم إجازة + يومين دخل</option>
+            <option value="1_2">يومين إجازة + يوم دخل</option>
+          </select>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
           <span>قيمة بدل الراحة</span>
@@ -2228,8 +2259,8 @@
         <p style="font-size:11px;color:var(--nm-text-muted);margin:6px 0 0;">القيم دي بتتسجل يدوياً وبتتحفظ، مش بتتحسب تلقائي.</p>
       </div>
 
-      <div class="card" style="box-shadow:none;padding:0;margin-bottom:16px;">
-        <div style="font-weight:700;margin-bottom:8px;">❌ إعدادات الغياب والجزاءات</div>
+      <div class="card" style="box-shadow:none;padding:0;">
+        <div style="font-weight:700;margin-bottom:8px;">❌ الغياب والجزاءات</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
           <span>قيمة خصم يوم الغياب (افتراضية لو الشيفت من غير مبلغ خصم)</span>
           <input type="number" id="absenceDayValue" min="0" step="0.01" placeholder="مثال: 250" style="width:120px;padding:6px 10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
@@ -2242,20 +2273,6 @@
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="absenceAutoApply" style="accent-color:var(--nm-primary);" />
           <span style="font-size:13px;">إضافة الخصم تلقائياً إلى صفحة المرتب</span>
-        </div>
-      </div>
-
-      <div class="card" style="box-shadow:none;padding:0;">
-        <div style="font-weight:700;margin-bottom:8px;">➖ بنود الخصومات (صفحة المرتب)</div>
-        <div id="deductionTypesList"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-          <input type="text" id="newDedLabel" placeholder="اسم البند" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          <input type="number" id="newDedValue" placeholder="القيمة" step="0.01" style="width:90px;padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);" />
-          <select id="newDedUnit" style="padding:10px;border:none;border-radius:var(--nm-radius-sm);font-family:var(--nm-font);background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);">
-            <option value="amount">مبلغ (ج.م)</option>
-            <option value="hours">ساعات × متوسط أجر الساعة</option>
-          </select>
-          <button class="btn btn-primary" id="addDedType" style="padding:10px 16px;">➕ إضافة</button>
         </div>
       </div>
     </div>
@@ -2706,6 +2723,7 @@
     let managerName = '';
     let managerPhone = '';
     let managerPassword = '';
+    let myRole = 'worker'; // الوظيفة: worker / supervisor / manager
     let myDeptEmpId = ''; // ربط المستخدم بسجّله في جدول القسم عشان يقدر يستورد ورديته للتقويم الشخصي
     let editUnlocked = false; // حالة قفل التعديل — مش بيتصدّر مع بيانات الشركة عمداً
     let darkMode = false;
@@ -3074,7 +3092,8 @@
     function refreshManagerPasswordFieldVisibility() {
       const wrap = document.getElementById('managerPasswordWrap');
       if (!wrap) return;
-      wrap.style.display = isManagerIdentity() ? 'block' : 'none';
+      const roleNeedsPassword = myRole === 'manager' || myRole === 'supervisor';
+      wrap.style.display = (roleNeedsPassword || isManagerIdentity()) ? 'block' : 'none';
     }
     function refreshMyDeptEmpSelect() {
       const sel = document.getElementById('myDeptEmpSelect');
@@ -3186,7 +3205,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3233,6 +3252,7 @@
         savedLeaveTo = data.savedLeaveTo || null;
         myName = data.myName || '';
         myPhone = data.myPhone || '';
+        myRole = data.myRole || 'worker';
         myExtraPhones = data.myExtraPhones || '';
         managerName = data.managerName || '';
         managerPhone = data.managerPhone || '';
@@ -5761,6 +5781,7 @@
       document.getElementById('settingsBtn').addEventListener('click', () => {
         document.getElementById('myNameInput').value = myName;
         document.getElementById('myPhoneInput').value = myPhone;
+        document.getElementById('myRoleInput').value = myRole || 'worker';
         document.getElementById('myExtraPhonesInput').value = myExtraPhones;
         document.getElementById('managerNameInput').value = managerName;
         document.getElementById('managerPhoneInput').value = managerPhone;
@@ -5775,6 +5796,11 @@
         refreshManagerPasswordFieldVisibility();
       });
       document.getElementById('myPhoneInput').addEventListener('change', function() { myPhone = this.value.replace(/[^0-9]/g, ''); this.value = myPhone; saveData(); });
+      document.getElementById('myRoleInput').addEventListener('change', function() {
+        myRole = this.value;
+        saveData();
+        refreshManagerPasswordFieldVisibility();
+      });
       document.getElementById('myExtraPhonesInput').addEventListener('change', function() {
         myExtraPhones = this.value.split(',').map(p => p.replace(/[^0-9]/g, '')).filter(Boolean).join(', ');
         this.value = myExtraPhones;
@@ -6182,7 +6208,7 @@
       );
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6235,6 +6261,7 @@
             savedLeaveTo = data.savedLeaveTo || null;
             myName = data.myName || '';
             myPhone = data.myPhone || '';
+            myRole = data.myRole || 'worker';
             myExtraPhones = data.myExtraPhones || '';
             managerName = data.managerName || '';
             managerPhone = data.managerPhone || '';
