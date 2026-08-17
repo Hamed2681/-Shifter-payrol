@@ -3240,8 +3240,9 @@
         schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
         additionTypes = data.additionTypes || additionTypes;
-        additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
+        additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; if (a.calcEnabled === undefined) a.calcEnabled = true; });
         deductionTypes = data.deductionTypes || deductionTypes;
+        deductionTypes.forEach(d => { if (d.enabled === undefined) d.enabled = true; if (d.calcEnabled === undefined) d.calcEnabled = true; });
         holidays = data.holidays || [];
         leavePrev = data.leavePrev || 0;
         leaveAccrued = data.leaveAccrued || 0;
@@ -3262,9 +3263,11 @@
           { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
           { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
         ];
+        autoAllowanceTypes.forEach(t => { if (t.calcEnabled === undefined) t.calcEnabled = true; });
         autoDeductionTypes = Array.isArray(data.autoDeductionTypes) && data.autoDeductionTypes.length ? data.autoDeductionTypes : [
           { id: 'sick', name: '🤒 مرضي', enabled: false }
         ];
+        autoDeductionTypes.forEach(t => { if (t.calcEnabled === undefined) t.calcEnabled = true; });
         deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
         deptGroups = Array.isArray(data.deptGroups) ? data.deptGroups : [];
         deptSchedule = data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {};
@@ -4846,17 +4849,29 @@
       }
       const autoAllowanceRowsEl = document.getElementById('autoAllowanceRows');
       if (autoAllowanceRowsEl) {
-        autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.filter(t => t.enabled).map(t => `
+        autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.filter(t => t.enabled).map(t => {
+          const calcOn = t.calcEnabled !== false;
+          return `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} (تلقائي)</span>
+            <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+              <input type="checkbox" class="autoAllow-calc-enable" data-idt="${t.id}" ${calcOn ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${calcOn ? '' : 'opacity:0.5;text-decoration:line-through;'}">${t.name} (تلقائي)</span>
+            </label>
             <span style="font-weight:700;flex-shrink:0;">${(allowanceTotals[t.id] || 0).toFixed(2)} ج.م</span>
-          </div>`).join('');
+          </div>`;
+        }).join('');
+        autoAllowanceRowsEl.querySelectorAll('.autoAllow-calc-enable').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const item = autoAllowanceTypes.find(x => x.id === cb.dataset.idt);
+            if (item) { item.calcEnabled = cb.checked; saveData(); calculatePayroll(); }
+          });
+        });
       }
       let allowancesTotal = 0;
-      autoAllowanceTypes.forEach(t => { if (t.enabled) allowancesTotal += allowanceTotals[t.id] || 0; });
+      autoAllowanceTypes.forEach(t => { if (t.enabled && t.calcEnabled !== false) allowancesTotal += allowanceTotals[t.id] || 0; });
       totalIncome += allowancesTotal;
       let additionsTotal = 0;
-      additionTypes.forEach(add => { if (add.enabled !== false) additionsTotal += add.value || 0; });
+      additionTypes.forEach(add => { if (add.enabled !== false && add.calcEnabled !== false) additionsTotal += add.value || 0; });
       totalIncome += additionsTotal;
 
       // استحقاق أجر أيام العطلات الرسمية المعمولة (حسب طريقة الحساب المفعّلة)
@@ -4897,7 +4912,7 @@
 
       let deductionsTotal = 0;
       deductionTypes.forEach(ded => {
-        if (ded.enabled === false) return;
+        if (ded.enabled === false || ded.calcEnabled === false) return;
         if (ded.unit === 'amount') deductionsTotal += ded.value || 0;
         else if (ded.unit === 'hours') {
           const avgHourly = daysWorked > 0 ? (totalIncome / (daysWorked * 8)) : 0;
@@ -4908,26 +4923,39 @@
 
       const autoDeductionRowsEl = document.getElementById('autoDeductionRows');
       if (autoDeductionRowsEl) {
-        autoDeductionRowsEl.innerHTML = autoDeductionTypes.filter(t => t.enabled).map(t => `
+        autoDeductionRowsEl.innerHTML = autoDeductionTypes.filter(t => t.enabled).map(t => {
+          const calcOn = t.calcEnabled !== false;
+          return `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);gap:8px;">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name} (تلقائي)</span>
+            <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+              <input type="checkbox" class="autoDed-calc-enable" data-idt="${t.id}" ${calcOn ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${calcOn ? '' : 'opacity:0.5;text-decoration:line-through;'}">${t.name} (تلقائي)</span>
+            </label>
             <span style="font-weight:700;flex-shrink:0;">${(autoDeductionTotals[t.id] || 0).toFixed(2)} ج.م</span>
-          </div>`).join('');
+          </div>`;
+        }).join('');
+        autoDeductionRowsEl.querySelectorAll('.autoDed-calc-enable').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const item = autoDeductionTypes.find(x => x.id === cb.dataset.idt);
+            if (item) { item.calcEnabled = cb.checked; saveData(); calculatePayroll(); }
+          });
+        });
       }
       let autoDeductionsTotal = 0;
-      autoDeductionTypes.forEach(t => { if (t.enabled) autoDeductionsTotal += autoDeductionTotals[t.id] || 0; });
+      autoDeductionTypes.forEach(t => { if (t.enabled && t.calcEnabled !== false) autoDeductionsTotal += autoDeductionTotals[t.id] || 0; });
       totalDeductions += autoDeductionsTotal;
 
       document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
-      if (additionTypes.length === 0) addRows.innerHTML = '';
-      else addRows.innerHTML = additionTypes.map(a => {
-        const enabled = a.enabled !== false;
+      const visibleAdditionTypes = additionTypes.filter(a => a.enabled !== false);
+      if (visibleAdditionTypes.length === 0) addRows.innerHTML = '';
+      else addRows.innerHTML = visibleAdditionTypes.map(a => {
+        const calcOn = a.calcEnabled !== false;
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
           <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" class="add-calc-enable" data-add="${a.id}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'opacity:0.5;text-decoration:line-through;'}">${a.label}</span>
+            <input type="checkbox" class="add-calc-enable" data-add="${a.id}" ${calcOn ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${calcOn ? '' : 'opacity:0.5;text-decoration:line-through;'}">${a.label}</span>
           </label>
           <input type="number" class="add-calc-amount" data-add="${a.id}" value="${a.value || 0}" step="0.01" style="width:90px;text-align:center;padding:6px 8px;border:none;border-radius:8px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);font-family:var(--nm-font);" />
         </div>`;
@@ -4935,7 +4963,7 @@
       addRows.querySelectorAll('.add-calc-enable').forEach(cb => {
         cb.addEventListener('change', () => {
           const item = additionTypes.find(x => x.id === cb.dataset.add);
-          if (item) { item.enabled = cb.checked; saveData(); calculatePayroll(); }
+          if (item) { item.calcEnabled = cb.checked; saveData(); calculatePayroll(); }
         });
       });
       addRows.querySelectorAll('.add-calc-amount').forEach(inp => {
@@ -4946,17 +4974,18 @@
       });
 
       const dedRows = document.getElementById('deductionsRows');
-      if (deductionTypes.length === 0) dedRows.innerHTML = '';
-      else dedRows.innerHTML = deductionTypes.map(d => {
+      const visibleDeductionTypes = deductionTypes.filter(d => d.enabled !== false);
+      if (visibleDeductionTypes.length === 0) dedRows.innerHTML = '';
+      else dedRows.innerHTML = visibleDeductionTypes.map(d => {
         const isAbsenceItem = /غياب/.test(d.label);
-        const enabled = d.enabled !== false;
+        const calcOn = d.calcEnabled !== false;
         const amountHtml = isAbsenceItem
           ? `<span style="font-weight:700;">${(d.value || 0).toFixed(2)} ج.م</span>`
           : `<input type="number" class="ded-amount-input" data-ded="${d.id}" value="${d.value || 0}" step="0.01" style="width:90px;text-align:center;padding:6px 8px;border:none;border-radius:8px;background:var(--nm-bg);color:var(--nm-text);box-shadow:var(--nm-shadow-inset);font-family:var(--nm-font);" />`;
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;gap:8px;">
           <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
-            <input type="checkbox" class="ded-enable-toggle" data-ded="${d.id}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${enabled ? '' : 'opacity:0.5;text-decoration:line-through;'}">${d.label}</span>
+            <input type="checkbox" class="ded-enable-toggle" data-ded="${d.id}" ${calcOn ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${calcOn ? '' : 'opacity:0.5;text-decoration:line-through;'}">${d.label}</span>
           </label>
           ${amountHtml}
         </div>`;
@@ -4965,7 +4994,7 @@
       dedRows.querySelectorAll('.ded-enable-toggle').forEach(cb => {
         cb.addEventListener('change', () => {
           const item = deductionTypes.find(x => x.id === cb.dataset.ded);
-          if (item) { item.enabled = cb.checked; saveData(); calculatePayroll(); }
+          if (item) { item.calcEnabled = cb.checked; saveData(); calculatePayroll(); }
         });
       });
       dedRows.querySelectorAll('.ded-amount-input').forEach(inp => {
@@ -5959,7 +5988,7 @@
         const labelInput = document.getElementById('newAddLabel');
         const label = labelInput.value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        additionTypes.push({ id: generateId(), label, value: 0, enabled: true });
+        additionTypes.push({ id: generateId(), label, value: 0, enabled: true, calcEnabled: true });
         labelInput.value = '';
         saveData();
         renderAdditionTypes();
@@ -5975,7 +6004,7 @@
         list.querySelectorAll('.add-enable-toggle').forEach(cb => {
           cb.addEventListener('change', () => {
             const idx = parseInt(cb.dataset.addCb);
-            if (additionTypes[idx]) { additionTypes[idx].enabled = cb.checked; saveData(); renderAdditionTypes(); }
+            if (additionTypes[idx]) { additionTypes[idx].enabled = cb.checked; saveData(); renderAdditionTypes(); calculatePayroll(); }
           });
         });
         list.querySelectorAll('.mli-del').forEach(el => {
@@ -6029,7 +6058,7 @@
         const labelInput = document.getElementById('newAutoAllowLabel');
         const label = labelInput.value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        autoAllowanceTypes.push({ id: generateId(), name: label, enabled: true });
+        autoAllowanceTypes.push({ id: generateId(), name: label, enabled: true, calcEnabled: true });
         labelInput.value = '';
         saveData();
         renderAutoAllowanceTypes();
@@ -6077,7 +6106,7 @@
         const labelInput = document.getElementById('newAutoDedLabel');
         const label = labelInput.value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        autoDeductionTypes.push({ id: generateId(), name: label, enabled: true });
+        autoDeductionTypes.push({ id: generateId(), name: label, enabled: true, calcEnabled: true });
         labelInput.value = '';
         saveData();
         renderAutoDeductionTypes();
@@ -6088,7 +6117,7 @@
       document.getElementById('addDedType').addEventListener('click', () => {
         const label = document.getElementById('newDedLabel').value.trim();
         if (!label) { toast('أدخل اسم البند', 'error'); return; }
-        deductionTypes.push({ id: generateId(), label, unit: 'amount', value: 0, enabled: true });
+        deductionTypes.push({ id: generateId(), label, unit: 'amount', value: 0, enabled: true, calcEnabled: true });
         document.getElementById('newDedLabel').value = '';
         saveData();
         renderDeductionTypes();
@@ -6097,15 +6126,23 @@
       function renderDeductionTypes() {
         const list = document.getElementById('deductionTypesList');
         if (deductionTypes.length === 0) { list.innerHTML = '<div class="mini-list-empty">لا توجد خصومات</div>'; return; }
-        list.innerHTML = deductionTypes.map((d, idx) =>
-          `<div class="mini-list-item"><span class="mli-info"><span class="mli-name">${d.label}</span></span><button class="mli-del" data-ded="${idx}">✕</button></div>`
-        ).join('');
+        list.innerHTML = deductionTypes.map((d, idx) => {
+          const enabled = d.enabled !== false;
+          return `<div class="mini-list-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;"><input type="checkbox" class="ded-enable-toggle-settings" data-ded-cb="${idx}" ${enabled ? 'checked' : ''} style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" /><span class="mli-name" style="${enabled ? '' : 'opacity:0.5;'}">${d.label}</span></label><button class="mli-del" data-ded="${idx}">✕</button></div>`;
+        }).join('');
+        list.querySelectorAll('.ded-enable-toggle-settings').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = parseInt(cb.dataset.dedCb);
+            if (deductionTypes[idx]) { deductionTypes[idx].enabled = cb.checked; saveData(); renderDeductionTypes(); calculatePayroll(); }
+          });
+        });
         list.querySelectorAll('.mli-del').forEach(el => {
           el.addEventListener('click', () => {
             const idx = parseInt(el.dataset.ded);
             deductionTypes.splice(idx, 1);
             saveData();
             renderDeductionTypes();
+            calculatePayroll();
           });
         });
       }
@@ -6383,8 +6420,9 @@
             schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
             additionTypes = data.additionTypes || additionTypes;
-            additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; });
+            additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; if (a.calcEnabled === undefined) a.calcEnabled = true; });
             deductionTypes = data.deductionTypes || deductionTypes;
+            deductionTypes.forEach(d => { if (d.enabled === undefined) d.enabled = true; if (d.calcEnabled === undefined) d.calcEnabled = true; });
             holidays = data.holidays || [];
             leavePrev = data.leavePrev || 0;
             leaveAccrued = data.leaveAccrued || 0;
@@ -6405,9 +6443,11 @@
               { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
               { id: 'shift', name: '🌙 بدل الوردية', enabled: data.shiftAllowanceEnabled !== undefined ? data.shiftAllowanceEnabled : false }
             ];
+            autoAllowanceTypes.forEach(t => { if (t.calcEnabled === undefined) t.calcEnabled = true; });
             autoDeductionTypes = Array.isArray(data.autoDeductionTypes) && data.autoDeductionTypes.length ? data.autoDeductionTypes : [
               { id: 'sick', name: '🤒 مرضي', enabled: false }
             ];
+            autoDeductionTypes.forEach(t => { if (t.calcEnabled === undefined) t.calcEnabled = true; });
             deptEmployees = Array.isArray(data.deptEmployees) ? data.deptEmployees : [];
             deptGroups = Array.isArray(data.deptGroups) ? data.deptGroups : [];
             deptSchedule = data.deptSchedule && typeof data.deptSchedule === 'object' ? data.deptSchedule : {};
