@@ -2969,8 +2969,6 @@
     }
     function applyTheme() {
       document.documentElement.classList.toggle('dark-mode', darkMode);
-      const btn = document.getElementById('themeToggleBtn');
-      if (btn) { btn.textContent = darkMode ? '☀️' : '🌙'; btn.title = translations[uiLang][darkMode ? 'themeToggleLight' : 'themeToggleDark']; }
       const meta = document.getElementById('themeColorMeta');
       if (meta) meta.setAttribute('content', darkMode ? '#4e5862' : '#e6ebf1');
     }
@@ -2981,8 +2979,6 @@
         editCompany: 'تعديل اسم الشركة',
         settingsTooltip: 'الإعدادات',
         menuTooltip: 'القائمة',
-        themeToggleDark: 'الوضع الليلي',
-        themeToggleLight: 'الوضع النهاري',
         calendarViewLabel: 'شكل التقويم',
         calendarViewGrid: 'شبكة (شهر)',
         calendarViewList: 'قائمة رأسية (أيام)',
@@ -3023,8 +3019,6 @@
         editCompany: 'Edit company name',
         settingsTooltip: 'Settings',
         menuTooltip: 'Menu',
-        themeToggleDark: 'Dark mode',
-        themeToggleLight: 'Light mode',
         calendarViewLabel: 'Calendar view',
         calendarViewGrid: 'Grid (month)',
         calendarViewList: 'Vertical list (days)',
@@ -3074,8 +3068,6 @@
       });
       const langSelect = document.getElementById('uiLanguage');
       if (langSelect) langSelect.value = uiLang;
-      const themeBtn = document.getElementById('themeToggleBtn');
-      if (themeBtn) themeBtn.title = dict[darkMode ? 'themeToggleLight' : 'themeToggleDark'];
       refreshAllCustomDropdownTriggers();
     }
 
@@ -6455,7 +6447,7 @@
 
       document.getElementById('menuReset').addEventListener('click', () => {
         if (confirm('هل أنت متأكد من مسح كل بيانات الشركة الحالية؟ لا يمكن التراجع!')) {
-          localStorage.removeItem('shifterData_' + currentCompany);
+          try { localStorage.removeItem('shifterData_' + currentCompany); } catch(e) {}
           location.reload();
         }
       });
