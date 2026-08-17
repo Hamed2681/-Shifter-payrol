@@ -2561,6 +2561,10 @@
           <label style="font-size:13px;">❌ تُحسب كيوم غياب (تُطبق الجزاءات التصاعدية)</label>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+          <input type="checkbox" id="isSickLeave" style="accent-color:var(--nm-primary);" />
+          <label style="font-size:13px;">🤒 تُحسب كيوم مرضي (بدون جزاءات، بس بتُخصم زي الغياب لو فعّلت بند "مرضي" التلقائي)</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
           <input type="checkbox" id="isHolidayComp" style="accent-color:var(--nm-primary);" />
           <label style="font-size:13px;">🎉 تُحسب كبدل عطلة رسمية (تُخصم تلقائياً من رصيد العطلات بالترتيب)</label>
         </div>
@@ -2590,14 +2594,14 @@
     // جميع الوظائف محفوظة كما هي - نفس الكود من النسخة السابقة
     // البيانات الافتراضية
     let shifts = [
-      { id: 'shift1', name: 'اولى', abbr: '1', bgColor: '#ffffff', textColor: '#000000', textSize: 30, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift2', name: 'تانية', abbr: '2', bgColor: '#bdbdbd', textColor: '#2b2b2b', textSize: 30, startTime: '16:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift3', name: 'تالتة', abbr: '3', bgColor: '#1c1c1c', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '08:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift4', name: 'راحة', abbr: 'R', bgColor: '#000000', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift5', name: 'اعتيادي', abbr: 'اعتيادي', bgColor: '#5ec8e6', textColor: '#3b0764', textSize: 22, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: true, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift6', name: 'عطلة', abbr: 'عطلة', bgColor: '#0e6655', textColor: '#ffffff', textSize: 24, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isHolidayComp: false, customAdditions: [] },
-      { id: 'shift7', name: 'بدل عطلة', abbr: 'ب عطلة', bgColor: '#1e3a8a', textColor: '#ffffff', textSize: 20, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isHolidayComp: true, customAdditions: [] },
-      { id: 'shift8', name: 'غياب', abbr: 'غ', bgColor: '#a92f24', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 296, overtimeRate: 0, isAnnualLeave: false, isAbsence: true, isHolidayComp: false, customAdditions: [] }
+      { id: 'shift1', name: 'اولى', abbr: '1', bgColor: '#ffffff', textColor: '#000000', textSize: 30, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift2', name: 'تانية', abbr: '2', bgColor: '#bdbdbd', textColor: '#2b2b2b', textSize: 30, startTime: '16:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift3', name: 'تالتة', abbr: '3', bgColor: '#1c1c1c', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '08:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift4', name: 'راحة', abbr: 'R', bgColor: '#000000', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift5', name: 'اعتيادي', abbr: 'اعتيادي', bgColor: '#5ec8e6', textColor: '#3b0764', textSize: 22, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: true, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift6', name: 'عطلة', abbr: 'عطلة', bgColor: '#0e6655', textColor: '#ffffff', textSize: 24, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 0, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: false, customAdditions: [] },
+      { id: 'shift7', name: 'بدل عطلة', abbr: 'ب عطلة', bgColor: '#1e3a8a', textColor: '#ffffff', textSize: 20, startTime: '08:00', endTime: '16:00', hours: 8, currency: 'ج.م', dayIncome: 262.112, overtimeRate: 30, isAnnualLeave: false, isAbsence: false, isSickLeave: false, isHolidayComp: true, customAdditions: [] },
+      { id: 'shift8', name: 'غياب', abbr: 'غ', bgColor: '#a92f24', textColor: '#ffffff', textSize: 30, startTime: '00:00', endTime: '00:00', hours: 8, currency: 'ج.م', dayIncome: 296, overtimeRate: 0, isAnnualLeave: false, isAbsence: true, isSickLeave: false, isHolidayComp: false, customAdditions: [] }
     ];
     let schedule = {};
     let scheduleExtra = {};
@@ -3570,8 +3574,8 @@
           totalDays++;
           const shift = getShift(shiftId);
           if (shift) {
-            if (!shift.isAbsence) totalIncome += shift.dayIncome || 0;
-            if (!shift.isAnnualLeave && !shift.isAbsence) {
+            if (!shift.isAbsence && !shift.isSickLeave) totalIncome += shift.dayIncome || 0;
+            if (!shift.isAnnualLeave && !shift.isAbsence && !shift.isSickLeave) {
               autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] += getShiftAllowanceValue(shift, t.id); });
             }
           }
@@ -4808,13 +4812,19 @@
       autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
       const autoDeductionTotals = {};
       autoDeductionTypes.forEach(t => { autoDeductionTotals[t.id] = 0; });
+      // لو المستخدم ضايف وفعّل بند "غياب" أو "مرضي" ضمن البنود التلقائية، بنحسب قيمته
+      // مباشرة من أيام الغياب/المرضي في التقويم (زي ما بيحصل تلقائياً أصلاً) بدل ما يعتمد
+      // على قيمة مُعدّة يدوياً لكل شيفت — وده كمان بيمنع تكرار خصم نفس اليوم مرتين
+      const absenceAutoType = autoDeductionTypes.find(t => t.enabled && /غياب/.test(t.name));
+      const sickAutoType = autoDeductionTypes.find(t => t.enabled && /مرض/.test(t.name));
       const current = new Date(start);
       while (current <= end) {
         const key = formatDate(current);
         const shiftId = schedule[key];
         if (shiftId) {
           const shift = getShift(shiftId);
-          if (shift && !shift.isAbsence) {
+          const isNonPaidDay = shift && (shift.isAbsence || shift.isSickLeave);
+          if (shift && !isNonPaidDay) {
             totalIncome += shift.dayIncome || 0;
             if (!shift.isAnnualLeave) {
               daysWorked++;
@@ -4823,10 +4833,21 @@
           }
           if (shift && shift.isAbsence) {
             const fallback = parseFloat(document.getElementById('absenceDayValue').value) || 0;
-            totalDeductions += (shift.dayIncome && shift.dayIncome > 0) ? shift.dayIncome : fallback;
+            const absVal = (shift.dayIncome && shift.dayIncome > 0) ? shift.dayIncome : fallback;
+            if (absenceAutoType) autoDeductionTotals[absenceAutoType.id] += absVal;
+            else totalDeductions += absVal;
+          }
+          if (shift && shift.isSickLeave) {
+            const fallback = parseFloat(document.getElementById('absenceDayValue').value) || 0;
+            const sickVal = (shift.dayIncome && shift.dayIncome > 0) ? shift.dayIncome : fallback;
+            if (sickAutoType) autoDeductionTotals[sickAutoType.id] += sickVal;
+            else totalDeductions += sickVal;
           }
           if (shift) {
-            autoDeductionTypes.forEach(t => { autoDeductionTotals[t.id] += getShiftDeductionValue(shift, t.id); });
+            autoDeductionTypes.forEach(t => {
+              if ((absenceAutoType && t.id === absenceAutoType.id) || (sickAutoType && t.id === sickAutoType.id)) return;
+              autoDeductionTotals[t.id] += getShiftDeductionValue(shift, t.id);
+            });
           }
         }
         current.setDate(current.getDate() + 1);
@@ -5033,12 +5054,13 @@
 
     function updateAbsenceFieldUI() {
       const isAbs = document.getElementById('isAbsence').checked;
+      const isSick = document.getElementById('isSickLeave').checked;
       const label = document.getElementById('dayIncomeLabel');
       const hourlyField = document.getElementById('hourlyRateField');
       const extraFields = document.getElementById('incomeExtraFields');
-      if (label) label.textContent = isAbs ? '💸 مبلغ الخصم عن يوم الغياب' : 'إجمالي أجر اليوم';
-      if (hourlyField) hourlyField.style.display = isAbs ? 'none' : '';
-      if (extraFields) extraFields.style.display = isAbs ? 'none' : '';
+      if (label) label.textContent = isAbs ? '💸 مبلغ الخصم عن يوم الغياب' : isSick ? '💸 مبلغ الخصم عن يوم مرضي' : 'إجمالي أجر اليوم';
+      if (hourlyField) hourlyField.style.display = (isAbs || isSick) ? 'none' : '';
+      if (extraFields) extraFields.style.display = (isAbs || isSick) ? 'none' : '';
     }
 
     function renderShiftAutoAllowanceFields(shift) {
@@ -5086,6 +5108,7 @@
         renderShiftAutoDeductionFields(shift);
         document.getElementById('isAnnualLeave').checked = shift.isAnnualLeave || false;
         document.getElementById('isAbsence').checked = shift.isAbsence || false;
+        document.getElementById('isSickLeave').checked = shift.isSickLeave || false;
         document.getElementById('isHolidayComp').checked = shift.isHolidayComp || false;
         document.getElementById('hourlyRate').value = shift.hours > 0 ? ((shift.dayIncome || 0) / shift.hours).toFixed(2) : '0.00';
         updateAbsenceFieldUI();
@@ -5110,6 +5133,7 @@
         renderShiftAutoDeductionFields(null);
         document.getElementById('isAnnualLeave').checked = false;
         document.getElementById('isAbsence').checked = false;
+        document.getElementById('isSickLeave').checked = false;
         document.getElementById('isHolidayComp').checked = false;
         document.getElementById('hourlyRate').value = '0.00';
         updateAbsenceFieldUI();
@@ -5153,6 +5177,7 @@
         overtimeRate: parseFloat(document.getElementById('overtimeRate').value) || 0,
         isAnnualLeave: document.getElementById('isAnnualLeave').checked,
         isAbsence: document.getElementById('isAbsence').checked,
+        isSickLeave: document.getElementById('isSickLeave').checked,
         isHolidayComp: document.getElementById('isHolidayComp').checked,
         customAdditions: []
       };
@@ -5826,6 +5851,7 @@
       });
 
       document.getElementById('isAbsence').addEventListener('change', updateAbsenceFieldUI);
+      document.getElementById('isSickLeave').addEventListener('change', updateAbsenceFieldUI);
 
       document.getElementById('paintToggle').addEventListener('click', function() {
         document.getElementById('paintBar').classList.toggle('collapsed');
@@ -6114,7 +6140,7 @@
         const rounded = Math.round(wage * 100) / 100;
         let changed = false;
         shifts.forEach(s => {
-          if (!s.isAbsence && s.dayIncome !== rounded) {
+          if (!s.isAbsence && !s.isSickLeave && s.dayIncome !== rounded) {
             s.dayIncome = rounded;
             changed = true;
           }
@@ -6186,7 +6212,7 @@
             const sId = schedule[k];
             if (sId) {
               const sh = getShift(sId);
-              if (sh && !sh.isAbsence && !sh.isAnnualLeave) {
+              if (sh && !sh.isAbsence && !sh.isSickLeave && !sh.isAnnualLeave) {
                 realDaysIncome += sh.dayIncome || 0;
                 realDaysWorked++;
               }
@@ -6273,11 +6299,13 @@
       function addSwipeNav(elementId, onSwipeLeft, onSwipeRight, excludeSelector) {
         const el = document.getElementById(elementId);
         if (!el) return;
+        const EDGE_ZONE = 24;
         let startX = 0, startY = 0, tracking = false;
         el.addEventListener('touchstart', e => {
           if (excludeSelector && e.target.closest(excludeSelector)) { tracking = false; return; }
           startX = e.touches[0].clientX;
           startY = e.touches[0].clientY;
+          if (startX <= EDGE_ZONE || startX >= window.innerWidth - EDGE_ZONE) { tracking = false; return; }
           tracking = true;
         }, { passive: true });
         el.addEventListener('touchend', e => {
@@ -6312,6 +6340,35 @@
         () => deptDailyStep(1),
         () => deptDailyStep(-1)
       );
+
+      // سحب جانبي من حافة الشاشة (يمين أو يسار): يرجّع لصفحة التقويم، ولو أصلاً واقف فيها يخرج من التطبيق
+      (function() {
+        const EDGE_ZONE = 24;
+        let startX = 0, startY = 0, tracking = false;
+        document.addEventListener('touchstart', e => {
+          if (e.touches.length !== 1) { tracking = false; return; }
+          const x = e.touches[0].clientX;
+          if (x > EDGE_ZONE && x < window.innerWidth - EDGE_ZONE) { tracking = false; return; }
+          if (document.querySelector('.modal.open') || document.getElementById('sideMenuOverlay').classList.contains('open')) { tracking = false; return; }
+          startX = x;
+          startY = e.touches[0].clientY;
+          tracking = true;
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+          if (!tracking) return;
+          tracking = false;
+          const dx = e.changedTouches[0].clientX - startX;
+          const dy = e.changedTouches[0].clientY - startY;
+          if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+          const activeTab = document.querySelector('.tab.active');
+          if (activeTab && activeTab.dataset.tab === 'month') {
+            try { history.back(); } catch(e) {}
+          } else {
+            const monthTab = document.querySelector('.tab[data-tab="month"]');
+            if (monthTab) monthTab.click();
+          }
+        }, { passive: true });
+      })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
         const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
