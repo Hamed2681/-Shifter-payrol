@@ -1984,6 +1984,19 @@
         <div class="card-title">➖ الخصومات</div>
         <div id="autoDeductionRows"></div>
         <div id="deductionsRows"></div>
+        <div id="prevPenaltyDeductionRow" style="display:none;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);font-size:13px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;cursor:pointer;">
+              <input type="checkbox" id="prevPenaltyAutoApplyCb" style="accent-color:var(--nm-primary);flex-shrink:0;width:16px;height:16px;" />
+              <span>⚖️ خصم الجزاءات الإدارية تلقائياً</span>
+            </label>
+            <span style="font-weight:700;" id="prevPenaltyDeductionVal">0.00 ج.م</span>
+          </div>
+          <div id="prevPenaltyConfirmWrap" style="display:none;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:11px;color:var(--nm-text-muted);" id="prevPenaltyConfirmNote"></span>
+            <button type="button" class="btn btn-outline" id="prevPenaltyConfirmBtn" style="padding:4px 10px;font-size:11px;">✅ تأكيد وتحديث الرصيد</button>
+          </div>
+        </div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-danger);font-weight:800;margin-top:4px;">
           <span>إجمالي الخصومات</span>
           <span id="totalDeductions" style="color:var(--nm-danger);">0.00 ج.م</span>
@@ -2699,6 +2712,8 @@
     let appAllowanceValueManual = 0;
     let restAllowanceValueManual = 0;
     let absenceAutoApply = true;
+    let prevPenaltyAutoApply = false;
+    let prevPenaltyLastConfirmedPeriod = '';
     let weekStart = 'sat';
     let deptEmployees = [];
     let deptGroups = [];
@@ -3228,7 +3243,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3260,6 +3275,8 @@
         appAllowanceValueManual = data.appAllowanceValueManual || 0;
         restAllowanceValueManual = data.restAllowanceValueManual || 0;
         absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
+        prevPenaltyAutoApply = data.prevPenaltyAutoApply || false;
+        prevPenaltyLastConfirmedPeriod = data.prevPenaltyLastConfirmedPeriod || '';
         weekStart = data.weekStart || 'sat';
         autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
           { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
@@ -4951,6 +4968,36 @@
       autoDeductionTypes.forEach(t => { if (t.enabled && t.calcEnabled !== false) autoDeductionsTotal += autoDeductionTotals[t.id] || 0; });
       totalDeductions += autoDeductionsTotal;
 
+      // خصم الجزاءات الإدارية (رصيد من سنوات سابقة) — بحد أقصى 5 أيام في كل مرة، أو المتبقي بالكامل لو أقل من 5.
+      // ده رقم للعرض الحي بس (يتغيّر مع أي تعديل)، التحديث الفعلي لـ"المخصوم" بيحصل من زرار التأكيد بس.
+      const prevPenaltyRemainingLive = Math.max((prevPenaltyDays || 0) - (prevPenaltyDeducted || 0), 0);
+      const prevPenaltyAppliedDaysLive = prevPenaltyRemainingLive > 5 ? 5 : prevPenaltyRemainingLive;
+      const prevPenaltyAppliedValueLive = prevPenaltyAppliedDaysLive * (prevPenaltyDayValue || 0);
+      const prevPenaltyRow = document.getElementById('prevPenaltyDeductionRow');
+      if (prevPenaltyRow) {
+        if (prevPenaltyRemainingLive > 0 && (prevPenaltyDayValue || 0) > 0) {
+          prevPenaltyRow.style.display = 'flex';
+          document.getElementById('prevPenaltyDeductionVal').textContent = prevPenaltyAppliedValueLive.toFixed(2) + ' ج.م';
+        } else {
+          prevPenaltyRow.style.display = 'none';
+        }
+        const confirmWrap = document.getElementById('prevPenaltyConfirmWrap');
+        if (prevPenaltyAutoApply && prevPenaltyAppliedDaysLive > 0) {
+          confirmWrap.style.display = 'flex';
+          const periodKey = from + '_' + to;
+          const already = prevPenaltyLastConfirmedPeriod === periodKey;
+          document.getElementById('prevPenaltyConfirmNote').textContent = already
+            ? '✔️ اتأكد الخصم للفترة دي قبل كده'
+            : (prevPenaltyAppliedDaysLive.toFixed(2) + ' يوم هيتضاف للمخصوم لو أكّدت');
+          const btn = document.getElementById('prevPenaltyConfirmBtn');
+          btn.disabled = already;
+          btn.style.opacity = already ? '0.5' : '1';
+        } else {
+          confirmWrap.style.display = 'none';
+        }
+      }
+      if (prevPenaltyAutoApply) totalDeductions += prevPenaltyAppliedValueLive;
+
       document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
@@ -5481,6 +5528,7 @@
       document.getElementById('sumLeavePrev').value = leavePrev;
       document.getElementById('sumLeaveAccrued').value = leaveAccrued;
       document.getElementById('absenceAutoApply').checked = absenceAutoApply;
+      document.getElementById('prevPenaltyAutoApplyCb').checked = prevPenaltyAutoApply;
       document.getElementById('weekStart').value = weekStart;
       document.getElementById('holidayMode').value = holidayMode;
       document.getElementById('appAllowanceMode').value = appAllowanceMode;
@@ -6323,6 +6371,29 @@
       document.getElementById('sumLeavePrev').addEventListener('change', function() { leavePrev = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
       document.getElementById('sumLeaveAccrued').addEventListener('change', function() { leaveAccrued = parseFloat(this.value) || 0; saveData(); calculateLeaveBalance(); });
       document.getElementById('absenceAutoApply').addEventListener('change', function() { absenceAutoApply = this.checked; saveData(); });
+      document.getElementById('prevPenaltyAutoApplyCb').addEventListener('change', function() {
+        prevPenaltyAutoApply = this.checked;
+        saveData();
+        calculatePayroll();
+      });
+      document.getElementById('prevPenaltyConfirmBtn').addEventListener('click', () => {
+        const from = document.getElementById('payFrom').value;
+        const to = document.getElementById('payTo').value;
+        if (!from || !to) return;
+        const periodKey = from + '_' + to;
+        if (prevPenaltyLastConfirmedPeriod === periodKey) { toast('اتأكد الخصم للفترة دي قبل كده', 'error'); return; }
+        const remaining = Math.max((prevPenaltyDays || 0) - (prevPenaltyDeducted || 0), 0);
+        const appliedDays = remaining > 5 ? 5 : remaining;
+        if (appliedDays <= 0) { toast('مفيش رصيد جزاءات متبقي', 'error'); return; }
+        prevPenaltyDeducted = (prevPenaltyDeducted || 0) + appliedDays;
+        document.getElementById('prevPenaltyDeducted').value = prevPenaltyDeducted;
+        prevPenaltyLastConfirmedPeriod = periodKey;
+        calculatePrevPenalty();
+        calculateAbsenceAndHolidays();
+        saveData();
+        calculatePayroll();
+        toast('تم تأكيد خصم ' + appliedDays.toFixed(2) + ' يوم وتحديث الرصيد ✔️');
+      });
       document.getElementById('weekStart').addEventListener('change', function() { weekStart = this.value; saveData(); renderCalendar(); renderYear(); });
       document.getElementById('holidayMode').addEventListener('change', function() { holidayMode = this.value; saveData(); });
       document.getElementById('appAllowanceMode').addEventListener('change', function() { appAllowanceMode = this.value; saveData(); });
@@ -6419,7 +6490,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6457,6 +6528,8 @@
             appAllowanceValueManual = data.appAllowanceValueManual || 0;
             restAllowanceValueManual = data.restAllowanceValueManual || 0;
             absenceAutoApply = data.absenceAutoApply !== undefined ? data.absenceAutoApply : true;
+            prevPenaltyAutoApply = data.prevPenaltyAutoApply || false;
+            prevPenaltyLastConfirmedPeriod = data.prevPenaltyLastConfirmedPeriod || '';
             weekStart = data.weekStart || 'sat';
             autoAllowanceTypes = Array.isArray(data.autoAllowanceTypes) && data.autoAllowanceTypes.length ? data.autoAllowanceTypes : [
               { id: 'meal', name: '🍽️ بدل الوجبة', enabled: data.mealAllowanceEnabled !== undefined ? data.mealAllowanceEnabled : false },
