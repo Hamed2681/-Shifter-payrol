@@ -2682,15 +2682,18 @@
     function computeHolidayEarnings() {
       const { incomeDays, leaveDays } = parseHolidayMode(holidayMode);
       const earnings = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       holidays.forEach(h => {
         (h.dates || []).forEach(date => {
           if (!date) return;
           const d = parseDate(date);
           if (!d || d.getFullYear() !== currentYear) return;
+          const hasOccurred = d <= today; // العطلة لسه ما جتش، فمينفعش نحسب استحقاق قبل ما اليوم نفسه يجي فعليًا
           const shiftId = schedule[date];
           const shift = shiftId ? getShift(shiftId) : null;
-          const worked = isWorkShiftForHolidayComp(shift);
-          earnings.push({ name: h.name, date, worked: !!worked, dayIncome: shift ? (shift.dayIncome || 0) : 0, incomeDaysEarned: worked ? incomeDays : 0, leaveDaysEarned: worked ? leaveDays : 0 });
+          const worked = hasOccurred && isWorkShiftForHolidayComp(shift);
+          earnings.push({ name: h.name, date, worked: !!worked, hasOccurred, dayIncome: shift ? (shift.dayIncome || 0) : 0, incomeDaysEarned: worked ? incomeDays : 0, leaveDaysEarned: worked ? leaveDays : 0 });
         });
       });
       return earnings.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -5467,6 +5470,7 @@
         function statusLineFor(date) {
           if (!date) return '<span style="color:var(--nm-text-muted);">لم يُحدد تاريخها بعد</span>';
           const e = earningsByDate[date];
+          if (e && !e.hasOccurred) return '<span style="color:var(--nm-text-muted);">لسه ماجاش — العطلة في الأول تيجي وبعدين يتحسب الاستحقاق</span>';
           if (!e || !e.worked) return '<span style="color:var(--nm-text-muted);">لا توجد وردية مسجلة في هذا التاريخ — لا يوجد استحقاق</span>';
           const compDates = consumedByHolidayDate[date] || [];
           const parts = [];
