@@ -3610,6 +3610,19 @@
     }
 
     // الإحصائيات
+    // بيرجع عدد أيام الفترة على أساس إن كل شهر = 30 يوم (حتى فبراير)، مش عدد الأيام الفعلي في التقويم
+    // بيستخدم نظام "30/360" المحاسبي المعروف: بيوم الشهر الأخير بيتحسب دايمًا كـ30 لو كان آخر يوم في الشهر (28/29/30/31)
+    function isLastDayOfMonth(date) {
+      const next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+      return next.getMonth() !== date.getMonth();
+    }
+    function getPeriod30Days(start, end) {
+      let d1 = start.getDate(), m1 = start.getMonth(), y1 = start.getFullYear();
+      let d2 = end.getDate(), m2 = end.getMonth(), y2 = end.getFullYear();
+      if (d1 === 31 || isLastDayOfMonth(start)) d1 = 30;
+      if (d2 === 31 || isLastDayOfMonth(end)) d2 = 30;
+      return (y2 - y1) * 360 + (m2 - m1) * 30 + (d2 - d1) + 1;
+    }
     function getPeriodDates(mode, year, month) {
       let start, end;
       if (mode === 'month') { start = new Date(year, month, 1); end = new Date(year, month+1, 0); }
@@ -3622,7 +3635,7 @@
       else { const res = getPeriodDates(mode, year, month); start = res.start; end = res.end; }
       const shiftCounts = {};
       let totalDays = 0, totalIncome = 0, absenceDays = 0;
-      const periodDays = Math.round((end - start) / 86400000) + 1;
+      const periodDays = getPeriod30Days(start, end);
       const allowanceTotals = {};
       autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
       const current = new Date(start);
