@@ -2388,6 +2388,17 @@
     </div>
   </div>
 
+  <div class="modal" id="pgConfirmModal" style="z-index:231;">
+    <div class="modal-content" style="max-width:420px;">
+      <button class="modal-close" id="pgConfirmClose">⌃</button>
+      <h3 id="pgConfirmTitle" style="line-height:1.6;">تأكيد</h3>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="btn btn-outline" id="pgConfirmCancel">إلغاء</button>
+        <button class="btn btn-primary" id="pgConfirmOk">تأكيد</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="deptScheduleModal">
     <div class="modal-content" style="max-width:100%;">
       <button class="modal-close" id="closeDeptSchedule">⌃</button>
@@ -2983,6 +2994,33 @@
         cancelBtn.addEventListener('click', onCancel);
         closeBtn.addEventListener('click', onCancel);
         input.addEventListener('keydown', onKeydown);
+      });
+    }
+    function pgConfirm(message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('pgConfirmModal');
+        const titleEl = document.getElementById('pgConfirmTitle');
+        const okBtn = document.getElementById('pgConfirmOk');
+        const cancelBtn = document.getElementById('pgConfirmCancel');
+        const closeBtn = document.getElementById('pgConfirmClose');
+        titleEl.textContent = message || '';
+        modal.classList.add('open');
+
+        let done = false;
+        function finish(value) {
+          if (done) return;
+          done = true;
+          modal.classList.remove('open');
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          closeBtn.removeEventListener('click', onCancel);
+          resolve(value);
+        }
+        function onOk() { finish(true); }
+        function onCancel() { finish(false); }
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        closeBtn.addEventListener('click', onCancel);
       });
     }
     function applyTheme() {
@@ -3611,9 +3649,8 @@
     // - الأرقام 1/2/3 في جدول القسم بتتحول دايمًا لأول 3 ورديات في قائمة الورديات بنفس الترتيب
     // - في حالة التبديل (مثلاً 1>2) بناخد الوردية النهائية بعد التبديل
     // - أيام الراحة الأسبوعية الثابتة (المحسوبة من restDay الموظف) بتتسحب كمان، وبتتحول للوردية الرابعة في القائمة (المفروض تبقى "راحة")
-    // - أي يوم اتسجل يدويًا (مش عن طريق الاستيراد) بيتسيب زي ما هو ومنستوردهوش
-    // - أي يوم كان مستورد من جدول القسم قبل كده بيتحدّث لآخر تعديل لو القسم غيّر الوردية
-    function importMyShiftsFromDeptSchedule() {
+    // - أي يوم مسجل عندك بالفعل بنسأل قبل ما نستبدله (عشان مش دايمًا نقدر نميّز أكيد هو تعديل يدوي ولا استيراد قديم من قبل التتبع)
+    async function importMyShiftsFromDeptSchedule() {
       if (!myDeptEmpId) {
         toast('حدّد الأول مين حضرتك في جدول القسم — من الإعدادات ⚙️', 'error');
         document.getElementById('settingsModal').classList.add('open');
@@ -3634,12 +3671,24 @@
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
 
+      // نحسب مين الأيام المتضاربة (متسجلة عندك وملهاش علامة استيراد سابق) قبل أي تعديل فعلي
+      let conflictDays = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (schedule[dateStr] && !deptImportedDays[dateStr]) conflictDays++;
+      }
+
+      let overwriteConflicts = false;
+      if (conflictDays > 0) {
+        overwriteConflicts = await pgConfirm(`فيه ${conflictDays} يوم متسجل عندك بالفعل في التقويم الشخصي. عايز تستبدلهم ببيانات جدول القسم الأحدث؟`);
+      }
+
       let imported = 0, importedRest = 0, updated = 0, skippedConflict = 0, skippedNoData = 0, skippedRestNoShift = 0;
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const existing = schedule[dateStr];
         const isAutoImported = !!deptImportedDays[dateStr];
-        if (existing && !isAutoImported) { skippedConflict++; continue; }
+        if (existing && !isAutoImported && !overwriteConflicts) { skippedConflict++; continue; }
 
         let newShiftId = null, isRest = false;
         const val = monthData[d] || monthData[String(d)];
@@ -3666,9 +3715,10 @@
           newShiftId = targetShift.id;
         }
 
-        if (existing && isAutoImported) {
-          if (existing === newShiftId) continue; // نفس القيمة، مفيش داعي نعدّل
+        if (existing) {
+          if (existing === newShiftId) { deptImportedDays[dateStr] = true; continue; } // نفس القيمة، مفيش داعي نعدّل، بس نعلّمها عشان تتحدّث تلقائي بعد كده
           schedule[dateStr] = newShiftId;
+          deptImportedDays[dateStr] = true;
           updated++;
           continue;
         }
