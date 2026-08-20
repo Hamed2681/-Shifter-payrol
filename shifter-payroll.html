@@ -3636,6 +3636,8 @@
       const shiftCounts = {};
       let totalDays = 0, totalIncome = 0, absenceDays = 0;
       const periodDays = getPeriod30Days(start, end);
+      // عدد أيام الفترة الفعلي (تقويمي حقيقي) زي ما المستخدم حدده بالظبط، مش بنظام 30/360
+      const realDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
       const allowanceTotals = {};
       autoAllowanceTypes.forEach(t => { allowanceTotals[t.id] = 0; });
       const current = new Date(start);
@@ -3656,7 +3658,7 @@
         }
         current.setDate(current.getDate() + 1);
       }
-      return { shiftCounts, totalDays, totalIncome, allowanceTotals, periodDays, absenceDays };
+      return { shiftCounts, totalDays, totalIncome, allowanceTotals, periodDays, absenceDays, realDays };
     }
 
     function deptMonthKey(y, m) { return y + '-' + (m + 1); }
@@ -4789,12 +4791,18 @@
       // أجر اليوم = إجمالي الدخل ÷ (عدد أيام الفترة المختارة كلها − عدد أيام الغياب فيها)
       const payableDays = stats.periodDays - stats.absenceDays;
       const avgDayWage = payableDays > 0 ? totalIncomeAll / payableDays : 0;
+      // تسوية الشهر المحاسبي لـ30 يوم: لو الفترة الفعلية المحددة 31 يوم بينقص يوم بالأجر الفعلي لليوم،
+      // ولو أقل من 30 يوم بيتكمّل للـ30 بنفس الأجر الفعلي لليوم
+      let periodAdjustment = 0;
+      if (stats.realDays === 31) periodAdjustment = -avgDayWage;
+      else if (stats.realDays < 30) periodAdjustment = avgDayWage * (30 - stats.realDays);
+      const totalIncomeAdjusted = totalIncomeAll + periodAdjustment;
       // كل نوع بدل من autoAllowanceTypes بيتجمع مرة واحدة بس هنا (من stats.allowanceTotals، المحسوبة مرة واحدة في calculateStats)
       // مفيش أي مكان تاني في الصفحة دي بيضيف البدلات دي تاني فوق بعضها
       const totalAllowances = autoAllowanceTypes.reduce((sum, t) => sum + (t.enabled ? (stats.allowanceTotals[t.id] || 0) : 0), 0);
-      const totalIncomeWithAllowances = totalIncomeAll + totalAllowances;
+      const totalIncomeWithAllowances = totalIncomeAdjusted + totalAllowances;
       let globalText = `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الأيام</span><span>${stats.totalDays}</span></div>`;
-      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بدون البدلات)</span><span>${totalIncomeAll.toFixed(2)} ج.م</span></div>`;
+      globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بدون البدلات)</span><span>${totalIncomeAdjusted.toFixed(2)} ج.م</span></div>`;
       globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>إجمالي الدخل (بالبدلات)</span><span>${totalIncomeWithAllowances.toFixed(2)} ج.م</span></div>`;
       autoAllowanceTypes.forEach(t => {
         globalText += `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>${t.name}</span><span>${(stats.allowanceTotals[t.id] || 0).toFixed(2)} ج.م</span></div>`;
@@ -4958,6 +4966,11 @@
         }
         current.setDate(current.getDate() + 1);
       }
+      // أجر اليوم الفعلي = صافي دخل الورديات المدفوعة ÷ عدد أيام العمل الفعلية في الفترة (قبل إضافة البدلات/الإضافات/الأرصدة)
+      const baseIncome = totalIncome;
+      const avgDayWage = daysWorked > 0 ? baseIncome / daysWorked : 0;
+      // عدد أيام الفترة الفعلي (تقويمي حقيقي) زي ما المستخدم حدده بالظبط
+      const realDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
       const autoAllowanceRowsEl = document.getElementById('autoAllowanceRows');
       if (autoAllowanceRowsEl) {
         autoAllowanceRowsEl.innerHTML = autoAllowanceTypes.filter(t => t.enabled).map(t => {
@@ -5085,6 +5098,13 @@
         }
       }
       if (prevPenaltyAutoApply) totalDeductions += prevPenaltyAppliedValueLive;
+
+      // تسوية الشهر المحاسبي لـ30 يوم: لو الفترة الفعلية المحددة 31 يوم بينقص يوم بالأجر الفعلي لليوم،
+      // ولو أقل من 30 يوم بيتكمّل للـ30 بنفس الأجر الفعلي لليوم
+      let periodAdjustment = 0;
+      if (realDays === 31) periodAdjustment = -avgDayWage;
+      else if (realDays < 30) periodAdjustment = avgDayWage * (30 - realDays);
+      totalIncome += periodAdjustment;
 
       document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
 
