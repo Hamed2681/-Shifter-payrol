@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <meta name="theme-color" content="#f5f9fa" id="themeColorMeta" />
+  <meta name="theme-color" content="#e1e1e1" id="themeColorMeta" />
   <title>Shifter Payroll - Neumorphism</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
@@ -30,9 +30,9 @@
     }
 
     :root {
-      --nm-bg: #f5f9fa;
-      --nm-shadow-light: #ffffff;
-      --nm-shadow-dark: #a9b5c7;
+      --nm-bg: #e1e1e1;
+      --nm-shadow-light: #f5f5f5;
+      --nm-shadow-dark: #c2c2c2;
       --nm-shadow: 8px 8px 16px var(--nm-shadow-dark), -8px -8px 16px var(--nm-shadow-light);
       --nm-shadow-inset: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
       --nm-shadow-sm: 4px 4px 8px var(--nm-shadow-dark), -4px -4px 8px var(--nm-shadow-light);
@@ -50,7 +50,7 @@
       --nm-success: #22c55e;
       --nm-danger: #ef4444;
       --nm-warning: #f59e0b;
-      --nm-bg-card: #f5f9fa;
+      --nm-bg-card: #e1e1e1;
     }
 
     :root.dark-mode {
@@ -2066,16 +2066,16 @@
             <span>أجر اليوم الواحد (تقدير من الرسالة)</span>
             <span id="pmDailyWage" style="color:var(--nm-primary);">0.00 ج.م</span>
           </div>
-          <div id="pmAbsAdjRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid #4ade80;font-weight:800;">
+          <div id="pmAbsAdjRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-success);font-weight:800;">
             <span>🎯 أجر اليوم الفعلي (بعد خصم أيام الغياب من عدد الأيام)</span>
-            <span id="pmAbsAdjDailyWage" style="color:#4ade80;">0.00 ج.م</span>
+            <span id="pmAbsAdjDailyWage" style="color:var(--nm-success);">0.00 ج.م</span>
           </div>
-          <div id="pmRealRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid #4ade80;font-weight:800;">
+          <div id="pmRealRow" style="display:none;justify-content:space-between;padding:10px 0;border-top:2px solid var(--nm-success);font-weight:800;">
             <span>🎯 أجر اليوم الفعلي (من جدول الشيفتات للفترة)</span>
-            <span id="pmRealDailyWage" style="color:#4ade80;">0.00 ج.م</span>
+            <span id="pmRealDailyWage" style="color:var(--nm-success);">0.00 ج.م</span>
           </div>
           <p style="font-size:11px;color:var(--nm-text-muted);margin-top:8px;">⚠️ ملحوظة: علامة (−) يعني البند بيتخصم من "أجر الفترة الأساسي"، وعلامة (+) يعني بيتضاف. جرب الاحتمالات المختلفة لحد ما توصل لنفس رقم "أجر اليوم الفعلي" الأخضر تحت، وده معناه لقيت المعادلة الصح لرسايل الشركة دي. اكتب "عدد أيام الغياب في هذه الفترة" عشان يتخصم من عدد أيام الفترة قبل القسمة، فيطلعلك أجر اليوم الفعلي الحقيقي.</p>
-          <p style="font-size:11px;color:#4ade80;margin-top:4px;">✅ "أجر اليوم الفعلي" ده بيتحدث تلقائياً في إعدادات كل الشيفتات (باستثناء شيفت الغياب اللي بيفضل زي ما هو).</p>
+          <p style="font-size:11px;color:var(--nm-success);margin-top:4px;">✅ "أجر اليوم الفعلي" ده بيتحدث تلقائياً في إعدادات كل الشيفتات (باستثناء شيفت الغياب اللي بيفضل زي ما هو).</p>
         </div>
       </div>
     </section>
@@ -2620,6 +2620,7 @@
     ];
     let schedule = {};
     let scheduleExtra = {};
+    let deptImportedDays = {}; // dateStr -> true لو اليوم ده جاي من استيراد جدول القسم (مش تعديل يدوي)، عشان الاستيراد التالي يقدر يحدّثه لآخر تعديل
     let selectedShiftId = null;
     let companies = [{ id: 'default', name: 'الشركة الرئيسية' }];
     let currentCompany = 'default';
@@ -2987,7 +2988,7 @@
     function applyTheme() {
       document.documentElement.classList.toggle('dark-mode', darkMode);
       const meta = document.getElementById('themeColorMeta');
-      if (meta) meta.setAttribute('content', darkMode ? '#4e5862' : '#f5f9fa');
+      if (meta) meta.setAttribute('content', darkMode ? '#4e5862' : '#e1e1e1');
     }
 
     // الترجمة
@@ -3243,7 +3244,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3256,6 +3257,7 @@
         shifts = data.shifts || shifts;
         schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
+        deptImportedDays = data.deptImportedDays || {};
         additionTypes = data.additionTypes || additionTypes;
         additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; if (a.calcEnabled === undefined) a.calcEnabled = true; });
         deductionTypes = data.deductionTypes || deductionTypes;
@@ -3334,11 +3336,11 @@
         if (pIdx >= pool.length) break;
         const p = pool[pIdx];
         const hd = parseDate(p.date);
-        assignments[dateKey] = { name: p.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}` : p.date };
+        assignments[dateKey] = { name: p.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}/${hd.getFullYear()}` : p.date };
         p.remaining--;
         const cd = parseDate(dateKey);
         if (!consumedByHolidayDate[p.date]) consumedByHolidayDate[p.date] = [];
-        consumedByHolidayDate[p.date].push(cd ? `${cd.getDate()}/${cd.getMonth()+1}` : dateKey);
+        consumedByHolidayDate[p.date].push(cd ? `${cd.getDate()}/${cd.getMonth()+1}/${cd.getFullYear()}` : dateKey);
       }
       return { assignments, earnings, pool, consumedByHolidayDate };
     }
@@ -3346,6 +3348,8 @@
     // معالجة الضغط على يوم في التقويم: أول ضغط بوردية يحطها أساسية، أي ضغط تاني بوردية مختلفة يضيفها فوق (لحد 3)، وضغط نفس الوردية تاني يشيلها
     function handleDayTap(dateStr) {
       if (!selectedShiftId) return;
+      // أي تعديل يدوي على اليوم يفكّه من علامة "مستورد من جدول القسم" — بقى ملك المستخدم واستيراد جدول القسم مايلمسوش تاني
+      delete deptImportedDays[dateStr];
       if (selectedShiftId === ERASE_ID) {
         delete schedule[dateStr];
         delete scheduleExtra[dateStr];
@@ -3607,7 +3611,8 @@
     // - الأرقام 1/2/3 في جدول القسم بتتحول دايمًا لأول 3 ورديات في قائمة الورديات بنفس الترتيب
     // - في حالة التبديل (مثلاً 1>2) بناخد الوردية النهائية بعد التبديل
     // - أيام الراحة الأسبوعية الثابتة (المحسوبة من restDay الموظف) بتتسحب كمان، وبتتحول للوردية الرابعة في القائمة (المفروض تبقى "راحة")
-    // - أي يوم عنده وردية متسجلة بالفعل في التقويم الشخصي بيتسيب زي ما هو ومنستوردهوش
+    // - أي يوم اتسجل يدويًا (مش عن طريق الاستيراد) بيتسيب زي ما هو ومنستوردهوش
+    // - أي يوم كان مستورد من جدول القسم قبل كده بيتحدّث لآخر تعديل لو القسم غيّر الوردية
     function importMyShiftsFromDeptSchedule() {
       if (!myDeptEmpId) {
         toast('حدّد الأول مين حضرتك في جدول القسم — من الإعدادات ⚙️', 'error');
@@ -3629,44 +3634,61 @@
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const restDay = emp.restDay !== undefined && emp.restDay !== '' ? Number(emp.restDay) : null;
 
-      let imported = 0, importedRest = 0, skippedConflict = 0, skippedNoData = 0, skippedRestNoShift = 0;
+      let imported = 0, importedRest = 0, updated = 0, skippedConflict = 0, skippedNoData = 0, skippedRestNoShift = 0;
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        if (schedule[dateStr]) { skippedConflict++; continue; }
+        const existing = schedule[dateStr];
+        const isAutoImported = !!deptImportedDays[dateStr];
+        if (existing && !isAutoImported) { skippedConflict++; continue; }
+
+        let newShiftId = null, isRest = false;
         const val = monthData[d] || monthData[String(d)];
         if (!val) {
           const dow = new Date(currentYear, currentMonth, d).getDay();
           if (restDay !== null && dow === restDay) {
             if (shifts[3]) {
-              schedule[dateStr] = shifts[3].id;
-              importedRest++;
+              newShiftId = shifts[3].id;
+              isRest = true;
             } else {
               skippedRestNoShift++;
+              continue;
             }
           } else {
             skippedNoData++;
+            continue;
           }
+        } else {
+          const swapMatch = /^([123])>([123])$/.exec(val);
+          const effectiveNum = swapMatch ? swapMatch[2] : (/^[123]$/.test(val) ? val : null);
+          if (!effectiveNum) { skippedNoData++; continue; }
+          const targetShift = shifts[Number(effectiveNum) - 1];
+          if (!targetShift) { skippedNoData++; continue; }
+          newShiftId = targetShift.id;
+        }
+
+        if (existing && isAutoImported) {
+          if (existing === newShiftId) continue; // نفس القيمة، مفيش داعي نعدّل
+          schedule[dateStr] = newShiftId;
+          updated++;
           continue;
         }
-        const swapMatch = /^([123])>([123])$/.exec(val);
-        const effectiveNum = swapMatch ? swapMatch[2] : (/^[123]$/.test(val) ? val : null);
-        if (!effectiveNum) { skippedNoData++; continue; }
-        const targetShift = shifts[Number(effectiveNum) - 1];
-        if (!targetShift) { skippedNoData++; continue; }
-        schedule[dateStr] = targetShift.id;
-        imported++;
+
+        schedule[dateStr] = newShiftId;
+        deptImportedDays[dateStr] = true;
+        if (isRest) importedRest++; else imported++;
       }
 
       saveData();
       renderCalendar();
       if (typeof renderStats === 'function') renderStats();
 
-      if (imported === 0 && importedRest === 0) {
-        toast('مفيش أيام جديدة اتستوردت — إما محدّش سجّل وردياتك في جدول القسم الشهر ده، أو كل الأيام متسجلة عندك بالفعل', 'error');
+      if (imported === 0 && importedRest === 0 && updated === 0) {
+        toast('مفيش حاجة جديدة اتستوردت — إما محدّش سجّل وردياتك في جدول القسم الشهر ده، أو كل الأيام متسجلة عندك يدويًا بالفعل ومطابقة لآخر تعديل', 'error');
       } else {
         let msg = `تم استيراد ${imported + importedRest} يوم ✔️`;
         if (importedRest) msg += ` (منهم ${importedRest} يوم راحة)`;
-        if (skippedConflict) msg += ` — اتسيب ${skippedConflict} يوم كان متسجل عندك بالفعل`;
+        if (updated) msg += ` — وتحديث ${updated} يوم لآخر تعديل في جدول القسم`;
+        if (skippedConflict) msg += ` — اتسيب ${skippedConflict} يوم مسجل عندك يدويًا`;
         toast(msg);
       }
       if (skippedRestNoShift > 0) {
@@ -5401,9 +5423,9 @@
           if (e.leaveDaysEarned > 0) parts.push(`بدل مُستحق: ${e.leaveDaysEarned} (مُستنفذ: ${compDates.length})`);
           if (e.incomeDaysEarned > 0) parts.push(`+${e.incomeDaysEarned} يوم أجر إضافي`);
           if (parts.length === 0) parts.push('تم العمل، لكن طريقة الحساب الحالية لا تمنح استحقاق');
-          let html = `<span style="color:#4ade80;">✅ ${parts.join(' • ')}</span>`;
+          let html = `<span style="color:var(--nm-success);font-weight:600;">✅ ${parts.join(' • ')}</span>`;
           if (compDates.length) {
-            const numbered = compDates.map((d, i) => `<div>${i + 1}. ${d}</div>`).join('');
+            const numbered = compDates.map((d, i) => `<div style="${i > 0 ? 'border-top:1px dotted var(--nm-text-muted);padding-top:3px;margin-top:3px;' : ''}">${i + 1}. ${d}</div>`).join('');
             html += `<div style="font-size:11px;color:var(--nm-text-muted);margin-top:2px;">${numbered}</div>`;
           }
           return html;
@@ -6214,7 +6236,7 @@
           if (!btn) return;
           const isPlus = pmSigns[f] === 1;
           btn.textContent = isPlus ? '+' : '−';
-          btn.style.background = isPlus ? '#4ade80' : '#f87171';
+          btn.style.background = isPlus ? 'var(--nm-success)' : '#f87171';
           btn.style.color = '#1a1a2e';
         });
       }
@@ -6490,7 +6512,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6509,6 +6531,7 @@
             shifts = data.shifts || shifts;
             schedule = data.schedule || {};
         scheduleExtra = data.scheduleExtra || {};
+            deptImportedDays = data.deptImportedDays || {};
             additionTypes = data.additionTypes || additionTypes;
             additionTypes.forEach(a => { if (a.enabled === undefined) a.enabled = true; if (a.calcEnabled === undefined) a.calcEnabled = true; });
             deductionTypes = data.deductionTypes || deductionTypes;
