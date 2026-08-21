@@ -802,8 +802,9 @@
     }
     .range-pickers {
       display: none;
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 12px;
+      align-items: flex-end;
     }
     .range-pickers.visible {
       display: flex;
@@ -811,6 +812,15 @@
     .range-pickers>div {
       flex: 1;
       min-width: 0;
+    }
+    .range-pickers .date-field .date-display {
+      min-width: 0;
+      padding: 10px 6px;
+    }
+    .range-pickers .nav-arrow {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      font-size: 22px;
     }
 
     /* ===== Leave Grid ===== */
@@ -1637,9 +1647,6 @@
         grid-template-columns: 1.5fr 0.7fr 1fr 40px;
         font-size: 12px;
       }
-      .range-pickers {
-        flex-direction: column;
-      }
       .leave-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -1809,6 +1816,16 @@
     <section class="view" id="view-year">
       <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;" id="yearBtnRow"></div>
       <div class="year-grid" id="yearGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">📊 إحصائيات السنة</div>
+        <div class="stats-table">
+          <div class="stats-head">
+            <span>الشيفتات</span><span>العدد</span><span>الوقت/الدخل</span><span>يدخل بالإجمالي</span>
+          </div>
+          <div id="yearStatsBody"></div>
+        </div>
+        <div class="stats-global" id="yearStatsGlobal"></div>
+      </div>
     </section>
 
     <!-- Summary View -->
@@ -1826,6 +1843,7 @@
           <button class="nav-arrow" id="nextPeriod">‹</button>
         </div>
         <div class="range-pickers" id="rangePickers">
+          <button class="nav-arrow" id="rangeShiftPrev" type="button">‹</button>
           <div>
             <label style="font-size:12px;color:var(--nm-text-muted);">من</label>
             <div class="date-field">
@@ -1840,6 +1858,7 @@
               <span class="date-display" id="toDateDisplay">—</span>
             </div>
           </div>
+          <button class="nav-arrow" id="rangeShiftNext" type="button">›</button>
         </div>
         <div class="stats-table">
           <div class="stats-head">
@@ -1940,21 +1959,23 @@
       <div class="card">
         <div class="card-title">💰 حساب المرتب</div>
         <p class="card-subtitle">احسب صافي المرتب بعد الإضافات والبدلات والخصومات</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div style="flex:1;min-width:140px;">
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:nowrap;">
+          <button class="nav-arrow" id="payShiftPrev" type="button" style="flex-shrink:0;padding:6px 10px;font-size:22px;">‹</button>
+          <div style="flex:1;min-width:0;">
             <label style="font-size:12px;color:var(--nm-text-muted);">من</label>
             <div class="date-field">
               <input type="date" id="payFrom" />
               <span class="date-display" id="payFromDisplay">—</span>
             </div>
           </div>
-          <div style="flex:1;min-width:140px;">
+          <div style="flex:1;min-width:0;">
             <label style="font-size:12px;color:var(--nm-text-muted);">إلى</label>
             <div class="date-field">
               <input type="date" id="payTo" />
               <span class="date-display" id="payToDisplay">—</span>
             </div>
           </div>
+          <button class="nav-arrow" id="payShiftNext" type="button" style="flex-shrink:0;padding:6px 10px;font-size:22px;">›</button>
         </div>
       </div>
 
@@ -2776,6 +2797,7 @@
     let savedStatsTo = null;
     let savedLeaveFrom = null;
     let savedLeaveTo = null;
+    let yearStatsExcluded = []; // أكواد الشيفتات المستبعدة من إجمالي "Global" في إحصائيات السنة
     let myName = '';
     let myPhone = '';
     let myExtraPhones = '';
@@ -2807,6 +2829,27 @@
     function parseDate(str) {
       const p = str.split('-');
       return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+    }
+    // بيزيح الفترة المحددة (من/إلى) بالكامل للفترة اللي قبلها أو اللي بعدها بنفس طولها بالظبط
+    function shiftDateRange(fromId, toId, direction, callback) {
+      const fromInput = document.getElementById(fromId);
+      const toInput = document.getElementById(toId);
+      const fromVal = fromInput.value, toVal = toInput.value;
+      if (!fromVal || !toVal) return;
+      const fromD = parseDate(fromVal), toD = parseDate(toVal);
+      const spanDays = Math.round((toD - fromD) / (1000 * 60 * 60 * 24)) + 1;
+      const offset = spanDays * direction;
+      const newFromD = new Date(fromD); newFromD.setDate(newFromD.getDate() + offset);
+      const newToD = new Date(toD); newToD.setDate(newToD.getDate() + offset);
+      const newFromStr = formatDate(newFromD), newToStr = formatDate(newToD);
+      fromInput.value = newFromStr;
+      toInput.value = newToStr;
+      const fromDisplay = document.getElementById(fromId + 'Display');
+      const toDisplay = document.getElementById(toId + 'Display');
+      if (fromDisplay) fromDisplay.textContent = newFromStr;
+      if (toDisplay) toDisplay.textContent = newToStr;
+      saveData();
+      if (callback) callback(newFromStr, newToStr);
     }
     function getMonthDays(y,m) { return new Date(y, m+1, 0).getDate(); }
     function getFirstDayOfMonth(y,m) {
@@ -3289,7 +3332,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3349,6 +3392,7 @@
         savedStatsTo = data.savedStatsTo || null;
         savedLeaveFrom = data.savedLeaveFrom || null;
         savedLeaveTo = data.savedLeaveTo || null;
+        yearStatsExcluded = data.yearStatsExcluded || [];
         myName = data.myName || '';
         myPhone = data.myPhone || '';
         myRole = data.myRole || 'worker';
@@ -3387,7 +3431,7 @@
         if (pIdx >= pool.length) break;
         const p = pool[pIdx];
         const hd = parseDate(p.date);
-        assignments[dateKey] = { name: p.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}/${hd.getFullYear()}` : p.date };
+        assignments[dateKey] = { name: p.name, shortDate: hd ? `${hd.getDate()}/${hd.getMonth()+1}` : p.date };
         p.remaining--;
         const cd = parseDate(dateKey);
         if (!consumedByHolidayDate[p.date]) consumedByHolidayDate[p.date] = [];
@@ -3617,6 +3661,38 @@
         div.innerHTML = `<div style="font-weight:700;text-align:center;margin-bottom:6px;font-size:13px;">${months[m]}</div>${calHTML}`;
         grid.appendChild(div);
       }
+      renderYearStats();
+    }
+
+    function renderYearStats() {
+      const stats = calculateStats('year', currentYear, 0, null, null);
+      const body = document.getElementById('yearStatsBody');
+      if (!body) return;
+      body.innerHTML = '';
+      let totalShifts = 0, totalHours = 0, totalIncome = 0;
+      Object.entries(stats.shiftCounts).forEach(([id, count]) => {
+        const shift = getShift(id);
+        const hours = shift ? (shift.hours || 0) * count : 0;
+        const income = shift ? (shift.dayIncome || 0) * count : 0;
+        const included = !yearStatsExcluded.includes(id);
+        if (included) { totalShifts += count; totalHours += hours; totalIncome += income; }
+        const row = document.createElement('div');
+        row.className = 'stats-row';
+        const h = Math.floor(hours), mnt = Math.round((hours - h) * 60);
+        row.innerHTML = `<span>${shift ? shift.name : id}</span><span>${count}</span><span>${h}h,${mnt}m<br>${income.toFixed(2)} ج.م</span><span style="text-align:center;"><input type="checkbox" class="year-stats-check" data-id="${id}" ${included ? 'checked' : ''} style="accent-color:var(--nm-primary);width:20px;height:20px;" /></span>`;
+        body.appendChild(row);
+      });
+      body.querySelectorAll('.year-stats-check').forEach(cb => {
+        cb.addEventListener('change', function() {
+          const id = this.dataset.id;
+          if (this.checked) yearStatsExcluded = yearStatsExcluded.filter(x => x !== id);
+          else if (!yearStatsExcluded.includes(id)) yearStatsExcluded.push(id);
+          saveData();
+          renderYearStats();
+        });
+      });
+      const gh = Math.floor(totalHours), gm = Math.round((totalHours - gh) * 60);
+      document.getElementById('yearStatsGlobal').innerHTML = `Global: ${totalShifts} Shifts<br>${gh}h,${gm}m<br>${totalIncome.toFixed(2)} ج.م`;
     }
 
     // الإحصائيات
@@ -5719,6 +5795,8 @@
       document.getElementById('nextPeriod').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderStats(); });
       document.getElementById('fromDate').addEventListener('change', function() { document.getElementById('fromDateDisplay').textContent = this.value || '—'; savedStatsFrom = this.value; saveData(); renderStats(); });
       document.getElementById('toDate').addEventListener('change', function() { document.getElementById('toDateDisplay').textContent = this.value || '—'; savedStatsTo = this.value; saveData(); renderStats(); });
+      document.getElementById('rangeShiftPrev').addEventListener('click', () => shiftDateRange('fromDate', 'toDate', -1, (f, t) => { savedStatsFrom = f; savedStatsTo = t; renderStats(); }));
+      document.getElementById('rangeShiftNext').addEventListener('click', () => shiftDateRange('fromDate', 'toDate', 1, (f, t) => { savedStatsFrom = f; savedStatsTo = t; renderStats(); }));
       document.getElementById('leaveFromDate').addEventListener('change', function() { document.getElementById('leaveFromDateDisplay').textContent = this.value || '—'; savedLeaveFrom = this.value; saveData(); calculateLeaveBalance(); });
       document.getElementById('leaveToDate').addEventListener('change', function() { document.getElementById('leaveToDateDisplay').textContent = this.value || '—'; savedLeaveTo = this.value; saveData(); calculateLeaveBalance(); });
 
@@ -6484,8 +6562,10 @@
           }
         }
       });
-      document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; savedPayFrom = this.value; saveData(); updatePmDaysFromPeriod(); });
-      document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; savedPayTo = this.value; saveData(); updatePmDaysFromPeriod(); });
+      document.getElementById('payFrom').addEventListener('change', function() { document.getElementById('payFromDisplay').textContent = this.value || '—'; savedPayFrom = this.value; saveData(); updatePmDaysFromPeriod(); calculatePayroll(); });
+      document.getElementById('payTo').addEventListener('change', function() { document.getElementById('payToDisplay').textContent = this.value || '—'; savedPayTo = this.value; saveData(); updatePmDaysFromPeriod(); calculatePayroll(); });
+      document.getElementById('payShiftPrev').addEventListener('click', () => shiftDateRange('payFrom', 'payTo', -1, (f, t) => { savedPayFrom = f; savedPayTo = t; updatePmDaysFromPeriod(); calculatePayroll(); }));
+      document.getElementById('payShiftNext').addEventListener('click', () => shiftDateRange('payFrom', 'payTo', 1, (f, t) => { savedPayFrom = f; savedPayTo = t; updatePmDaysFromPeriod(); calculatePayroll(); }));
 
       document.getElementById('absenceDayValue').addEventListener('change', function() { absenceDayValue = parseFloat(this.value) || 0; saveData(); });
       document.getElementById('penaltyDayValue').addEventListener('change', function() { penaltyDayValue = parseFloat(this.value) || 0; saveData(); });
@@ -6614,7 +6694,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6680,6 +6760,7 @@
             savedStatsTo = data.savedStatsTo || null;
             savedLeaveFrom = data.savedLeaveFrom || null;
             savedLeaveTo = data.savedLeaveTo || null;
+            yearStatsExcluded = data.yearStatsExcluded || [];
             myName = data.myName || '';
             myPhone = data.myPhone || '';
             myRole = data.myRole || 'worker';
