@@ -2830,17 +2830,24 @@
       const p = str.split('-');
       return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
     }
-    // بيزيح الفترة المحددة (من/إلى) بالكامل للفترة اللي قبلها أو اللي بعدها بنفس طولها بالظبط
+    // بيزيح الفترة المحددة (من/إلى) شهر كامل للي قبلها أو اللي بعدها، وبيحافظ على نفس رقم يوم البداية ورقم يوم النهاية
+    // مثال: 16/7 → 15/8 بتترجع لـ 16/6 → 15/7 (مش بعدد أيام الفترة، ده بعدد الشهور)
+    function addMonthsClamped(date, months) {
+      const targetMonth = date.getMonth() + months;
+      const targetYear = date.getFullYear() + Math.floor(targetMonth / 12);
+      const normMonth = ((targetMonth % 12) + 12) % 12;
+      const lastDay = new Date(targetYear, normMonth + 1, 0).getDate();
+      const day = Math.min(date.getDate(), lastDay);
+      return new Date(targetYear, normMonth, day);
+    }
     function shiftDateRange(fromId, toId, direction, callback) {
       const fromInput = document.getElementById(fromId);
       const toInput = document.getElementById(toId);
       const fromVal = fromInput.value, toVal = toInput.value;
       if (!fromVal || !toVal) return;
       const fromD = parseDate(fromVal), toD = parseDate(toVal);
-      const spanDays = Math.round((toD - fromD) / (1000 * 60 * 60 * 24)) + 1;
-      const offset = spanDays * direction;
-      const newFromD = new Date(fromD); newFromD.setDate(newFromD.getDate() + offset);
-      const newToD = new Date(toD); newToD.setDate(newToD.getDate() + offset);
+      const newFromD = addMonthsClamped(fromD, direction);
+      const newToD = addMonthsClamped(toD, direction);
       const newFromStr = formatDate(newFromD), newToStr = formatDate(newToD);
       fromInput.value = newFromStr;
       toInput.value = newToStr;
