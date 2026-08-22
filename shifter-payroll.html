@@ -1979,10 +1979,18 @@
         </div>
       </div>
 
+      <div class="card" style="border:2px solid var(--nm-primary);">
+        <div class="card-title" style="color:var(--nm-primary);">💰 صافي المرتب</div>
+        <div class="net-row"><span>إجمالي الدخل</span><span id="netIncome">0.00 ج.م</span></div>
+        <div class="net-row"><span>إجمالي الخصومات</span><span id="netDeductions">0.00 ج.م</span></div>
+        <div class="net-row big"><span>الصافي</span><span id="netSalary">0.00 ج.م</span></div>
+        <button class="btn btn-primary" id="calcPayroll" style="width:100%;margin-top:12px;">احسب المرتب</button>
+      </div>
+
       <div class="card">
         <div class="card-title">💵 الدخل</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(163,177,198,0.3);">
-          <span>إجمالي أجر الأيام (محسوب تلقائياً)</span>
+          <span>أساسي المرتب</span>
           <span id="totalDaysIncome" style="font-weight:700;">0.00 ج.م</span>
         </div>
         <div id="autoAllowanceRows"></div>
@@ -2022,14 +2030,6 @@
           <span>إجمالي الخصومات</span>
           <span id="totalDeductions" style="color:var(--nm-danger);">0.00 ج.م</span>
         </div>
-      </div>
-
-      <div class="card" style="border:2px solid var(--nm-primary);">
-        <div class="card-title" style="color:var(--nm-primary);">💰 صافي المرتب</div>
-        <div class="net-row"><span>إجمالي الدخل</span><span id="netIncome">0.00 ج.م</span></div>
-        <div class="net-row"><span>إجمالي الخصومات</span><span id="netDeductions">0.00 ج.م</span></div>
-        <div class="net-row big"><span>الصافي</span><span id="netSalary">0.00 ج.م</span></div>
-        <button class="btn btn-primary" id="calcPayroll" style="width:100%;margin-top:12px;">احسب المرتب</button>
       </div>
 
       <div class="card">
@@ -5201,7 +5201,9 @@
       else if (realDays < 30) periodAdjustment = avgDayWage * (30 - realDays);
       totalIncome += periodAdjustment;
 
-      document.getElementById('totalDaysIncome').textContent = totalIncome.toFixed(2) + ' ج.م';
+      // أساسي المرتب = إجمالي الدخل مطروح منه كل البدلات (بحيث: أساسي المرتب + البدلات = الإجمالي بالظبط)
+      const basicSalaryDisplay = totalIncome - allowancesTotal;
+      document.getElementById('totalDaysIncome').textContent = basicSalaryDisplay.toFixed(2) + ' ج.م';
 
       const addRows = document.getElementById('additionsIncomeRows');
       const visibleAdditionTypes = additionTypes.filter(a => a.enabled !== false);
