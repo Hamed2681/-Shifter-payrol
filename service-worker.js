@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shifter-payroll-v2';
+const CACHE_NAME = 'shifter-payroll-v3';
 const APP_SHELL = [
   './shifter-payroll.html',
   './manifest.json',
