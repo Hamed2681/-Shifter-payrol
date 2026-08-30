@@ -239,12 +239,13 @@
     /* ===== Tabs ===== */
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       background: var(--nm-bg);
       border-bottom: 1px solid rgba(163, 177, 198, 0.3);
       flex: 0 0 auto;
       padding: 6px 8px;
       gap: 6px;
+      overflow-x: auto;
     }
     .tab {
       background: var(--nm-bg);
@@ -252,13 +253,14 @@
       padding: 10px 4px;
       font-family: var(--nm-font);
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--nm-text-muted);
       cursor: pointer;
       border-radius: var(--nm-radius-sm);
       box-shadow: var(--nm-shadow-sm);
       transition: all 0.2s;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
     }
     .tab:active {
       box-shadow: var(--nm-shadow-sm-inset);
@@ -533,6 +535,134 @@
     .day.other {
       opacity: 0.35;
       box-shadow: none;
+    }
+    .day .agenda-dot {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--nm-primary);
+    }
+    .day.agenda-today {
+      box-shadow: 0 0 0 2px var(--nm-primary), var(--nm-shadow-sm);
+    }
+    .agenda-hours {
+      display: flex;
+      flex-direction: column;
+      background: var(--nm-bg);
+      border-radius: var(--nm-radius-sm);
+      box-shadow: var(--nm-shadow-inset);
+      overflow: hidden;
+    }
+    .agenda-hour-row {
+      display: flex;
+      border-bottom: 1px solid rgba(163, 177, 198, 0.25);
+      min-height: 48px;
+    }
+    .agenda-hour-row:last-child {
+      border-bottom: none;
+    }
+    .agenda-hour-label {
+      flex: 0 0 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--nm-text-muted);
+      border-left: 1px solid rgba(163, 177, 198, 0.25);
+    }
+    .agenda-hour-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      flex-wrap: wrap;
+    }
+    .agenda-hour-add {
+      background: var(--nm-bg);
+      border: none;
+      color: var(--nm-primary);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      box-shadow: var(--nm-shadow-sm);
+      flex-shrink: 0;
+    }
+    .agenda-hour-add:active {
+      box-shadow: var(--nm-shadow-sm-inset);
+      transform: scale(0.94);
+    }
+    .agenda-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .agenda-note-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--nm-primary);
+      color: #fff;
+      border-radius: var(--nm-radius-full);
+      padding: 5px 10px;
+      font-size: 12px;
+      max-width: 100%;
+    }
+    .agenda-note-chip.done {
+      background: var(--nm-bg);
+      color: var(--nm-text-muted);
+      box-shadow: var(--nm-shadow-sm-inset);
+    }
+    .agenda-note-chip-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .agenda-note-chip-check {
+      flex-shrink: 0;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .agenda-note-chip.done .agenda-note-chip-text {
+      text-decoration: line-through;
+    }
+    .agenda-note-chip-del {
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0.8;
+      flex-shrink: 0;
+      padding: 0;
+      line-height: 1;
+    }
+    .agenda-cat-chip {
+      border: none;
+      border-radius: var(--nm-radius-full);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .agenda-cat-chip.agenda-cat-add {
+      background: var(--nm-bg);
+      color: var(--nm-text-muted);
+      box-shadow: var(--nm-shadow-sm);
+      opacity: 1;
     }
     .day.future-day {
       opacity: 0.4;
@@ -1789,6 +1919,7 @@
     <button class="tab" data-tab="year" id="yearTab">2026</button>
     <button class="tab" data-tab="summary" data-i18n="tabStats">إحصائيات</button>
     <button class="tab" data-tab="payroll" data-i18n="tabPayroll">المرتب</button>
+    <button class="tab" data-tab="agenda">أجندة</button>
   </nav>
 
   <!-- Main -->
@@ -2101,9 +2232,69 @@
         </div>
       </div>
     </section>
+
+    <!-- Agenda View -->
+    <section class="view" id="view-agenda">
+      <div class="month-nav">
+        <button class="nav-arrow" id="prevAgendaMonth">›</button>
+        <h2 id="agendaMonthTitle">JULY 2026</h2>
+        <button class="nav-arrow" id="nextAgendaMonth">‹</button>
+      </div>
+      <div class="weekdays" id="agendaWeekdaysRow"></div>
+      <div class="calendar" id="agendaCalendar"></div>
+    </section>
+
+    <!-- Agenda Day View (24-hour) -->
+    <section class="view" id="view-agenda-day">
+      <div class="month-nav">
+        <button class="nav-arrow" id="agendaDayBack">→</button>
+        <h2 id="agendaDayFullTitle" style="font-size:15px;">—</h2>
+        <button class="nav-arrow" id="agendaDayAddAllDay">+</button>
+      </div>
+      <div id="agendaAllDayList" style="margin-bottom:14px;"></div>
+      <div class="agenda-hours" id="agendaHoursGrid"></div>
+    </section>
   </main>
 
   <!-- Modals -->
+  <div class="modal" id="agendaCatManageModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeAgendaCatManage">⌃</button>
+      <h3>⚙️ إدارة فئات الأجندة</h3>
+      <div id="agendaCatManageList" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="agendaNoteModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeAgendaNote">⌃</button>
+      <h3 id="agendaNoteModalTitle">📝 مهمة جديدة</h3>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;color:var(--nm-text-muted);">النص</label>
+        <input type="text" id="agendaNoteTextInput" placeholder="اكتب المهمة أو الملاحظة..." style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
+      </div>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;color:var(--nm-text-muted);">الوقت (اختياري)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <input type="time" id="agendaNoteTimeInput" style="flex:1;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;" />
+          <button type="button" class="btn btn-outline" id="agendaNoteClearTime" style="padding:8px 12px;font-size:12px;white-space:nowrap;">بدون وقت</button>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;color:var(--nm-text-muted);">الفئة</label>
+        <div id="agendaCategoryPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+        <input type="checkbox" id="agendaNoteAlertCb" style="accent-color:var(--nm-primary);width:18px;height:18px;" />
+        <label for="agendaNoteAlertCb" style="font-size:13px;cursor:pointer;">🔔 نبهني عند بدء الوقت (محتاج التطبيق يكون مفتوح)</label>
+      </div>
+      <div class="modal-actions" style="margin-top:16px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="agendaNoteSaveBtn" style="flex:1;">💾 حفظ</button>
+        <button class="btn btn-outline" id="agendaNoteDeleteBtn" style="display:none;color:var(--nm-danger);">🗑️ حذف</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="shiftsModal">
     <div class="modal-content">
       <button class="modal-close" id="closeShifts">⌃</button>
@@ -2663,6 +2854,8 @@
     let currentCompany = 'default';
     let currentYear = 2026;
     let currentMonth = 6;
+    let agendaYear = new Date().getFullYear();
+    let agendaMonth = new Date().getMonth();
     const ERASE_ID = '__erase__';
     let editingShiftId = null;
     let additionTypes = [{ id: 'add1', label: 'بدل انتقال', value: 50 }];
@@ -2799,6 +2992,20 @@
     let savedLeaveFrom = null;
     let savedLeaveTo = null;
     let yearStatsExcluded = []; // أكواد الشيفتات المستبعدة من إجمالي "Global" في إحصائيات السنة
+    let agendaNotes = {}; // 'YYYY-MM-DD' -> [{id, text, done, time, categoryId, alert, alerted}]
+    let agendaSelectedDate = null;
+    let agendaEditingNoteId = null; // null = إضافة جديد، غير null = تعديل موجود
+    let agendaCategories = [
+      { id: 'religious', name: 'دينية', color: '#d4a017', icon: '🕌' },
+      { id: 'personal', name: 'شخصية', color: '#2563eb', icon: '👤' },
+      { id: 'family', name: 'أسرية', color: '#0891b2', icon: '👨‍👩‍👧' },
+      { id: 'social', name: 'اجتماعية', color: '#eab308', icon: '💛' },
+      { id: 'work', name: 'عمل', color: '#b8860b', icon: '💼' },
+      { id: 'study', name: 'دراسة', color: '#7c3aed', icon: '📖' },
+      { id: 'health', name: 'صحة', color: '#dc2626', icon: '🏃' },
+      { id: 'development', name: 'تطوير', color: '#16a34a', icon: '📚' }
+    ];
+    const agendaColorPalette = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#64748b'];
     let myName = '';
     let myPhone = '';
     let myExtraPhones = '';
@@ -3340,7 +3547,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3401,6 +3608,8 @@
         savedLeaveFrom = data.savedLeaveFrom || null;
         savedLeaveTo = data.savedLeaveTo || null;
         yearStatsExcluded = data.yearStatsExcluded || [];
+        agendaNotes = data.agendaNotes || {};
+        if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
         myName = data.myName || '';
         myPhone = data.myPhone || '';
         myRole = data.myRole || 'worker';
@@ -3605,6 +3814,294 @@
       }
       renderPaintBar();
     }
+
+    function renderAgenda() {
+      const year = agendaYear, month = agendaMonth;
+      const days = getMonthDays(year, month);
+      const firstDay = getFirstDayOfMonth(year, month);
+      const title = new Date(year, month).toLocaleString(translations[uiLang].locale, { month:'long', year:'numeric' });
+      document.getElementById('agendaMonthTitle').textContent = title;
+
+      const weekMap = ['sat','sun','mon','tue','wed','thu','fri'];
+      const weekNames = translations[uiLang].weekLetters;
+      const startIdx = weekMap.indexOf(weekStart);
+      const ordered = weekNames.slice(startIdx).concat(weekNames.slice(0, startIdx));
+      document.getElementById('agendaWeekdaysRow').innerHTML = ordered.map(d => `<span>${d}</span>`).join('');
+
+      const cal = document.getElementById('agendaCalendar');
+      cal.innerHTML = '';
+      const todayStr = formatDate(new Date());
+
+      const total = firstDay + days;
+      const rows = Math.ceil(total / 7);
+      for (let i = 0; i < rows * 7; i++) {
+        const dayNum = i - firstDay + 1;
+        const isOther = dayNum < 1 || dayNum > days;
+        const dateStr = isOther ? '' : formatDate(new Date(year, month, dayNum));
+        const notes = dateStr ? (agendaNotes[dateStr] || []) : [];
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day' + (isOther ? ' other' : '') + (dateStr === todayStr ? ' agenda-today' : '');
+        if (!isOther) {
+          dayEl.dataset.date = dateStr;
+          dayEl.addEventListener('click', () => openAgendaDay(dateStr));
+          const num = document.createElement('span');
+          num.className = 'num-top';
+          num.textContent = dayNum;
+          dayEl.appendChild(num);
+          if (notes.length > 0) {
+            const doneCount = notes.filter(n => n.done).length;
+            const label = document.createElement('span');
+            label.style.cssText = 'font-size:11px;font-weight:700;text-align:center;padding:0 4px;';
+            label.textContent = doneCount === notes.length ? '✅' : `📝 ${notes.length}`;
+            dayEl.appendChild(label);
+            const dot = document.createElement('span');
+            dot.className = 'agenda-dot';
+            dayEl.appendChild(dot);
+          }
+        }
+        cal.appendChild(dayEl);
+      }
+    }
+
+    let agendaPrevTab = 'month';
+
+    function openAgendaDay(dateStr) {
+      agendaSelectedDate = dateStr;
+      agendaPrevTab = document.querySelector('.tab.active')?.dataset.tab || 'agenda';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-agenda-day').classList.add('active');
+      renderAgendaDayPage();
+    }
+
+    function closeAgendaDayPage() {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-agenda-day').classList.remove('active');
+      document.getElementById('view-' + agendaPrevTab).classList.add('active');
+      const tabBtn = document.querySelector(`.tab[data-tab="${agendaPrevTab}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+      if (agendaPrevTab === 'agenda') renderAgenda();
+    }
+
+    function getAgendaCategory(id) {
+      return agendaCategories.find(c => c.id === id) || agendaCategories[agendaCategories.length - 1];
+    }
+
+    function noteHour(n) {
+      return n.time ? parseInt(n.time.split(':')[0], 10) : null;
+    }
+
+    function renderNoteChip(n) {
+      const cat = getAgendaCategory(n.categoryId);
+      const bg = n.done ? 'var(--nm-bg)' : cat.color;
+      const color = n.done ? 'var(--nm-text-muted)' : '#fff';
+      return `
+        <div class="agenda-note-chip${n.done ? ' done' : ''}" data-id="${n.id}" style="background:${bg};color:${color};${n.done ? 'box-shadow:var(--nm-shadow-sm-inset);' : ''}">
+          <span class="agenda-note-chip-check" data-id="${n.id}">${n.done ? '✓' : '○'}</span>
+          <span class="agenda-note-chip-text" data-id="${n.id}">${cat.icon ? cat.icon + ' ' : ''}${n.alert ? '🔔 ' : ''}${n.time ? n.time + ' ' : ''}${n.text}</span>
+          <button class="agenda-note-chip-del" data-id="${n.id}">×</button>
+        </div>`;
+    }
+
+    function attachNoteChipListeners(container) {
+      container.querySelectorAll('.agenda-note-chip-check').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const note = (agendaNotes[agendaSelectedDate] || []).find(n => n.id === el.dataset.id);
+          if (note) { note.done = !note.done; saveData(); renderAgendaDayPage(); }
+        });
+      });
+      container.querySelectorAll('.agenda-note-chip-text').forEach(el => {
+        el.addEventListener('click', () => openAgendaNoteEditor(el.dataset.id));
+      });
+      container.querySelectorAll('.agenda-note-chip-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          agendaNotes[agendaSelectedDate] = (agendaNotes[agendaSelectedDate] || []).filter(n => n.id !== btn.dataset.id);
+          if (agendaNotes[agendaSelectedDate].length === 0) delete agendaNotes[agendaSelectedDate];
+          saveData(); renderAgendaDayPage();
+        });
+      });
+    }
+
+    function renderAgendaDayPage() {
+      if (!agendaSelectedDate) return;
+      const d = parseDate(agendaSelectedDate);
+      const title = d.toLocaleString(translations[uiLang].locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('agendaDayFullTitle').textContent = title;
+
+      const notes = (agendaNotes[agendaSelectedDate] || []).slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      const allDayNotes = notes.filter(n => !n.time);
+      const allDayEl = document.getElementById('agendaAllDayList');
+      allDayEl.innerHTML = `<div style="font-size:12px;color:var(--nm-text-muted);font-weight:700;margin-bottom:6px;">📌 طوال اليوم</div>` +
+        (allDayNotes.length === 0 ? '<div class="mini-list-empty">لا توجد ملاحظات</div>' : `<div class="agenda-chip-row">${allDayNotes.map(renderNoteChip).join('')}</div>`);
+      attachNoteChipListeners(allDayEl);
+
+      const grid = document.getElementById('agendaHoursGrid');
+      grid.innerHTML = '';
+      for (let h = 0; h < 24; h++) {
+        const hourNotes = notes.filter(n => noteHour(n) === h);
+        const row = document.createElement('div');
+        row.className = 'agenda-hour-row';
+        row.innerHTML = `
+          <div class="agenda-hour-label">${String(h).padStart(2, '0')}:00</div>
+          <div class="agenda-hour-content">
+            <div class="agenda-chip-row" data-hour="${h}">${hourNotes.map(renderNoteChip).join('')}</div>
+            <button class="agenda-hour-add" data-hour="${h}">+</button>
+          </div>`;
+        grid.appendChild(row);
+      }
+      attachNoteChipListeners(grid);
+      grid.querySelectorAll('.agenda-hour-add').forEach(btn => {
+        btn.addEventListener('click', () => openAgendaNoteEditor(null, parseInt(btn.dataset.hour)));
+      });
+    }
+
+    function renderAgendaCategoryPicker(selectedId) {
+      const wrap = document.getElementById('agendaCategoryPicker');
+      wrap.innerHTML = agendaCategories.map(c => `
+        <button type="button" class="agenda-cat-chip${c.id === selectedId ? ' selected' : ''}" data-id="${c.id}" style="background:${c.color};${c.id === selectedId ? 'box-shadow:0 0 0 2px #fff inset;' : 'opacity:0.55;'}">${c.icon ? c.icon + ' ' : ''}${c.name}</button>
+      `).join('') +
+        `<button type="button" class="agenda-cat-chip agenda-cat-add" id="agendaCatAddBtn">+ فئة</button>` +
+        `<button type="button" class="agenda-cat-chip agenda-cat-add" id="agendaCatManageBtn">⚙️ إدارة</button>`;
+      wrap.dataset.selected = selectedId;
+      wrap.querySelectorAll('.agenda-cat-chip[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => { wrap.dataset.selected = btn.dataset.id; renderAgendaCategoryPicker(btn.dataset.id); });
+      });
+      document.getElementById('agendaCatAddBtn').addEventListener('click', async () => {
+        const name = await pgPrompt('اسم الفئة الجديدة');
+        if (!name || !name.trim()) return;
+        const color = agendaColorPalette[agendaCategories.length % agendaColorPalette.length];
+        const newCat = { id: generateId(), name: name.trim(), color, icon: '🏷️' };
+        agendaCategories.push(newCat);
+        saveData();
+        renderAgendaCategoryPicker(newCat.id);
+      });
+      document.getElementById('agendaCatManageBtn').addEventListener('click', () => openAgendaCatManage(selectedId));
+    }
+
+    function openAgendaCatManage(returnSelectedId) {
+      renderAgendaCatManageList(returnSelectedId);
+      document.getElementById('agendaCatManageModal').classList.add('open');
+    }
+
+    function renderAgendaCatManageList(returnSelectedId) {
+      const list = document.getElementById('agendaCatManageList');
+      list.innerHTML = agendaCategories.map(c => `
+        <div class="mini-list-item" style="margin-bottom:6px;">
+          <span class="mli-info agenda-cat-rename" data-id="${c.id}" style="cursor:pointer;flex:1;min-width:0;">
+            <span class="mli-name"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.color};margin-left:6px;"></span>${c.icon ? c.icon + ' ' : ''}${c.name}</span>
+            <span class="mli-sub">دوس عشان تغيّر الاسم</span>
+          </span>
+          <button class="mli-del agenda-cat-del" data-id="${c.id}">×</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.agenda-cat-rename').forEach(el => {
+        el.addEventListener('click', async () => {
+          const cat = agendaCategories.find(c => c.id === el.dataset.id);
+          if (!cat) return;
+          const name = await pgPrompt('اسم الفئة', cat.name);
+          if (!name || !name.trim()) return;
+          cat.name = name.trim();
+          saveData();
+          renderAgendaCatManageList(returnSelectedId);
+        });
+      });
+      list.querySelectorAll('.agenda-cat-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (agendaCategories.length <= 1) { toast('لازم تفضل فئة واحدة على الأقل', 'error'); return; }
+          const cat = agendaCategories.find(c => c.id === btn.dataset.id);
+          const ok = await pgConfirm(`حذف فئة "${cat ? cat.name : ''}"؟ المهام اللي عليها هتتحول لأول فئة متاحة.`);
+          if (!ok) return;
+          agendaCategories = agendaCategories.filter(c => c.id !== btn.dataset.id);
+          const fallbackId = agendaCategories[0].id;
+          Object.keys(agendaNotes).forEach(dateKey => {
+            (agendaNotes[dateKey] || []).forEach(n => { if (n.categoryId === btn.dataset.id) n.categoryId = fallbackId; });
+          });
+          saveData();
+          renderAgendaCatManageList(returnSelectedId);
+        });
+      });
+    }
+
+    function openAgendaNoteEditor(noteId, presetHour) {
+      agendaEditingNoteId = noteId;
+      const note = noteId ? (agendaNotes[agendaSelectedDate] || []).find(n => n.id === noteId) : null;
+      document.getElementById('agendaNoteModalTitle').textContent = note ? '✏️ تعديل المهمة' : '📝 مهمة جديدة';
+      document.getElementById('agendaNoteTextInput').value = note ? note.text : '';
+      document.getElementById('agendaNoteTimeInput').value = note ? (note.time || '') : (presetHour !== undefined && presetHour !== null ? String(presetHour).padStart(2, '0') + ':00' : '');
+      document.getElementById('agendaNoteAlertCb').checked = note ? !!note.alert : false;
+      document.getElementById('agendaNoteDeleteBtn').style.display = note ? 'block' : 'none';
+      renderAgendaCategoryPicker(note ? note.categoryId : agendaCategories[0].id);
+      document.getElementById('agendaNoteModal').classList.add('open');
+      setTimeout(() => document.getElementById('agendaNoteTextInput').focus(), 50);
+    }
+
+    function saveAgendaNoteFromEditor() {
+      const text = document.getElementById('agendaNoteTextInput').value.trim();
+      if (!text || !agendaSelectedDate) return;
+      const time = document.getElementById('agendaNoteTimeInput').value || null;
+      const alert = document.getElementById('agendaNoteAlertCb').checked;
+      const categoryId = document.getElementById('agendaCategoryPicker').dataset.selected || agendaCategories[0].id;
+      if (!agendaNotes[agendaSelectedDate]) agendaNotes[agendaSelectedDate] = [];
+      if (agendaEditingNoteId) {
+        const note = agendaNotes[agendaSelectedDate].find(n => n.id === agendaEditingNoteId);
+        if (note) {
+          const timeChanged = note.time !== time;
+          note.text = text; note.time = time; note.categoryId = categoryId; note.alert = alert;
+          if (timeChanged) note.alerted = false;
+        }
+      } else {
+        agendaNotes[agendaSelectedDate].push({ id: generateId(), text, done: false, time, categoryId, alert, alerted: false });
+      }
+      saveData();
+      document.getElementById('agendaNoteModal').classList.remove('open');
+      renderAgendaDayPage();
+      if (alert) requestAgendaNotifPermission();
+    }
+
+    function deleteAgendaNoteFromEditor() {
+      if (!agendaEditingNoteId || !agendaSelectedDate) return;
+      agendaNotes[agendaSelectedDate] = (agendaNotes[agendaSelectedDate] || []).filter(n => n.id !== agendaEditingNoteId);
+      if (agendaNotes[agendaSelectedDate].length === 0) delete agendaNotes[agendaSelectedDate];
+      saveData();
+      document.getElementById('agendaNoteModal').classList.remove('open');
+      renderAgendaDayPage();
+    }
+
+    function requestAgendaNotifPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    function checkAgendaAlerts() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const todayStr = formatDate(new Date());
+      const notes = agendaNotes[todayStr] || [];
+      const now = new Date();
+      const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      let changed = false;
+      notes.forEach(n => {
+        if (n.alert && !n.alerted && !n.done && n.time && n.time <= nowHM) {
+          const cat = getAgendaCategory(n.categoryId);
+          const title = '⏰ تذكير - ' + (cat ? cat.name : '');
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+              if (reg) reg.showNotification(title, { body: n.text, icon: 'icon-192.png' });
+              else new Notification(title, { body: n.text });
+            }).catch(() => { try { new Notification(title, { body: n.text }); } catch (e) {} });
+          } else {
+            try { new Notification(title, { body: n.text }); } catch (e) {}
+          }
+          n.alerted = true;
+          changed = true;
+        }
+      });
+      if (changed) saveData();
+    }
+    setInterval(checkAgendaAlerts, 30000);
 
     function renderPaintBar() {
       const eraseBtn = document.getElementById('paintErase');
@@ -5800,9 +6297,22 @@
       renderStats();
       renderShiftsList();
       renderHolidays();
+      renderAgenda();
+      checkAgendaAlerts();
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) checkAgendaAlerts(); });
 
       document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } saveData(); renderCalendar(); renderStats(); });
       document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } saveData(); renderCalendar(); renderStats(); });
+      document.getElementById('prevAgendaMonth').addEventListener('click', () => { agendaMonth--; if (agendaMonth < 0) { agendaMonth = 11; agendaYear--; } renderAgenda(); });
+      document.getElementById('nextAgendaMonth').addEventListener('click', () => { agendaMonth++; if (agendaMonth > 11) { agendaMonth = 0; agendaYear++; } renderAgenda(); });
+      document.getElementById('agendaDayBack').addEventListener('click', closeAgendaDayPage);
+      document.getElementById('agendaDayAddAllDay').addEventListener('click', () => openAgendaNoteEditor(null, null));
+      document.getElementById('closeAgendaNote').addEventListener('click', () => document.getElementById('agendaNoteModal').classList.remove('open'));
+      document.getElementById('closeAgendaCatManage').addEventListener('click', () => document.getElementById('agendaCatManageModal').classList.remove('open'));
+      document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
+      document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
+      document.getElementById('agendaNoteClearTime').addEventListener('click', () => { document.getElementById('agendaNoteTimeInput').value = ''; });
+      document.getElementById('agendaNoteTextInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveAgendaNoteFromEditor(); } });
 
       document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -5811,6 +6321,7 @@
           document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
           document.getElementById('view-' + tab.dataset.tab).classList.add('active');
           if (tab.dataset.tab === 'summary') renderStats();
+          if (tab.dataset.tab === 'agenda') renderAgenda();
         });
       });
 
@@ -6725,7 +7236,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -6792,6 +7303,8 @@
             savedLeaveFrom = data.savedLeaveFrom || null;
             savedLeaveTo = data.savedLeaveTo || null;
             yearStatsExcluded = data.yearStatsExcluded || [];
+            agendaNotes = data.agendaNotes || {};
+            if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
             myName = data.myName || '';
             myPhone = data.myPhone || '';
             myRole = data.myRole || 'worker';
