@@ -549,6 +549,29 @@
     .day.agenda-today {
       box-shadow: 0 0 0 2px var(--nm-primary), var(--nm-shadow-sm);
     }
+    .breakdown-day {
+      min-height: 78px;
+      padding-top: 16px;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+    .breakdown-track {
+      position: relative;
+      flex: 1;
+      width: 100%;
+    }
+    .breakdown-bar {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      border-radius: 2px;
+      min-height: 2px;
+    }
+    .agenda-clock-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+    }
     .agenda-hours {
       display: flex;
       flex-direction: column;
@@ -663,6 +686,63 @@
       color: var(--nm-text-muted);
       box-shadow: var(--nm-shadow-sm);
       opacity: 1;
+    }
+    .agenda-preset-cat {
+      margin-bottom: 8px;
+      border-radius: var(--nm-radius-sm);
+      overflow: hidden;
+      box-shadow: var(--nm-shadow-sm);
+    }
+    .agenda-preset-cat-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--nm-bg);
+      border: none;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--nm-text);
+      cursor: pointer;
+    }
+    .agenda-preset-chevron {
+      transition: transform 0.2s;
+      font-size: 12px;
+      color: var(--nm-text-muted);
+    }
+    .agenda-preset-cat-header.expanded .agenda-preset-chevron {
+      transform: rotate(180deg);
+    }
+    .agenda-preset-cat-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+      background: var(--nm-bg);
+    }
+    .agenda-preset-cat-body.expanded {
+      max-height: 600px;
+    }
+    .agenda-preset-item {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(163, 177, 198, 0.25);
+      font-size: 13px;
+    }
+    .agenda-preset-times {
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding-right: 26px;
+    }
+    .agenda-preset-times input[type="time"] {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: var(--nm-radius-sm);
+      border: none;
+      background: var(--nm-bg);
+      box-shadow: var(--nm-shadow-inset);
+      color: var(--nm-text);
+      font-size: 12px;
     }
     .day.future-day {
       opacity: 0.4;
@@ -1931,8 +2011,10 @@
         <h2 id="monthTitle">JULY 2026</h2>
         <button class="nav-arrow" id="nextMonth">‹</button>
       </div>
+      <button class="btn btn-outline" id="toggleBreakdownView" style="width:100%;margin-bottom:10px;">📊 عرض تقسيم اليوم</button>
       <div class="weekdays" id="weekdaysRow"></div>
       <div class="calendar" id="calendar"></div>
+      <div class="calendar" id="dayBreakdownCalendar" style="display:none;"></div>
       <div class="calendar-list" id="calendarList"></div>
       <div class="paint-bar" id="paintBar">
         <div class="paint-fixed">
@@ -2236,12 +2318,16 @@
     <!-- Agenda View -->
     <section class="view" id="view-agenda">
       <div class="month-nav">
-        <button class="nav-arrow" id="prevAgendaMonth">›</button>
-        <h2 id="agendaMonthTitle">JULY 2026</h2>
-        <button class="nav-arrow" id="nextAgendaMonth">‹</button>
+        <button class="nav-arrow" id="prevAgendaDay">›</button>
+        <h2 id="agendaDayNavTitle" style="font-size:15px;">—</h2>
+        <button class="nav-arrow" id="nextAgendaDay">‹</button>
       </div>
-      <div class="weekdays" id="agendaWeekdaysRow"></div>
-      <div class="calendar" id="agendaCalendar"></div>
+      <div class="agenda-clock-wrap">
+        <svg id="agendaClockSvg" viewBox="0 0 240 240" style="width:100%;max-width:280px;margin:0 auto;display:block;"></svg>
+      </div>
+      <div id="agendaClockLegend" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
+      <button class="btn btn-primary" id="openAgendaDayFromClock" style="width:100%;margin-top:16px;">📝 فتح تفاصيل اليوم</button>
+      <button class="btn btn-outline" id="openAgendaPresetsBtn" style="width:100%;margin-top:10px;">📋 بنود سريعة (فئات جاهزة)</button>
     </section>
 
     <!-- Agenda Day View (24-hour) -->
@@ -2257,6 +2343,19 @@
   </main>
 
   <!-- Modals -->
+  <div class="modal" id="agendaPresetsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeAgendaPresets">⌃</button>
+      <h3>📋 بنود سريعة</h3>
+      <div style="margin-top:10px;">
+        <label style="font-size:12px;color:var(--nm-text-muted);">لأي يوم؟</label>
+        <input type="date" id="agendaPresetsDateInput" style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
+      </div>
+      <div id="agendaPresetsList" style="margin-top:14px;"></div>
+      <button class="btn btn-primary" id="agendaPresetsAddBtn" style="width:100%;margin-top:14px;">➕ إضافة المحدد</button>
+    </div>
+  </div>
+
   <div class="modal" id="agendaCatManageModal">
     <div class="modal-content">
       <button class="modal-close" id="closeAgendaCatManage">⌃</button>
@@ -2274,11 +2373,15 @@
         <input type="text" id="agendaNoteTextInput" placeholder="اكتب المهمة أو الملاحظة..." style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
       </div>
       <div style="margin-top:12px;">
-        <label style="font-size:12px;color:var(--nm-text-muted);">الوقت (اختياري)</label>
+        <label style="font-size:12px;color:var(--nm-text-muted);">من (اختياري)</label>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
           <input type="time" id="agendaNoteTimeInput" style="flex:1;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;" />
           <button type="button" class="btn btn-outline" id="agendaNoteClearTime" style="padding:8px 12px;font-size:12px;white-space:nowrap;">بدون وقت</button>
         </div>
+      </div>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;color:var(--nm-text-muted);">إلى (اختياري)</label>
+        <input type="time" id="agendaNoteEndTimeInput" style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
       </div>
       <div style="margin-top:12px;">
         <label style="font-size:12px;color:var(--nm-text-muted);">الفئة</label>
@@ -3006,6 +3109,40 @@
       { id: 'development', name: 'تطوير', color: '#16a34a', icon: '📚' }
     ];
     const agendaColorPalette = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#64748b'];
+    // بنود جاهزة لكل فئة (تقدر تعدّل توقيتها قبل الإضافة) — دي بنود اقتراحية بس، الفئات المخصصة اللي المستخدم يضيفها ملهاش بنود جاهزة
+    const agendaPresetItems = {
+      religious: [
+        { name: 'صلاة الفجر', start: '05:00', end: '05:20' },
+        { name: 'صلاة الظهر', start: '12:00', end: '12:20' },
+        { name: 'صلاة العصر', start: '15:30', end: '15:50' },
+        { name: 'صلاة المغرب', start: '18:00', end: '18:20' },
+        { name: 'صلاة العشاء', start: '19:30', end: '19:50' }
+      ],
+      personal: [
+        { name: 'وقت راحة', start: '13:00', end: '13:30' },
+        { name: 'قراءة', start: '21:00', end: '21:30' }
+      ],
+      family: [
+        { name: 'وقت مع العائلة', start: '17:00', end: '18:00' },
+        { name: 'مكالمة الأهل', start: '20:00', end: '20:15' }
+      ],
+      social: [
+        { name: 'تواصل مع الأصدقاء', start: '19:00', end: '19:30' }
+      ],
+      work: [
+        { name: 'اجتماع صباحي', start: '09:00', end: '09:30' },
+        { name: 'مراجعة المهام', start: '16:00', end: '16:30' }
+      ],
+      study: [
+        { name: 'وقت مذاكرة', start: '20:00', end: '21:00' }
+      ],
+      health: [
+        { name: 'رياضة', start: '06:30', end: '07:00' }
+      ],
+      development: [
+        { name: 'تعلم مهارة جديدة', start: '21:30', end: '22:00' }
+      ]
+    };
     let myName = '';
     let myPhone = '';
     let myExtraPhones = '';
@@ -3815,53 +3952,153 @@
       renderPaintBar();
     }
 
-    function renderAgenda() {
-      const year = agendaYear, month = agendaMonth;
+    function getDaySegments(dateStr) {
+      const segs = [];
+      const shiftId = schedule[dateStr];
+      if (shiftId) {
+        const shift = getShift(shiftId);
+        if (shift && shift.startTime && shift.endTime && shift.startTime !== shift.endTime) {
+          const [sh, sm] = shift.startTime.split(':').map(Number);
+          const [eh, em] = shift.endTime.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          let endMin = eh * 60 + em;
+          if (endMin <= startMin) endMin += 1440;
+          const durMin = Math.min(endMin - startMin, 1440 - startMin);
+          segs.push({ startMin, durMin, color: shift.bgColor || '#888' });
+        }
+      }
+      (agendaNotes[dateStr] || []).forEach(n => {
+        if (!n.time) return;
+        const [sh, sm] = n.time.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        let durMin = 30;
+        if (n.endTime) {
+          const [eh, em] = n.endTime.split(':').map(Number);
+          let endMin = eh * 60 + em;
+          if (endMin <= startMin) endMin += 1440;
+          durMin = endMin - startMin;
+        }
+        const cat = getAgendaCategory(n.categoryId);
+        segs.push({ startMin, durMin: Math.min(durMin, 1440 - startMin), color: cat.color });
+      });
+      return segs;
+    }
+
+    function renderShiftBreakdownCalendar() {
+      const year = currentYear, month = currentMonth;
       const days = getMonthDays(year, month);
       const firstDay = getFirstDayOfMonth(year, month);
-      const title = new Date(year, month).toLocaleString(translations[uiLang].locale, { month:'long', year:'numeric' });
-      document.getElementById('agendaMonthTitle').textContent = title;
-
-      const weekMap = ['sat','sun','mon','tue','wed','thu','fri'];
-      const weekNames = translations[uiLang].weekLetters;
-      const startIdx = weekMap.indexOf(weekStart);
-      const ordered = weekNames.slice(startIdx).concat(weekNames.slice(0, startIdx));
-      document.getElementById('agendaWeekdaysRow').innerHTML = ordered.map(d => `<span>${d}</span>`).join('');
-
-      const cal = document.getElementById('agendaCalendar');
+      const cal = document.getElementById('dayBreakdownCalendar');
       cal.innerHTML = '';
-      const todayStr = formatDate(new Date());
-
       const total = firstDay + days;
       const rows = Math.ceil(total / 7);
       for (let i = 0; i < rows * 7; i++) {
         const dayNum = i - firstDay + 1;
         const isOther = dayNum < 1 || dayNum > days;
         const dateStr = isOther ? '' : formatDate(new Date(year, month, dayNum));
-        const notes = dateStr ? (agendaNotes[dateStr] || []) : [];
 
         const dayEl = document.createElement('div');
-        dayEl.className = 'day' + (isOther ? ' other' : '') + (dateStr === todayStr ? ' agenda-today' : '');
+        dayEl.className = 'day breakdown-day' + (isOther ? ' other' : '');
         if (!isOther) {
-          dayEl.dataset.date = dateStr;
-          dayEl.addEventListener('click', () => openAgendaDay(dateStr));
           const num = document.createElement('span');
           num.className = 'num-top';
           num.textContent = dayNum;
           dayEl.appendChild(num);
-          if (notes.length > 0) {
-            const doneCount = notes.filter(n => n.done).length;
-            const label = document.createElement('span');
-            label.style.cssText = 'font-size:11px;font-weight:700;text-align:center;padding:0 4px;';
-            label.textContent = doneCount === notes.length ? '✅' : `📝 ${notes.length}`;
-            dayEl.appendChild(label);
-            const dot = document.createElement('span');
-            dot.className = 'agenda-dot';
-            dayEl.appendChild(dot);
-          }
+          const track = document.createElement('div');
+          track.className = 'breakdown-track';
+          getDaySegments(dateStr).forEach(seg => {
+            const bar = document.createElement('div');
+            bar.className = 'breakdown-bar';
+            bar.style.top = (seg.startMin / 1440 * 100) + '%';
+            bar.style.height = Math.max(seg.durMin / 1440 * 100, 2.5) + '%';
+            bar.style.background = seg.color;
+            track.appendChild(bar);
+          });
+          dayEl.appendChild(track);
+          dayEl.addEventListener('click', () => openAgendaDay(dateStr));
         }
         cal.appendChild(dayEl);
       }
+    }
+
+    function toggleBreakdownView() {
+      const cal = document.getElementById('calendar');
+      const breakdown = document.getElementById('dayBreakdownCalendar');
+      const btn = document.getElementById('toggleBreakdownView');
+      const showingBreakdown = breakdown.style.display !== 'none';
+      if (showingBreakdown) {
+        breakdown.style.display = 'none';
+        cal.style.display = '';
+        btn.textContent = '📊 عرض تقسيم اليوم';
+      } else {
+        renderShiftBreakdownCalendar();
+        cal.style.display = 'none';
+        breakdown.style.display = '';
+        btn.textContent = '🗓️ عرض جدول الورديات';
+      }
+    }
+
+    function renderAgendaClock() {
+      if (!agendaSelectedDate) agendaSelectedDate = formatDate(new Date());
+      const dateStr = agendaSelectedDate;
+      const d = parseDate(dateStr);
+      const title = d.toLocaleString(translations[uiLang].locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('agendaDayNavTitle').textContent = title;
+
+      const cx = 120, cy = 120, outerR = 100, ringWidth = 34;
+      const midR = outerR - ringWidth / 2;
+      const circumference = 2 * Math.PI * midR;
+      const todayStr = formatDate(new Date());
+
+      let svg = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="var(--nm-text-muted)" stroke-opacity="0.15" stroke-width="${ringWidth}"/>`;
+
+      [0, 3, 6, 9, 12, 15, 18, 21].forEach(h => {
+        const angle = (h / 24) * 360 - 90;
+        const rad = angle * Math.PI / 180;
+        const tx = cx + (outerR + 16) * Math.cos(rad);
+        const ty = cy + (outerR + 16) * Math.sin(rad);
+        svg += `<text x="${tx}" y="${ty}" font-size="10" fill="var(--nm-text-muted)" text-anchor="middle" dominant-baseline="middle">${String(h).padStart(2, '0')}</text>`;
+      });
+
+      const segs = getDaySegments(dateStr);
+      segs.forEach(seg => {
+        const arcLen = Math.max(seg.durMin / 1440 * circumference, 3);
+        const gap = circumference - arcLen;
+        const offset = -(seg.startMin / 1440) * circumference;
+        svg += `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${seg.color}" stroke-width="${ringWidth}" stroke-dasharray="${arcLen} ${gap}" stroke-dashoffset="${offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>`;
+      });
+
+      if (dateStr === todayStr) {
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        const angle = (nowMin / 1440) * 360 - 90;
+        const rad = angle * Math.PI / 180;
+        const x1 = cx + (outerR - ringWidth) * Math.cos(rad);
+        const y1 = cy + (outerR - ringWidth) * Math.sin(rad);
+        const x2 = cx + (outerR + 4) * Math.cos(rad);
+        const y2 = cy + (outerR + 4) * Math.sin(rad);
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--nm-danger)" stroke-width="2"/>`;
+      }
+
+      svg += `<text x="${cx}" y="${cy}" font-size="13" fill="var(--nm-text)" text-anchor="middle" dominant-baseline="middle" font-weight="700">${segs.length} بند</text>`;
+
+      document.getElementById('agendaClockSvg').innerHTML = svg;
+
+      const legendCats = new Map();
+      const shiftId = schedule[dateStr];
+      if (shiftId) {
+        const shift = getShift(shiftId);
+        if (shift) legendCats.set('shift-' + shift.id, { name: shift.name, color: shift.bgColor || '#888' });
+      }
+      (agendaNotes[dateStr] || []).forEach(n => {
+        const cat = getAgendaCategory(n.categoryId);
+        legendCats.set(cat.id, { name: (cat.icon ? cat.icon + ' ' : '') + cat.name, color: cat.color });
+      });
+      const legendEl = document.getElementById('agendaClockLegend');
+      legendEl.innerHTML = [...legendCats.values()].map(c => `
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--nm-text-muted);">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.color};display:inline-block;"></span>${c.name}
+        </span>`).join('') || '<span style="font-size:12px;color:var(--nm-text-muted);">لا توجد بنود اليوم ده</span>';
     }
 
     let agendaPrevTab = 'month';
@@ -3881,7 +4118,7 @@
       document.getElementById('view-' + agendaPrevTab).classList.add('active');
       const tabBtn = document.querySelector(`.tab[data-tab="${agendaPrevTab}"]`);
       if (tabBtn) tabBtn.classList.add('active');
-      if (agendaPrevTab === 'agenda') renderAgenda();
+      if (agendaPrevTab === 'agenda') renderAgendaClock();
     }
 
     function getAgendaCategory(id) {
@@ -3899,7 +4136,7 @@
       return `
         <div class="agenda-note-chip${n.done ? ' done' : ''}" data-id="${n.id}" style="background:${bg};color:${color};${n.done ? 'box-shadow:var(--nm-shadow-sm-inset);' : ''}">
           <span class="agenda-note-chip-check" data-id="${n.id}">${n.done ? '✓' : '○'}</span>
-          <span class="agenda-note-chip-text" data-id="${n.id}">${cat.icon ? cat.icon + ' ' : ''}${n.alert ? '🔔 ' : ''}${n.time ? n.time + ' ' : ''}${n.text}</span>
+          <span class="agenda-note-chip-text" data-id="${n.id}">${cat.icon ? cat.icon + ' ' : ''}${n.alert ? '🔔 ' : ''}${n.time ? n.time + (n.endTime ? '-' + n.endTime : '') + ' ' : ''}${n.text}</span>
           <button class="agenda-note-chip-del" data-id="${n.id}">×</button>
         </div>`;
     }
@@ -4025,12 +4262,90 @@
       });
     }
 
+    function openAgendaPresets() {
+      const dateInput = document.getElementById('agendaPresetsDateInput');
+      dateInput.value = agendaSelectedDate || formatDate(new Date());
+      renderAgendaPresetsList();
+      document.getElementById('agendaPresetsModal').classList.add('open');
+    }
+
+    function renderAgendaPresetsList() {
+      const wrap = document.getElementById('agendaPresetsList');
+      wrap.innerHTML = agendaCategories.map(c => {
+        const items = agendaPresetItems[c.id] || [];
+        return `
+        <div class="agenda-preset-cat">
+          <button type="button" class="agenda-preset-cat-header" data-id="${c.id}" style="border-right:4px solid ${c.color};">
+            <span>${c.icon ? c.icon + ' ' : ''}${c.name}</span>
+            <span class="agenda-preset-chevron">▾</span>
+          </button>
+          <div class="agenda-preset-cat-body" data-body="${c.id}">
+            ${items.length === 0 ? '<div class="mini-list-empty">لا توجد بنود جاهزة لهذه الفئة</div>' : items.map((it, idx) => `
+              <div class="agenda-preset-item">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" class="agenda-preset-check" data-cat="${c.id}" data-idx="${idx}" style="accent-color:${c.color};width:18px;height:18px;flex-shrink:0;" />
+                  <span>${it.name}</span>
+                </label>
+                <div class="agenda-preset-times" data-times="${c.id}-${idx}" style="display:none;">
+                  <input type="time" class="agenda-preset-start" data-cat="${c.id}" data-idx="${idx}" value="${it.start}" />
+                  <span>—</span>
+                  <input type="time" class="agenda-preset-end" data-cat="${c.id}" data-idx="${idx}" value="${it.end}" />
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+
+      wrap.querySelectorAll('.agenda-preset-cat-header').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const body = wrap.querySelector(`.agenda-preset-cat-body[data-body="${btn.dataset.id}"]`);
+          body.classList.toggle('expanded');
+          btn.classList.toggle('expanded');
+        });
+      });
+      wrap.querySelectorAll('.agenda-preset-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const timesEl = wrap.querySelector(`.agenda-preset-times[data-times="${cb.dataset.cat}-${cb.dataset.idx}"]`);
+          if (timesEl) timesEl.style.display = cb.checked ? 'flex' : 'none';
+        });
+      });
+    }
+
+    function addSelectedAgendaPresets() {
+      const dateStr = document.getElementById('agendaPresetsDateInput').value;
+      if (!dateStr) { toast('اختار اليوم الأول', 'error'); return; }
+      const wrap = document.getElementById('agendaPresetsList');
+      const checked = wrap.querySelectorAll('.agenda-preset-check:checked');
+      if (checked.length === 0) { toast('اختار بند واحد على الأقل', 'error'); return; }
+      if (!agendaNotes[dateStr]) agendaNotes[dateStr] = [];
+      checked.forEach(cb => {
+        const catId = cb.dataset.cat, idx = parseInt(cb.dataset.idx);
+        const item = agendaPresetItems[catId][idx];
+        const startEl = wrap.querySelector(`.agenda-preset-start[data-cat="${catId}"][data-idx="${idx}"]`);
+        const endEl = wrap.querySelector(`.agenda-preset-end[data-cat="${catId}"][data-idx="${idx}"]`);
+        agendaNotes[dateStr].push({
+          id: generateId(), text: item.name, done: false,
+          time: startEl.value || item.start, endTime: endEl.value || item.end,
+          categoryId: catId, alert: false, alerted: false
+        });
+      });
+      saveData();
+      document.getElementById('agendaPresetsModal').classList.remove('open');
+      toast('تمت إضافة البنود المحددة ✅', 'success');
+      renderAgendaClock();
+      if (agendaSelectedDate === dateStr && document.getElementById('view-agenda-day').classList.contains('active')) {
+        renderAgendaDayPage();
+      }
+    }
+
     function openAgendaNoteEditor(noteId, presetHour) {
       agendaEditingNoteId = noteId;
       const note = noteId ? (agendaNotes[agendaSelectedDate] || []).find(n => n.id === noteId) : null;
       document.getElementById('agendaNoteModalTitle').textContent = note ? '✏️ تعديل المهمة' : '📝 مهمة جديدة';
       document.getElementById('agendaNoteTextInput').value = note ? note.text : '';
       document.getElementById('agendaNoteTimeInput').value = note ? (note.time || '') : (presetHour !== undefined && presetHour !== null ? String(presetHour).padStart(2, '0') + ':00' : '');
+      document.getElementById('agendaNoteEndTimeInput').value = note ? (note.endTime || '') : '';
       document.getElementById('agendaNoteAlertCb').checked = note ? !!note.alert : false;
       document.getElementById('agendaNoteDeleteBtn').style.display = note ? 'block' : 'none';
       renderAgendaCategoryPicker(note ? note.categoryId : agendaCategories[0].id);
@@ -4042,6 +4357,7 @@
       const text = document.getElementById('agendaNoteTextInput').value.trim();
       if (!text || !agendaSelectedDate) return;
       const time = document.getElementById('agendaNoteTimeInput').value || null;
+      const endTime = document.getElementById('agendaNoteEndTimeInput').value || null;
       const alert = document.getElementById('agendaNoteAlertCb').checked;
       const categoryId = document.getElementById('agendaCategoryPicker').dataset.selected || agendaCategories[0].id;
       if (!agendaNotes[agendaSelectedDate]) agendaNotes[agendaSelectedDate] = [];
@@ -4049,11 +4365,11 @@
         const note = agendaNotes[agendaSelectedDate].find(n => n.id === agendaEditingNoteId);
         if (note) {
           const timeChanged = note.time !== time;
-          note.text = text; note.time = time; note.categoryId = categoryId; note.alert = alert;
+          note.text = text; note.time = time; note.endTime = endTime; note.categoryId = categoryId; note.alert = alert;
           if (timeChanged) note.alerted = false;
         }
       } else {
-        agendaNotes[agendaSelectedDate].push({ id: generateId(), text, done: false, time, categoryId, alert, alerted: false });
+        agendaNotes[agendaSelectedDate].push({ id: generateId(), text, done: false, time, endTime, categoryId, alert, alerted: false });
       }
       saveData();
       document.getElementById('agendaNoteModal').classList.remove('open');
@@ -6297,21 +6613,26 @@
       renderStats();
       renderShiftsList();
       renderHolidays();
-      renderAgenda();
+      renderAgendaClock();
       checkAgendaAlerts();
       document.addEventListener('visibilitychange', () => { if (!document.hidden) checkAgendaAlerts(); });
 
-      document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } saveData(); renderCalendar(); renderStats(); });
-      document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } saveData(); renderCalendar(); renderStats(); });
-      document.getElementById('prevAgendaMonth').addEventListener('click', () => { agendaMonth--; if (agendaMonth < 0) { agendaMonth = 11; agendaYear--; } renderAgenda(); });
-      document.getElementById('nextAgendaMonth').addEventListener('click', () => { agendaMonth++; if (agendaMonth > 11) { agendaMonth = 0; agendaYear++; } renderAgenda(); });
+      document.getElementById('prevMonth').addEventListener('click', () => { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } saveData(); renderCalendar(); renderStats(); if (document.getElementById('dayBreakdownCalendar').style.display !== 'none') renderShiftBreakdownCalendar(); });
+      document.getElementById('nextMonth').addEventListener('click', () => { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } saveData(); renderCalendar(); renderStats(); if (document.getElementById('dayBreakdownCalendar').style.display !== 'none') renderShiftBreakdownCalendar(); });
+      document.getElementById('toggleBreakdownView').addEventListener('click', toggleBreakdownView);
+      document.getElementById('prevAgendaDay').addEventListener('click', () => { const d = parseDate(agendaSelectedDate || formatDate(new Date())); d.setDate(d.getDate() - 1); agendaSelectedDate = formatDate(d); renderAgendaClock(); });
+      document.getElementById('nextAgendaDay').addEventListener('click', () => { const d = parseDate(agendaSelectedDate || formatDate(new Date())); d.setDate(d.getDate() + 1); agendaSelectedDate = formatDate(d); renderAgendaClock(); });
+      document.getElementById('openAgendaDayFromClock').addEventListener('click', () => openAgendaDay(agendaSelectedDate || formatDate(new Date())));
       document.getElementById('agendaDayBack').addEventListener('click', closeAgendaDayPage);
       document.getElementById('agendaDayAddAllDay').addEventListener('click', () => openAgendaNoteEditor(null, null));
       document.getElementById('closeAgendaNote').addEventListener('click', () => document.getElementById('agendaNoteModal').classList.remove('open'));
       document.getElementById('closeAgendaCatManage').addEventListener('click', () => document.getElementById('agendaCatManageModal').classList.remove('open'));
+      document.getElementById('openAgendaPresetsBtn').addEventListener('click', openAgendaPresets);
+      document.getElementById('closeAgendaPresets').addEventListener('click', () => document.getElementById('agendaPresetsModal').classList.remove('open'));
+      document.getElementById('agendaPresetsAddBtn').addEventListener('click', addSelectedAgendaPresets);
       document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
       document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
-      document.getElementById('agendaNoteClearTime').addEventListener('click', () => { document.getElementById('agendaNoteTimeInput').value = ''; });
+      document.getElementById('agendaNoteClearTime').addEventListener('click', () => { document.getElementById('agendaNoteTimeInput').value = ''; document.getElementById('agendaNoteEndTimeInput').value = ''; });
       document.getElementById('agendaNoteTextInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveAgendaNoteFromEditor(); } });
 
       document.querySelectorAll('.tab').forEach(tab => {
@@ -6321,7 +6642,7 @@
           document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
           document.getElementById('view-' + tab.dataset.tab).classList.add('active');
           if (tab.dataset.tab === 'summary') renderStats();
-          if (tab.dataset.tab === 'agenda') renderAgenda();
+          if (tab.dataset.tab === 'agenda') renderAgendaClock();
         });
       });
 
