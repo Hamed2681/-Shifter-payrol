@@ -239,7 +239,7 @@
     /* ===== Tabs ===== */
     .tabs {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       background: var(--nm-bg);
       border-bottom: 1px solid rgba(163, 177, 198, 0.3);
       flex: 0 0 auto;
@@ -572,6 +572,13 @@
       justify-content: center;
       padding: 10px 0;
     }
+    #view-agenda .month-nav {
+      gap: 10px;
+    }
+    #view-agenda .month-nav .nav-arrow {
+      font-size: 20px;
+      padding: 6px 10px;
+    }
     .agenda-hours {
       display: flex;
       flex-direction: column;
@@ -699,20 +706,28 @@
       align-items: center;
       justify-content: space-between;
       background: var(--nm-bg);
-      border: none;
-      padding: 12px 14px;
-      font-size: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--nm-text);
-      cursor: pointer;
     }
-    .agenda-preset-chevron {
-      transition: transform 0.2s;
+    .agenda-preset-fold {
+      background: var(--nm-bg);
+      border: none;
+      box-shadow: var(--nm-shadow-sm);
+      border-radius: var(--nm-radius-full);
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 12px;
       color: var(--nm-text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
     }
-    .agenda-preset-cat-header.expanded .agenda-preset-chevron {
-      transform: rotate(180deg);
+    .agenda-preset-fold:active {
+      box-shadow: var(--nm-shadow-sm-inset);
     }
     .agenda-preset-cat-body {
       max-height: 0;
@@ -743,6 +758,38 @@
       box-shadow: var(--nm-shadow-inset);
       color: var(--nm-text);
       font-size: 12px;
+    }
+    #agendaSideDrawer .agenda-preset-item {
+      padding: 6px 4px;
+    }
+    #agendaSideDrawer .agenda-preset-times {
+      flex-direction: column;
+      align-items: stretch;
+      padding-right: 0;
+      gap: 4px;
+    }
+    #agendaSideDrawer .agenda-preset-times span {
+      display: none;
+    }
+    #agendaSideDrawer .agenda-preset-cat-header {
+      padding: 8px 8px;
+      font-size: 11px;
+    }
+    #agendaSideDrawer .agenda-preset-fold {
+      font-size: 10px;
+      width: 18px;
+      height: 18px;
+    }
+    .agenda-preset-add-item {
+      display: block;
+      width: 100%;
+      background: var(--nm-bg);
+      border: none;
+      border-top: 1px solid rgba(163, 177, 198, 0.25);
+      padding: 8px;
+      font-size: 12px;
+      color: var(--nm-primary);
+      cursor: pointer;
     }
     .day.future-day {
       opacity: 0.4;
@@ -1603,6 +1650,15 @@
     .side-menu-overlay.open .side-menu {
       transform: translateX(0);
     }
+    #agendaSideDrawer {
+      width: 46vw;
+      max-width: 200px;
+      padding: 12px;
+      font-size: 12px;
+    }
+    #agendaSideDrawer h3 {
+      font-size: 13px;
+    }
     .side-menu-close {
       background: var(--nm-bg);
       border: none;
@@ -1999,7 +2055,6 @@
     <button class="tab" data-tab="year" id="yearTab">2026</button>
     <button class="tab" data-tab="summary" data-i18n="tabStats">إحصائيات</button>
     <button class="tab" data-tab="payroll" data-i18n="tabPayroll">المرتب</button>
-    <button class="tab" data-tab="agenda">أجندة</button>
   </nav>
 
   <!-- Main -->
@@ -2011,7 +2066,10 @@
         <h2 id="monthTitle">JULY 2026</h2>
         <button class="nav-arrow" id="nextMonth">‹</button>
       </div>
-      <button class="btn btn-outline" id="toggleBreakdownView" style="width:100%;margin-bottom:10px;">📊 عرض تقسيم اليوم</button>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-outline" id="toggleBreakdownView" style="flex:1;">📊 عرض تقسيم اليوم</button>
+        <button class="btn btn-outline" id="openAgendaFromMonthBtn" style="flex:1;">📁 الأجندة</button>
+      </div>
       <div class="weekdays" id="weekdaysRow"></div>
       <div class="calendar" id="calendar"></div>
       <div class="calendar" id="dayBreakdownCalendar" style="display:none;"></div>
@@ -2318,16 +2376,19 @@
     <!-- Agenda View -->
     <section class="view" id="view-agenda">
       <div class="month-nav">
+        <button class="nav-arrow" id="agendaViewBack">→</button>
         <button class="nav-arrow" id="prevAgendaDay">›</button>
-        <h2 id="agendaDayNavTitle" style="font-size:15px;">—</h2>
+        <h2 id="agendaDayNavTitle" style="font-size:14px;">—</h2>
         <button class="nav-arrow" id="nextAgendaDay">‹</button>
       </div>
       <div class="agenda-clock-wrap">
         <svg id="agendaClockSvg" viewBox="0 0 240 240" style="width:100%;max-width:280px;margin:0 auto;display:block;"></svg>
       </div>
       <div id="agendaClockLegend" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
-      <button class="btn btn-primary" id="openAgendaDayFromClock" style="width:100%;margin-top:16px;">📝 فتح تفاصيل اليوم</button>
-      <button class="btn btn-outline" id="openAgendaPresetsBtn" style="width:100%;margin-top:10px;">📋 بنود سريعة (فئات جاهزة)</button>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-primary" id="openAgendaDayFromClock" style="flex:1;padding:8px 10px;font-size:12px;">📝 تفاصيل اليوم</button>
+        <button class="btn btn-outline" id="openAgendaSideBtn" style="flex:1;padding:8px 10px;font-size:12px;">📁 الفئات</button>
+      </div>
     </section>
 
     <!-- Agenda Day View (24-hour) -->
@@ -2343,25 +2404,17 @@
   </main>
 
   <!-- Modals -->
-  <div class="modal" id="agendaPresetsModal">
-    <div class="modal-content">
-      <button class="modal-close" id="closeAgendaPresets">⌃</button>
-      <h3>📋 بنود سريعة</h3>
-      <div style="margin-top:10px;">
+  <div class="side-menu-overlay" id="agendaSideOverlay">
+    <nav class="side-menu" id="agendaSideDrawer">
+      <button class="side-menu-close" id="closeAgendaSide">✕</button>
+      <h3 style="margin:0 0 8px;">📁 الأجندة — الفئات والبنود</h3>
+      <div>
         <label style="font-size:12px;color:var(--nm-text-muted);">لأي يوم؟</label>
         <input type="date" id="agendaPresetsDateInput" style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
       </div>
       <div id="agendaPresetsList" style="margin-top:14px;"></div>
       <button class="btn btn-primary" id="agendaPresetsAddBtn" style="width:100%;margin-top:14px;">➕ إضافة المحدد</button>
-    </div>
-  </div>
-
-  <div class="modal" id="agendaCatManageModal">
-    <div class="modal-content">
-      <button class="modal-close" id="closeAgendaCatManage">⌃</button>
-      <h3>⚙️ إدارة فئات الأجندة</h3>
-      <div id="agendaCatManageList" style="margin-top:12px;"></div>
-    </div>
+    </nav>
   </div>
 
   <div class="modal" id="agendaNoteModal">
@@ -3110,7 +3163,7 @@
     ];
     const agendaColorPalette = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#64748b'];
     // بنود جاهزة لكل فئة (تقدر تعدّل توقيتها قبل الإضافة) — دي بنود اقتراحية بس، الفئات المخصصة اللي المستخدم يضيفها ملهاش بنود جاهزة
-    const agendaPresetItems = {
+    let agendaPresetItems = {
       religious: [
         { name: 'صلاة الفجر', start: '05:00', end: '05:20' },
         { name: 'صلاة الظهر', start: '12:00', end: '12:20' },
@@ -3684,7 +3737,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3747,6 +3800,7 @@
         yearStatsExcluded = data.yearStatsExcluded || [];
         agendaNotes = data.agendaNotes || {};
         if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
+        if (data.agendaPresetItems) agendaPresetItems = data.agendaPresetItems;
         myName = data.myName || '';
         myPhone = data.myPhone || '';
         myRole = data.myRole || 'worker';
@@ -4102,6 +4156,23 @@
     }
 
     let agendaPrevTab = 'month';
+    let agendaMainReturnTab = 'month';
+
+    function openAgendaView() {
+      agendaMainReturnTab = document.querySelector('.tab.active')?.dataset.tab || 'month';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-agenda').classList.add('active');
+      renderAgendaClock();
+    }
+
+    function closeAgendaView() {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-agenda').classList.remove('active');
+      document.getElementById('view-' + agendaMainReturnTab).classList.add('active');
+      const tabBtn = document.querySelector(`.tab[data-tab="${agendaMainReturnTab}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+    }
 
     function openAgendaDay(dateStr) {
       agendaSelectedDate = dateStr;
@@ -4200,8 +4271,7 @@
       wrap.innerHTML = agendaCategories.map(c => `
         <button type="button" class="agenda-cat-chip${c.id === selectedId ? ' selected' : ''}" data-id="${c.id}" style="background:${c.color};${c.id === selectedId ? 'box-shadow:0 0 0 2px #fff inset;' : 'opacity:0.55;'}">${c.icon ? c.icon + ' ' : ''}${c.name}</button>
       `).join('') +
-        `<button type="button" class="agenda-cat-chip agenda-cat-add" id="agendaCatAddBtn">+ فئة</button>` +
-        `<button type="button" class="agenda-cat-chip agenda-cat-add" id="agendaCatManageBtn">⚙️ إدارة</button>`;
+        `<button type="button" class="agenda-cat-chip agenda-cat-add" id="agendaCatAddBtn">+ فئة</button>`;
       wrap.dataset.selected = selectedId;
       wrap.querySelectorAll('.agenda-cat-chip[data-id]').forEach(btn => {
         btn.addEventListener('click', () => { wrap.dataset.selected = btn.dataset.id; renderAgendaCategoryPicker(btn.dataset.id); });
@@ -4215,58 +4285,55 @@
         saveData();
         renderAgendaCategoryPicker(newCat.id);
       });
-      document.getElementById('agendaCatManageBtn').addEventListener('click', () => openAgendaCatManage(selectedId));
     }
 
-    function openAgendaCatManage(returnSelectedId) {
-      renderAgendaCatManageList(returnSelectedId);
-      document.getElementById('agendaCatManageModal').classList.add('open');
+    async function editOrDeleteAgendaCategory(catId) {
+      const cat = agendaCategories.find(c => c.id === catId);
+      if (!cat) return;
+      const newName = await pgPrompt('عدّل اسم الفئة، أو امسح النص كله واضغط حفظ عشان تحذفها', cat.name);
+      if (newName === null) return;
+      if (!newName.trim()) {
+        if (agendaCategories.length <= 1) { toast('لازم تفضل فئة واحدة على الأقل', 'error'); return; }
+        const ok = await pgConfirm(`حذف فئة "${cat.name}"؟ المهام اللي عليها هتتحول لأول فئة متاحة.`);
+        if (!ok) return;
+        agendaCategories = agendaCategories.filter(c => c.id !== catId);
+        delete agendaPresetItems[catId];
+        const fallbackId = agendaCategories[0].id;
+        Object.keys(agendaNotes).forEach(dateKey => {
+          (agendaNotes[dateKey] || []).forEach(n => { if (n.categoryId === catId) n.categoryId = fallbackId; });
+        });
+      } else {
+        cat.name = newName.trim();
+      }
+      saveData();
+      renderAgendaPresetsList();
     }
 
-    function renderAgendaCatManageList(returnSelectedId) {
-      const list = document.getElementById('agendaCatManageList');
-      list.innerHTML = agendaCategories.map(c => `
-        <div class="mini-list-item" style="margin-bottom:6px;">
-          <span class="mli-info agenda-cat-rename" data-id="${c.id}" style="cursor:pointer;flex:1;min-width:0;">
-            <span class="mli-name"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.color};margin-left:6px;"></span>${c.icon ? c.icon + ' ' : ''}${c.name}</span>
-            <span class="mli-sub">دوس عشان تغيّر الاسم</span>
-          </span>
-          <button class="mli-del agenda-cat-del" data-id="${c.id}">×</button>
-        </div>
-      `).join('');
-      list.querySelectorAll('.agenda-cat-rename').forEach(el => {
-        el.addEventListener('click', async () => {
-          const cat = agendaCategories.find(c => c.id === el.dataset.id);
-          if (!cat) return;
-          const name = await pgPrompt('اسم الفئة', cat.name);
-          if (!name || !name.trim()) return;
-          cat.name = name.trim();
-          saveData();
-          renderAgendaCatManageList(returnSelectedId);
-        });
-      });
-      list.querySelectorAll('.agenda-cat-del').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (agendaCategories.length <= 1) { toast('لازم تفضل فئة واحدة على الأقل', 'error'); return; }
-          const cat = agendaCategories.find(c => c.id === btn.dataset.id);
-          const ok = await pgConfirm(`حذف فئة "${cat ? cat.name : ''}"؟ المهام اللي عليها هتتحول لأول فئة متاحة.`);
-          if (!ok) return;
-          agendaCategories = agendaCategories.filter(c => c.id !== btn.dataset.id);
-          const fallbackId = agendaCategories[0].id;
-          Object.keys(agendaNotes).forEach(dateKey => {
-            (agendaNotes[dateKey] || []).forEach(n => { if (n.categoryId === btn.dataset.id) n.categoryId = fallbackId; });
-          });
-          saveData();
-          renderAgendaCatManageList(returnSelectedId);
-        });
-      });
+    async function addAgendaPresetItem(catId) {
+      const name = await pgPrompt('اسم البند الجديد');
+      if (!name || !name.trim()) return;
+      if (!agendaPresetItems[catId]) agendaPresetItems[catId] = [];
+      agendaPresetItems[catId].push({ name: name.trim(), start: '09:00', end: '09:30' });
+      saveData();
+      renderAgendaPresetsList();
+      const body = document.querySelector(`.agenda-preset-cat-body[data-body="${catId}"]`);
+      if (body) body.classList.add('expanded');
+    }
+
+    async function addAgendaCategoryFromSide() {
+      const name = await pgPrompt('اسم الفئة الجديدة');
+      if (!name || !name.trim()) return;
+      const color = agendaColorPalette[agendaCategories.length % agendaColorPalette.length];
+      agendaCategories.push({ id: generateId(), name: name.trim(), color, icon: '🏷️' });
+      saveData();
+      renderAgendaPresetsList();
     }
 
     function openAgendaPresets() {
       const dateInput = document.getElementById('agendaPresetsDateInput');
       dateInput.value = agendaSelectedDate || formatDate(new Date());
       renderAgendaPresetsList();
-      document.getElementById('agendaPresetsModal').classList.add('open');
+      document.getElementById('agendaSideOverlay').classList.add('open');
     }
 
     function renderAgendaPresetsList() {
@@ -4275,16 +4342,16 @@
         const items = agendaPresetItems[c.id] || [];
         return `
         <div class="agenda-preset-cat">
-          <button type="button" class="agenda-preset-cat-header" data-id="${c.id}" style="border-right:4px solid ${c.color};">
+          <div class="agenda-preset-cat-header" data-catdbl="${c.id}" style="border-right:4px solid ${c.color};">
             <span>${c.icon ? c.icon + ' ' : ''}${c.name}</span>
-            <span class="agenda-preset-chevron">▾</span>
-          </button>
+            <button type="button" class="agenda-preset-fold" data-id="${c.id}">▾</button>
+          </div>
           <div class="agenda-preset-cat-body" data-body="${c.id}">
-            ${items.length === 0 ? '<div class="mini-list-empty">لا توجد بنود جاهزة لهذه الفئة</div>' : items.map((it, idx) => `
+            ${items.length === 0 ? '<div class="mini-list-empty">لا توجد بنود جاهزة</div>' : items.map((it, idx) => `
               <div class="agenda-preset-item">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                   <input type="checkbox" class="agenda-preset-check" data-cat="${c.id}" data-idx="${idx}" style="accent-color:${c.color};width:18px;height:18px;flex-shrink:0;" />
-                  <span>${it.name}</span>
+                  <span class="agenda-preset-item-name" data-cat="${c.id}" data-idx="${idx}">${it.name}</span>
                 </label>
                 <div class="agenda-preset-times" data-times="${c.id}-${idx}" style="display:none;">
                   <input type="time" class="agenda-preset-start" data-cat="${c.id}" data-idx="${idx}" value="${it.start}" />
@@ -4293,15 +4360,16 @@
                 </div>
               </div>
             `).join('')}
+            <button type="button" class="agenda-preset-add-item" data-cat="${c.id}">➕ إضافة بند</button>
           </div>
         </div>`;
-      }).join('');
+      }).join('') + `<button type="button" class="btn btn-outline" id="agendaAddCatSideBtn" style="width:100%;margin-top:10px;">➕ إضافة فئة</button>`;
 
-      wrap.querySelectorAll('.agenda-preset-cat-header').forEach(btn => {
+      wrap.querySelectorAll('.agenda-preset-fold').forEach(btn => {
         btn.addEventListener('click', () => {
           const body = wrap.querySelector(`.agenda-preset-cat-body[data-body="${btn.dataset.id}"]`);
-          body.classList.toggle('expanded');
-          btn.classList.toggle('expanded');
+          const expanded = body.classList.toggle('expanded');
+          btn.textContent = expanded ? '▴' : '▾';
         });
       });
       wrap.querySelectorAll('.agenda-preset-check').forEach(cb => {
@@ -4310,7 +4378,36 @@
           if (timesEl) timesEl.style.display = cb.checked ? 'flex' : 'none';
         });
       });
+      wrap.querySelectorAll('.agenda-preset-cat-header').forEach(header => {
+        header.addEventListener('dblclick', () => editOrDeleteAgendaCategory(header.dataset.catdbl));
+      });
+      wrap.querySelectorAll('.agenda-preset-item-name').forEach(el => {
+        el.addEventListener('dblclick', () => editOrDeletePresetItem(el.dataset.cat, parseInt(el.dataset.idx)));
+      });
+      wrap.querySelectorAll('.agenda-preset-add-item').forEach(btn => {
+        btn.addEventListener('click', () => addAgendaPresetItem(btn.dataset.cat));
+      });
+      const addCatBtn = document.getElementById('agendaAddCatSideBtn');
+      if (addCatBtn) addCatBtn.addEventListener('click', addAgendaCategoryFromSide);
     }
+
+
+    async function editOrDeletePresetItem(catId, idx) {
+      const item = agendaPresetItems[catId] && agendaPresetItems[catId][idx];
+      if (!item) return;
+      const newName = await pgPrompt('عدّل اسم البند، أو امسح النص كله واضغط حفظ عشان تحذفه', item.name);
+      if (newName === null) return;
+      if (!newName.trim()) {
+        const ok = await pgConfirm(`حذف البند "${item.name}"؟`);
+        if (!ok) return;
+        agendaPresetItems[catId].splice(idx, 1);
+      } else {
+        item.name = newName.trim();
+      }
+      saveData();
+      renderAgendaPresetsList();
+    }
+
 
     function addSelectedAgendaPresets() {
       const dateStr = document.getElementById('agendaPresetsDateInput').value;
@@ -4331,7 +4428,7 @@
         });
       });
       saveData();
-      document.getElementById('agendaPresetsModal').classList.remove('open');
+      document.getElementById('agendaSideOverlay').classList.remove('open');
       toast('تمت إضافة البنود المحددة ✅', 'success');
       renderAgendaClock();
       if (agendaSelectedDate === dateStr && document.getElementById('view-agenda-day').classList.contains('active')) {
@@ -6626,9 +6723,11 @@
       document.getElementById('agendaDayBack').addEventListener('click', closeAgendaDayPage);
       document.getElementById('agendaDayAddAllDay').addEventListener('click', () => openAgendaNoteEditor(null, null));
       document.getElementById('closeAgendaNote').addEventListener('click', () => document.getElementById('agendaNoteModal').classList.remove('open'));
-      document.getElementById('closeAgendaCatManage').addEventListener('click', () => document.getElementById('agendaCatManageModal').classList.remove('open'));
-      document.getElementById('openAgendaPresetsBtn').addEventListener('click', openAgendaPresets);
-      document.getElementById('closeAgendaPresets').addEventListener('click', () => document.getElementById('agendaPresetsModal').classList.remove('open'));
+      document.getElementById('openAgendaSideBtn').addEventListener('click', openAgendaPresets);
+      document.getElementById('openAgendaFromMonthBtn').addEventListener('click', openAgendaPresets);
+      document.getElementById('agendaViewBack').addEventListener('click', closeAgendaView);
+      document.getElementById('closeAgendaSide').addEventListener('click', () => document.getElementById('agendaSideOverlay').classList.remove('open'));
+      document.getElementById('agendaSideOverlay').addEventListener('click', (e) => { if (e.target.id === 'agendaSideOverlay') document.getElementById('agendaSideOverlay').classList.remove('open'); });
       document.getElementById('agendaPresetsAddBtn').addEventListener('click', addSelectedAgendaPresets);
       document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
       document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
@@ -6642,7 +6741,6 @@
           document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
           document.getElementById('view-' + tab.dataset.tab).classList.add('active');
           if (tab.dataset.tab === 'summary') renderStats();
-          if (tab.dataset.tab === 'agenda') renderAgendaClock();
         });
       });
 
@@ -7557,7 +7655,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -7626,6 +7724,7 @@
             yearStatsExcluded = data.yearStatsExcluded || [];
             agendaNotes = data.agendaNotes || {};
             if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
+            if (data.agendaPresetItems) agendaPresetItems = data.agendaPresetItems;
             myName = data.myName || '';
             myPhone = data.myPhone || '';
             myRole = data.myRole || 'worker';
