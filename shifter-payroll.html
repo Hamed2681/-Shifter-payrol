@@ -780,6 +780,32 @@
       width: 18px;
       height: 18px;
     }
+    .agenda-preset-item-time {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--nm-text-muted);
+      flex-shrink: 0;
+      min-width: 34px;
+    }
+    .agenda-preset-alert-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding-right: 26px;
+      font-size: 11px;
+      color: var(--nm-text-muted);
+    }
+    .agenda-preset-alert-row input[type="number"] {
+      width: 46px;
+      padding: 4px 6px;
+      border-radius: var(--nm-radius-sm);
+      border: none;
+      background: var(--nm-bg);
+      box-shadow: var(--nm-shadow-inset);
+      color: var(--nm-text);
+      font-size: 11px;
+    }
     .agenda-preset-add-item {
       display: block;
       width: 100%;
@@ -1651,9 +1677,9 @@
       transform: translateX(0);
     }
     #agendaSideDrawer {
-      width: 46vw;
-      max-width: 200px;
-      padding: 12px;
+      width: 82vw;
+      max-width: 320px;
+      padding: 14px;
       font-size: 12px;
     }
     #agendaSideDrawer h3 {
@@ -2381,10 +2407,6 @@
         <h2 id="agendaDayNavTitle" style="font-size:14px;">—</h2>
         <button class="nav-arrow" id="nextAgendaDay">‹</button>
       </div>
-      <div class="agenda-clock-wrap">
-        <svg id="agendaClockSvg" viewBox="0 0 240 240" style="width:100%;max-width:280px;margin:0 auto;display:block;"></svg>
-      </div>
-      <div id="agendaClockLegend" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-primary" id="openAgendaDayFromClock" style="flex:1;padding:8px 10px;font-size:12px;">📝 تفاصيل اليوم</button>
         <button class="btn btn-outline" id="openAgendaSideBtn" style="flex:1;padding:8px 10px;font-size:12px;">📁 الفئات</button>
@@ -2414,6 +2436,13 @@
       </div>
       <div id="agendaPresetsList" style="margin-top:14px;"></div>
       <button class="btn btn-primary" id="agendaPresetsAddBtn" style="width:100%;margin-top:14px;">➕ إضافة المحدد</button>
+      <div style="margin-top:20px;border-top:1px solid rgba(163,177,198,0.25);padding-top:14px;">
+        <h3 style="margin:0 0 8px;font-size:13px;">🕐 نظرة على اليوم</h3>
+        <div class="agenda-clock-wrap">
+          <svg id="agendaClockSvg" viewBox="0 0 240 240" style="width:100%;max-width:220px;margin:0 auto;display:block;"></svg>
+        </div>
+        <div id="agendaClockLegend" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;"></div>
+      </div>
     </nav>
   </div>
 
@@ -2442,7 +2471,9 @@
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
         <input type="checkbox" id="agendaNoteAlertCb" style="accent-color:var(--nm-primary);width:18px;height:18px;" />
-        <label for="agendaNoteAlertCb" style="font-size:13px;cursor:pointer;">🔔 نبهني عند بدء الوقت (محتاج التطبيق يكون مفتوح)</label>
+        <label for="agendaNoteAlertCb" style="font-size:13px;cursor:pointer;">🔔 نبهني قبل بدء الوقت بـ</label>
+        <input type="number" id="agendaNoteAlertBeforeInput" min="0" max="180" value="0" style="width:50px;padding:6px 8px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:13px;" />
+        <span style="font-size:12px;color:var(--nm-text-muted);">دقيقة</span>
       </div>
       <div class="modal-actions" style="margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-primary" id="agendaNoteSaveBtn" style="flex:1;">💾 حفظ</button>
@@ -3165,11 +3196,11 @@
     // بنود جاهزة لكل فئة (تقدر تعدّل توقيتها قبل الإضافة) — دي بنود اقتراحية بس، الفئات المخصصة اللي المستخدم يضيفها ملهاش بنود جاهزة
     let agendaPresetItems = {
       religious: [
-        { name: 'صلاة الفجر', start: '05:00', end: '05:20' },
-        { name: 'صلاة الظهر', start: '12:00', end: '12:20' },
-        { name: 'صلاة العصر', start: '15:30', end: '15:50' },
-        { name: 'صلاة المغرب', start: '18:00', end: '18:20' },
-        { name: 'صلاة العشاء', start: '19:30', end: '19:50' }
+        { name: 'صلاة الفجر', start: '05:00', end: '05:20', alert: true, alertBefore: 15 },
+        { name: 'صلاة الظهر', start: '12:00', end: '12:20', alert: true, alertBefore: 15 },
+        { name: 'صلاة العصر', start: '15:30', end: '15:50', alert: true, alertBefore: 15 },
+        { name: 'صلاة المغرب', start: '18:00', end: '18:20', alert: true, alertBefore: 15 },
+        { name: 'صلاة العشاء', start: '19:30', end: '19:50', alert: true, alertBefore: 15 }
       ],
       personal: [
         { name: 'وقت راحة', start: '13:00', end: '13:30' },
@@ -4332,7 +4363,9 @@
     function openAgendaPresets() {
       const dateInput = document.getElementById('agendaPresetsDateInput');
       dateInput.value = agendaSelectedDate || formatDate(new Date());
+      agendaSelectedDate = dateInput.value;
       renderAgendaPresetsList();
+      renderAgendaClock();
       document.getElementById('agendaSideOverlay').classList.add('open');
     }
 
@@ -4351,12 +4384,21 @@
               <div class="agenda-preset-item">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                   <input type="checkbox" class="agenda-preset-check" data-cat="${c.id}" data-idx="${idx}" style="accent-color:${c.color};width:18px;height:18px;flex-shrink:0;" />
+                  <span class="agenda-preset-item-time">${it.start}</span>
                   <span class="agenda-preset-item-name" data-cat="${c.id}" data-idx="${idx}">${it.name}</span>
                 </label>
                 <div class="agenda-preset-times" data-times="${c.id}-${idx}" style="display:none;">
                   <input type="time" class="agenda-preset-start" data-cat="${c.id}" data-idx="${idx}" value="${it.start}" />
                   <span>—</span>
                   <input type="time" class="agenda-preset-end" data-cat="${c.id}" data-idx="${idx}" value="${it.end}" />
+                </div>
+                <div class="agenda-preset-alert-row" data-alertrow="${c.id}-${idx}" style="display:none;">
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                    <input type="checkbox" class="agenda-preset-alert-cb" data-cat="${c.id}" data-idx="${idx}" ${it.alert ? 'checked' : ''} style="accent-color:${c.color};width:14px;height:14px;" />
+                    🔔 نبهني قبل
+                  </label>
+                  <input type="number" min="0" max="180" class="agenda-preset-alert-before" data-cat="${c.id}" data-idx="${idx}" value="${it.alertBefore || 0}" />
+                  <span>دقيقة</span>
                 </div>
               </div>
             `).join('')}
@@ -4374,8 +4416,11 @@
       });
       wrap.querySelectorAll('.agenda-preset-check').forEach(cb => {
         cb.addEventListener('change', () => {
-          const timesEl = wrap.querySelector(`.agenda-preset-times[data-times="${cb.dataset.cat}-${cb.dataset.idx}"]`);
+          const key = `${cb.dataset.cat}-${cb.dataset.idx}`;
+          const timesEl = wrap.querySelector(`.agenda-preset-times[data-times="${key}"]`);
+          const alertRowEl = wrap.querySelector(`.agenda-preset-alert-row[data-alertrow="${key}"]`);
           if (timesEl) timesEl.style.display = cb.checked ? 'flex' : 'none';
+          if (alertRowEl) alertRowEl.style.display = cb.checked ? 'flex' : 'none';
         });
       });
       wrap.querySelectorAll('.agenda-preset-cat-header').forEach(header => {
@@ -4421,16 +4466,23 @@
         const item = agendaPresetItems[catId][idx];
         const startEl = wrap.querySelector(`.agenda-preset-start[data-cat="${catId}"][data-idx="${idx}"]`);
         const endEl = wrap.querySelector(`.agenda-preset-end[data-cat="${catId}"][data-idx="${idx}"]`);
+        const alertCbEl = wrap.querySelector(`.agenda-preset-alert-cb[data-cat="${catId}"][data-idx="${idx}"]`);
+        const alertBeforeEl = wrap.querySelector(`.agenda-preset-alert-before[data-cat="${catId}"][data-idx="${idx}"]`);
+        const alert = alertCbEl ? alertCbEl.checked : false;
+        const alertBefore = alertBeforeEl ? (parseInt(alertBeforeEl.value) || 0) : 0;
         agendaNotes[dateStr].push({
           id: generateId(), text: item.name, done: false,
           time: startEl.value || item.start, endTime: endEl.value || item.end,
-          categoryId: catId, alert: false, alerted: false
+          categoryId: catId, alert, alertBefore, alerted: false
         });
       });
       saveData();
       document.getElementById('agendaSideOverlay').classList.remove('open');
       toast('تمت إضافة البنود المحددة ✅', 'success');
       renderAgendaClock();
+      if (checked.length && [...checked].some(cb => document.querySelector(`.agenda-preset-alert-cb[data-cat="${cb.dataset.cat}"][data-idx="${cb.dataset.idx}"]`)?.checked)) {
+        requestAgendaNotifPermission();
+      }
       if (agendaSelectedDate === dateStr && document.getElementById('view-agenda-day').classList.contains('active')) {
         renderAgendaDayPage();
       }
@@ -4444,6 +4496,7 @@
       document.getElementById('agendaNoteTimeInput').value = note ? (note.time || '') : (presetHour !== undefined && presetHour !== null ? String(presetHour).padStart(2, '0') + ':00' : '');
       document.getElementById('agendaNoteEndTimeInput').value = note ? (note.endTime || '') : '';
       document.getElementById('agendaNoteAlertCb').checked = note ? !!note.alert : false;
+      document.getElementById('agendaNoteAlertBeforeInput').value = note ? (note.alertBefore || 0) : 0;
       document.getElementById('agendaNoteDeleteBtn').style.display = note ? 'block' : 'none';
       renderAgendaCategoryPicker(note ? note.categoryId : agendaCategories[0].id);
       document.getElementById('agendaNoteModal').classList.add('open');
@@ -4456,17 +4509,18 @@
       const time = document.getElementById('agendaNoteTimeInput').value || null;
       const endTime = document.getElementById('agendaNoteEndTimeInput').value || null;
       const alert = document.getElementById('agendaNoteAlertCb').checked;
+      const alertBefore = parseInt(document.getElementById('agendaNoteAlertBeforeInput').value) || 0;
       const categoryId = document.getElementById('agendaCategoryPicker').dataset.selected || agendaCategories[0].id;
       if (!agendaNotes[agendaSelectedDate]) agendaNotes[agendaSelectedDate] = [];
       if (agendaEditingNoteId) {
         const note = agendaNotes[agendaSelectedDate].find(n => n.id === agendaEditingNoteId);
         if (note) {
           const timeChanged = note.time !== time;
-          note.text = text; note.time = time; note.endTime = endTime; note.categoryId = categoryId; note.alert = alert;
+          note.text = text; note.time = time; note.endTime = endTime; note.categoryId = categoryId; note.alert = alert; note.alertBefore = alertBefore;
           if (timeChanged) note.alerted = false;
         }
       } else {
-        agendaNotes[agendaSelectedDate].push({ id: generateId(), text, done: false, time, endTime, categoryId, alert, alerted: false });
+        agendaNotes[agendaSelectedDate].push({ id: generateId(), text, done: false, time, endTime, categoryId, alert, alertBefore, alerted: false });
       }
       saveData();
       document.getElementById('agendaNoteModal').classList.remove('open');
@@ -4494,23 +4548,27 @@
       const todayStr = formatDate(new Date());
       const notes = agendaNotes[todayStr] || [];
       const now = new Date();
-      const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const nowMin = now.getHours() * 60 + now.getMinutes();
       let changed = false;
       notes.forEach(n => {
-        if (n.alert && !n.alerted && !n.done && n.time && n.time <= nowHM) {
-          const cat = getAgendaCategory(n.categoryId);
-          const title = '⏰ تذكير - ' + (cat ? cat.name : '');
-          if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
-            navigator.serviceWorker.getRegistration().then(reg => {
-              if (reg) reg.showNotification(title, { body: n.text, icon: 'icon-192.png' });
-              else new Notification(title, { body: n.text });
-            }).catch(() => { try { new Notification(title, { body: n.text }); } catch (e) {} });
-          } else {
-            try { new Notification(title, { body: n.text }); } catch (e) {}
-          }
-          n.alerted = true;
-          changed = true;
+        if (!n.alert || n.alerted || n.done || !n.time) return;
+        const [th, tm] = n.time.split(':').map(Number);
+        const triggerMin = th * 60 + tm - (n.alertBefore || 0);
+        if (triggerMin > nowMin) return;
+        const cat = getAgendaCategory(n.categoryId);
+        const beforeTxt = n.alertBefore ? ` (بعد ${n.alertBefore} دقيقة)` : '';
+        const title = '⏰ تذكير - ' + (cat ? cat.name : '');
+        const body = n.text + beforeTxt;
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg) reg.showNotification(title, { body, icon: 'icon-192.png' });
+            else new Notification(title, { body });
+          }).catch(() => { try { new Notification(title, { body }); } catch (e) {} });
+        } else {
+          try { new Notification(title, { body }); } catch (e) {}
         }
+        n.alerted = true;
+        changed = true;
       });
       if (changed) saveData();
     }
@@ -6729,6 +6787,7 @@
       document.getElementById('closeAgendaSide').addEventListener('click', () => document.getElementById('agendaSideOverlay').classList.remove('open'));
       document.getElementById('agendaSideOverlay').addEventListener('click', (e) => { if (e.target.id === 'agendaSideOverlay') document.getElementById('agendaSideOverlay').classList.remove('open'); });
       document.getElementById('agendaPresetsAddBtn').addEventListener('click', addSelectedAgendaPresets);
+      document.getElementById('agendaPresetsDateInput').addEventListener('change', function() { agendaSelectedDate = this.value; renderAgendaClock(); });
       document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
       document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
       document.getElementById('agendaNoteClearTime').addEventListener('click', () => { document.getElementById('agendaNoteTimeInput').value = ''; document.getElementById('agendaNoteEndTimeInput').value = ''; });
