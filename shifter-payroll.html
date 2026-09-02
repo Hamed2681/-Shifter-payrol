@@ -2063,8 +2063,6 @@
         </select>
       </div>
       <div class="side-menu-divider"></div>
-      <button class="side-menu-item" id="menuDeptSchedule">📋 جدول القسم</button>
-      <button class="side-menu-item" id="menuImportMyShifts">🔄 استيراد ورديتي من جدول القسم</button>
       <button class="side-menu-item" id="menuShareImport">📲 استيراد رسالة تبديل</button>
       <button class="side-menu-item" id="menuSendEmpRequest">✉️ إرسال نموذج جاهز لموظف</button>
       <button class="side-menu-item" id="menuCopyTemplate">📋 نسخ نموذج الرسالة للموظفين</button>
@@ -2092,9 +2090,13 @@
         <h2 id="monthTitle">JULY 2026</h2>
         <button class="nav-arrow" id="nextMonth">‹</button>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button class="btn btn-outline" id="toggleBreakdownView" style="flex:1;">📊 عرض تقسيم اليوم</button>
-        <button class="btn btn-outline" id="openAgendaFromMonthBtn" style="flex:1;">📁 الأجندة</button>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button class="btn btn-outline" id="toggleBreakdownView" style="flex:1;padding:6px 8px;font-size:11px;">📊 عرض تقسيم اليوم</button>
+        <button class="btn btn-outline" id="openAgendaFromMonthBtn" style="flex:1;padding:6px 8px;font-size:11px;">📁 الأجندة</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button class="btn btn-outline" id="deptScheduleFromMonthBtn" style="flex:1;padding:6px 8px;font-size:11px;">📋 جدول القسم</button>
+        <button class="btn btn-outline" id="myShiftsFromMonthBtn" style="flex:1;padding:6px 8px;font-size:11px;">🔄 ورديتي</button>
       </div>
       <div class="weekdays" id="weekdaysRow"></div>
       <div class="calendar" id="calendar"></div>
@@ -2774,7 +2776,7 @@
 
 
 
-  <div class="modal" id="pgPromptModal" style="z-index:230;">
+  <div class="modal" id="pgPromptModal" style="z-index:400;">
     <div class="modal-content" style="max-width:420px;">
       <button class="modal-close" id="pgPromptClose">⌃</button>
       <h3 id="pgPromptTitle">إدخال</h3>
@@ -2788,7 +2790,7 @@
     </div>
   </div>
 
-  <div class="modal" id="pgConfirmModal" style="z-index:231;">
+  <div class="modal" id="pgConfirmModal" style="z-index:401;">
     <div class="modal-content" style="max-width:420px;">
       <button class="modal-close" id="pgConfirmClose">⌃</button>
       <h3 id="pgConfirmTitle" style="line-height:1.6;">تأكيد</h3>
@@ -3886,7 +3888,7 @@
 
     // معالجة الضغط على يوم في التقويم: أول ضغط بوردية يحطها أساسية، أي ضغط تاني بوردية مختلفة يضيفها فوق (لحد 3)، وضغط نفس الوردية تاني يشيلها
     function handleDayTap(dateStr) {
-      if (!selectedShiftId) return;
+      if (!selectedShiftId) { openAgendaDay(dateStr); return; }
       // أي تعديل يدوي على اليوم يفكّه من علامة "مستورد من جدول القسم" — بقى ملك المستخدم واستيراد جدول القسم مايلمسوش تاني
       delete deptImportedDays[dateStr];
       if (selectedShiftId === ERASE_ID) {
@@ -6829,8 +6831,7 @@
       document.getElementById('closeSideMenu').addEventListener('click', () => { document.getElementById('sideMenuOverlay').classList.remove('open'); });
       document.getElementById('sideMenuOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) document.getElementById('sideMenuOverlay').classList.remove('open'); });
 
-      document.getElementById('menuDeptSchedule').addEventListener('click', () => {
-        document.getElementById('sideMenuOverlay').classList.remove('open');
+      document.getElementById('deptScheduleFromMonthBtn').addEventListener('click', () => {
         deptSchYear = currentYear !== undefined ? currentYear : new Date().getFullYear();
         deptSchMonth = currentMonth !== undefined ? currentMonth : new Date().getMonth();
         deptDailyDay = new Date().getDate();
@@ -6856,8 +6857,7 @@
         document.getElementById('genScheduleModal').classList.remove('open');
       });
 
-      document.getElementById('menuImportMyShifts').addEventListener('click', () => {
-        document.getElementById('sideMenuOverlay').classList.remove('open');
+      document.getElementById('myShiftsFromMonthBtn').addEventListener('click', () => {
         importMyShiftsFromDeptSchedule();
       });
       document.getElementById('menuShareImport').addEventListener('click', async () => {
