@@ -817,6 +817,60 @@
       color: var(--nm-primary);
       cursor: pointer;
     }
+    .day-notes-folder {
+      margin-bottom: 10px;
+      border-radius: var(--nm-radius-sm);
+      overflow: hidden;
+      box-shadow: var(--nm-shadow-sm);
+    }
+    .day-notes-folder-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--nm-bg);
+      border: none;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--nm-text);
+      cursor: pointer;
+    }
+    .day-notes-count {
+      background: var(--nm-bg);
+      box-shadow: var(--nm-shadow-sm-inset);
+      border-radius: var(--nm-radius-full);
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--nm-text-muted);
+    }
+    .day-notes-chevron {
+      font-size: 12px;
+      color: var(--nm-text-muted);
+    }
+    .day-notes-folder-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+      background: var(--nm-bg);
+      padding: 0 10px;
+    }
+    .day-notes-folder-body.expanded {
+      max-height: 1000px;
+      padding: 10px;
+    }
+    .day-notes-add-item {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: 1px dashed rgba(163, 177, 198, 0.4);
+      border-radius: var(--nm-radius-sm);
+      padding: 8px;
+      font-size: 12px;
+      color: var(--nm-primary);
+      cursor: pointer;
+      margin-top: 4px;
+    }
     .day.future-day {
       opacity: 0.4;
     }
@@ -2425,6 +2479,16 @@
       <div id="agendaAllDayList" style="margin-bottom:14px;"></div>
       <div class="agenda-hours" id="agendaHoursGrid"></div>
     </section>
+
+    <!-- Day Notes (Simple, folder-based) View -->
+    <section class="view" id="view-day-notes">
+      <div class="month-nav">
+        <button class="nav-arrow" id="dayNotesBack">→</button>
+        <h2 id="dayNotesTitle" style="font-size:15px;">—</h2>
+        <button class="nav-arrow" id="dayNotesAddBtn">+</button>
+      </div>
+      <div id="dayNotesFolders"></div>
+    </section>
   </main>
 
   <!-- Modals -->
@@ -3888,7 +3952,7 @@
 
     // معالجة الضغط على يوم في التقويم: أول ضغط بوردية يحطها أساسية، أي ضغط تاني بوردية مختلفة يضيفها فوق (لحد 3)، وضغط نفس الوردية تاني يشيلها
     function handleDayTap(dateStr) {
-      if (!selectedShiftId) { openAgendaDay(dateStr); return; }
+      if (!selectedShiftId) { openDayNotesPage(dateStr); return; }
       // أي تعديل يدوي على اليوم يفكّه من علامة "مستورد من جدول القسم" — بقى ملك المستخدم واستيراد جدول القسم مايلمسوش تاني
       delete deptImportedDays[dateStr];
       if (selectedShiftId === ERASE_ID) {
@@ -4230,6 +4294,91 @@
       if (agendaPrevTab === 'agenda') renderAgendaClock();
     }
 
+    function openDayNotesPage(dateStr) {
+      agendaSelectedDate = dateStr;
+      agendaPrevTab = document.querySelector('.tab.active')?.dataset.tab || 'month';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-day-notes').classList.add('active');
+      renderDayNotesPage();
+    }
+
+    function closeDayNotesPage() {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-day-notes').classList.remove('active');
+      document.getElementById('view-' + agendaPrevTab).classList.add('active');
+      const tabBtn = document.querySelector(`.tab[data-tab="${agendaPrevTab}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+      if (agendaPrevTab === 'agenda') renderAgendaClock();
+    }
+
+    function renderDayNotesPage() {
+      if (!agendaSelectedDate) return;
+      const d = parseDate(agendaSelectedDate);
+      const title = d.toLocaleString(translations[uiLang].locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('dayNotesTitle').textContent = title;
+
+      const notes = (agendaNotes[agendaSelectedDate] || []).slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      const wrap = document.getElementById('dayNotesFolders');
+      wrap.innerHTML = agendaCategories.map(c => {
+        const catNotes = notes.filter(n => n.categoryId === c.id);
+        return `
+        <div class="day-notes-folder">
+          <button type="button" class="day-notes-folder-header" data-fold="${c.id}" style="border-right:4px solid ${c.color};">
+            <span>${c.icon ? c.icon + ' ' : ''}${c.name}</span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <span class="day-notes-count">${catNotes.length}</span>
+              <span class="day-notes-chevron" data-chev="${c.id}">▾</span>
+            </span>
+          </button>
+          <div class="day-notes-folder-body expanded" data-foldbody="${c.id}">
+            ${catNotes.length === 0 ? '<div class="mini-list-empty">لا توجد ملاحظات</div>' : catNotes.map(n => `
+              <div class="mini-list-item day-notes-item" data-id="${n.id}" style="margin-bottom:6px;${n.done ? 'opacity:0.55;' : ''}">
+                <span class="mli-info day-notes-item-toggle" data-id="${n.id}" style="cursor:pointer;flex:1;min-width:0;display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:15px;flex-shrink:0;">${n.done ? '✅' : '⬜'}</span>
+                  <span class="mli-name" style="${n.done ? 'text-decoration:line-through;' : ''}">${n.time ? n.time + ' — ' : ''}${n.text}</span>
+                </span>
+                <button class="mli-del day-notes-item-del" data-id="${n.id}">×</button>
+              </div>
+            `).join('')}
+            <button type="button" class="day-notes-add-item" data-cat="${c.id}">➕ إضافة ملاحظة في "${c.name}"</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      wrap.querySelectorAll('.day-notes-folder-header').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const body = wrap.querySelector(`.day-notes-folder-body[data-foldbody="${btn.dataset.fold}"]`);
+          const chev = wrap.querySelector(`.day-notes-chevron[data-chev="${btn.dataset.fold}"]`);
+          const expanded = body.classList.toggle('expanded');
+          chev.textContent = expanded ? '▴' : '▾';
+        });
+      });
+      wrap.querySelectorAll('.day-notes-item-toggle').forEach(el => {
+        el.addEventListener('click', () => {
+          const note = (agendaNotes[agendaSelectedDate] || []).find(n => n.id === el.dataset.id);
+          if (note) { note.done = !note.done; saveData(); renderDayNotesPage(); }
+        });
+        el.addEventListener('dblclick', () => openAgendaNoteEditor(el.dataset.id));
+      });
+      wrap.querySelectorAll('.day-notes-item-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          agendaNotes[agendaSelectedDate] = (agendaNotes[agendaSelectedDate] || []).filter(n => n.id !== btn.dataset.id);
+          if (agendaNotes[agendaSelectedDate].length === 0) delete agendaNotes[agendaSelectedDate];
+          saveData(); renderDayNotesPage();
+        });
+      });
+      wrap.querySelectorAll('.day-notes-add-item').forEach(btn => {
+        btn.addEventListener('click', () => openAgendaNoteEditorForCategory(btn.dataset.cat));
+      });
+    }
+
+    function openAgendaNoteEditorForCategory(categoryId) {
+      openAgendaNoteEditor(null, null);
+      document.getElementById('agendaCategoryPicker').dataset.selected = categoryId;
+      renderAgendaCategoryPicker(categoryId);
+    }
+
     function getAgendaCategory(id) {
       return agendaCategories.find(c => c.id === id) || agendaCategories[agendaCategories.length - 1];
     }
@@ -4531,8 +4680,13 @@
       }
       saveData();
       document.getElementById('agendaNoteModal').classList.remove('open');
-      renderAgendaDayPage();
+      refreshActiveDayPage();
       if (alert) requestAgendaNotifPermission();
+    }
+
+    function refreshActiveDayPage() {
+      if (document.getElementById('view-agenda-day').classList.contains('active')) renderAgendaDayPage();
+      if (document.getElementById('view-day-notes').classList.contains('active')) renderDayNotesPage();
     }
 
     function deleteAgendaNoteFromEditor() {
@@ -4541,7 +4695,7 @@
       if (agendaNotes[agendaSelectedDate].length === 0) delete agendaNotes[agendaSelectedDate];
       saveData();
       document.getElementById('agendaNoteModal').classList.remove('open');
-      renderAgendaDayPage();
+      refreshActiveDayPage();
     }
 
     function requestAgendaNotifPermission() {
@@ -6787,6 +6941,8 @@
       document.getElementById('openAgendaDayFromClock').addEventListener('click', () => openAgendaDay(agendaSelectedDate || formatDate(new Date())));
       document.getElementById('agendaDayBack').addEventListener('click', closeAgendaDayPage);
       document.getElementById('agendaDayAddAllDay').addEventListener('click', () => openAgendaNoteEditor(null, null));
+      document.getElementById('dayNotesBack').addEventListener('click', closeDayNotesPage);
+      document.getElementById('dayNotesAddBtn').addEventListener('click', () => openAgendaNoteEditor(null, null));
       document.getElementById('closeAgendaNote').addEventListener('click', () => document.getElementById('agendaNoteModal').classList.remove('open'));
       document.getElementById('openAgendaSideBtn').addEventListener('click', openAgendaPresets);
       document.getElementById('openAgendaFromMonthBtn').addEventListener('click', openAgendaPresets);
