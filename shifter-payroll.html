@@ -2500,6 +2500,8 @@
         <label style="font-size:12px;color:var(--nm-text-muted);">لأي يوم؟</label>
         <input type="date" id="agendaPresetsDateInput" style="width:100%;padding:10px 14px;border-radius:var(--nm-radius-sm);border:none;background:var(--nm-bg);box-shadow:var(--nm-shadow-inset);color:var(--nm-text);font-size:14px;box-sizing:border-box;margin-top:4px;" />
       </div>
+      <button type="button" class="btn btn-outline" id="updatePrayerTimesBtn" style="width:100%;margin-top:10px;font-size:11px;padding:8px;">🕌📍 تحديث أوقات الصلاة حسب موقعي الحالي</button>
+      <div id="prayerTimesStatus" style="font-size:10px;color:var(--nm-text-muted);text-align:center;margin-top:4px;"></div>
       <div id="agendaPresetsList" style="margin-top:14px;"></div>
       <button class="btn btn-primary" id="agendaPresetsAddBtn" style="width:100%;margin-top:14px;">➕ إضافة المحدد</button>
       <div style="margin-top:20px;border-top:1px solid rgba(163,177,198,0.25);padding-top:14px;">
@@ -3248,6 +3250,8 @@
     let agendaNotes = {}; // 'YYYY-MM-DD' -> [{id, text, done, time, categoryId, alert, alerted}]
     let agendaSelectedDate = null;
     let agendaEditingNoteId = null; // null = إضافة جديد، غير null = تعديل موجود
+    let agendaPrayerCoords = null; // {latitude, longitude} آخر موقع تم تحديد أوقات الصلاة عليه
+    let agendaPrayerLastFetchDate = null; // آخر تاريخ (YYYY-MM-DD) تم فيه تحديث أوقات الصلاة فعليًا من الإنترنت
     let agendaCategories = [
       { id: 'religious', name: 'دينية', color: '#d4a017', icon: '🕌' },
       { id: 'personal', name: 'شخصية', color: '#2563eb', icon: '👤' },
@@ -3839,7 +3843,7 @@
     // حفظ واسترجاع
     function saveData() {
       try {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, agendaPrayerCoords, agendaPrayerLastFetchDate, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         localStorage.setItem('shifterData_' + currentCompany, JSON.stringify(data));
         saveCompaniesMeta();
       } catch(e) {}
@@ -3903,6 +3907,8 @@
         agendaNotes = data.agendaNotes || {};
         if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
         if (data.agendaPresetItems) agendaPresetItems = data.agendaPresetItems;
+        agendaPrayerCoords = data.agendaPrayerCoords || null;
+        agendaPrayerLastFetchDate = data.agendaPrayerLastFetchDate || null;
         myName = data.myName || '';
         myPhone = data.myPhone || '';
         myRole = data.myRole || 'worker';
@@ -4516,13 +4522,88 @@
       renderAgendaPresetsList();
     }
 
+    function addMinutesToTime(hhmm, mins) {
+      const [h, m] = hhmm.split(':').map(Number);
+      let total = h * 60 + m + mins;
+      total = ((total % 1440) + 1440) % 1440;
+      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+    }
+
+    function applyPrayerTimesToPresets(times) {
+      const items = agendaPresetItems.religious;
+      if (!items) return;
+      const map = {
+        'سنة الفجر القبلية (ركعتان)': [addMinutesToTime(times.fajr, -10), times.fajr],
+        'صلاة الفجر': [times.fajr, addMinutesToTime(times.fajr, 20)],
+        'سنة الظهر القبلية (أربع ركعات)': [addMinutesToTime(times.dhuhr, -20), times.dhuhr],
+        'صلاة الظهر': [times.dhuhr, addMinutesToTime(times.dhuhr, 20)],
+        'سنة الظهر البعدية (ركعتان)': [addMinutesToTime(times.dhuhr, 20), addMinutesToTime(times.dhuhr, 30)],
+        'صلاة العصر': [times.asr, addMinutesToTime(times.asr, 20)],
+        'صلاة المغرب': [times.maghrib, addMinutesToTime(times.maghrib, 20)],
+        'سنة المغرب البعدية (ركعتان)': [addMinutesToTime(times.maghrib, 20), addMinutesToTime(times.maghrib, 30)],
+        'صلاة العشاء': [times.isha, addMinutesToTime(times.isha, 20)],
+        'سنة العشاء البعدية (ركعتان)': [addMinutesToTime(times.isha, 20), addMinutesToTime(times.isha, 30)]
+      };
+      items.forEach(it => {
+        if (map[it.name]) { it.start = map[it.name][0]; it.end = map[it.name][1]; }
+      });
+    }
+
+    async function fetchAndApplyPrayerTimes(latitude, longitude) {
+      try {
+        const today = new Date();
+        const dateStr = String(today.getDate()).padStart(2, '0') + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + today.getFullYear();
+        const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=5`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data || !data.data || !data.data.timings) throw new Error('bad response');
+        const t = data.data.timings;
+        const clean = (s) => s.split(' ')[0];
+        applyPrayerTimesToPresets({
+          fajr: clean(t.Fajr), dhuhr: clean(t.Dhuhr), asr: clean(t.Asr), maghrib: clean(t.Maghrib), isha: clean(t.Isha)
+        });
+        agendaPrayerCoords = { latitude, longitude };
+        agendaPrayerLastFetchDate = formatDate(today);
+        saveData();
+        toast('تم تحديث أوقات الصلاة حسب موقعك الحالي ✅', 'success');
+        renderAgendaPresetsList();
+        updatePrayerTimesStatusDisplay();
+      } catch (e) {
+        toast('تعذّر جلب أوقات الصلاة — تأكد من الاتصال بالإنترنت وحاول تاني', 'error');
+      }
+    }
+
+    function updatePrayerTimesFromLocation() {
+      if (!navigator.geolocation) { toast('تحديد الموقع مش متاح على المتصفح ده', 'error'); return; }
+      toast('بنحدد موقعك الجغرافي...', 'success');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { fetchAndApplyPrayerTimes(pos.coords.latitude, pos.coords.longitude); },
+        (err) => { toast('تعذّر تحديد الموقع: ' + (err.message || 'مرفوض الإذن'), 'error'); },
+        { enableHighAccuracy: false, timeout: 12000 }
+      );
+    }
+
     function openAgendaPresets() {
       const dateInput = document.getElementById('agendaPresetsDateInput');
       dateInput.value = agendaSelectedDate || formatDate(new Date());
       agendaSelectedDate = dateInput.value;
       renderAgendaPresetsList();
       renderAgendaClock();
+      updatePrayerTimesStatusDisplay();
       document.getElementById('agendaSideOverlay').classList.add('open');
+    }
+
+    function updatePrayerTimesStatusDisplay() {
+      const el = document.getElementById('prayerTimesStatus');
+      if (!el) return;
+      const todayStr = formatDate(new Date());
+      if (agendaPrayerLastFetchDate === todayStr) {
+        el.textContent = '✅ محدّثة النهاردة حسب موقعك';
+      } else if (agendaPrayerLastFetchDate) {
+        el.textContent = `⚠️ آخر تحديث: ${agendaPrayerLastFetchDate} — دوس تاني عشان تحدّثها للنهاردة`;
+      } else {
+        el.textContent = 'الأوقات الحالية افتراضية — دوس فوق عشان تحدّثها حسب موقعك الفعلي';
+      }
     }
 
     function renderAgendaPresetsList() {
@@ -6951,6 +7032,7 @@
       document.getElementById('agendaSideOverlay').addEventListener('click', (e) => { if (e.target.id === 'agendaSideOverlay') document.getElementById('agendaSideOverlay').classList.remove('open'); });
       document.getElementById('agendaPresetsAddBtn').addEventListener('click', addSelectedAgendaPresets);
       document.getElementById('agendaPresetsDateInput').addEventListener('change', function() { agendaSelectedDate = this.value; renderAgendaClock(); });
+      document.getElementById('updatePrayerTimesBtn').addEventListener('click', updatePrayerTimesFromLocation);
       document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
       document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
       document.getElementById('agendaNoteClearTime').addEventListener('click', () => { document.getElementById('agendaNoteTimeInput').value = ''; document.getElementById('agendaNoteEndTimeInput').value = ''; });
@@ -7875,7 +7957,7 @@
       })();
 
       document.getElementById('menuExport').addEventListener('click', () => {
-        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
+        const data = { shifts, schedule, scheduleExtra, deptImportedDays, additionTypes, deductionTypes, holidays, leavePrev, leaveAccrued, absenceDayValue, penaltyDayValue, prevPenaltyDays, prevPenaltyDeducted, prevPenaltyDayValue, holidayMode, appAllowanceMode, restAllowanceMode, holidayAllowanceValue, appAllowanceValueManual, restAllowanceValueManual, absenceAutoApply, prevPenaltyAutoApply, prevPenaltyLastConfirmedPeriod, weekStart, autoAllowanceTypes, autoDeductionTypes, currentYear, currentMonth, deptEmployees, deptGroups, deptSchedule, savedPayFrom, savedPayTo, savedStatsFrom, savedStatsTo, savedLeaveFrom, savedLeaveTo, yearStatsExcluded, agendaNotes, agendaCategories, agendaPresetItems, agendaPrayerCoords, agendaPrayerLastFetchDate, myName, myPhone, myRole, myExtraPhones, managerName, managerPhone, managerPassword, myDeptEmpId };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -7945,6 +8027,8 @@
             agendaNotes = data.agendaNotes || {};
             if (data.agendaCategories && data.agendaCategories.length) agendaCategories = data.agendaCategories;
             if (data.agendaPresetItems) agendaPresetItems = data.agendaPresetItems;
+            agendaPrayerCoords = data.agendaPrayerCoords || null;
+            agendaPrayerLastFetchDate = data.agendaPrayerLastFetchDate || null;
             myName = data.myName || '';
             myPhone = data.myPhone || '';
             myRole = data.myRole || 'worker';
