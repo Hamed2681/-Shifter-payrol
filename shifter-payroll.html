@@ -759,6 +759,28 @@
       color: var(--nm-text);
       font-size: 12px;
     }
+    .agenda-preset-recur-btn {
+      background: transparent;
+      border: none;
+      font-size: 13px;
+      opacity: 0.35;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0 2px;
+    }
+    .agenda-preset-recur-btn.active {
+      opacity: 1;
+    }
+    .agenda-preset-item.recurrence-match {
+      background: rgba(37, 99, 235, 0.08);
+      border-radius: var(--nm-radius-sm);
+    }
+    .agenda-preset-recur-note {
+      font-size: 10px;
+      color: var(--nm-primary);
+      padding-right: 26px;
+      margin-top: 2px;
+    }
     #agendaSideDrawer .agenda-preset-item {
       padding: 6px 4px;
     }
@@ -3279,7 +3301,9 @@
         { name: 'صلاة المغرب', start: '18:00', end: '18:20', alert: true, alertBefore: 15, kind: 'maghrib' },
         { name: 'سنة المغرب البعدية (ركعتان)', start: '18:20', end: '18:30', alert: true, alertBefore: 5, kind: 'maghrib_sunnah_after' },
         { name: 'صلاة العشاء', start: '19:30', end: '19:50', alert: true, alertBefore: 15, kind: 'isha' },
-        { name: 'سنة العشاء البعدية (ركعتان)', start: '19:50', end: '20:00', alert: true, alertBefore: 5, kind: 'isha_sunnah_after' }
+        { name: 'سنة العشاء البعدية (ركعتان)', start: '19:50', end: '20:00', alert: true, alertBefore: 5, kind: 'isha_sunnah_after' },
+        { name: 'صيام الاثنين والخميس', start: null, end: null, alert: false, recurrence: { type: 'weekly', days: [1, 4] } },
+        { name: 'صيام الأيام البيض (13-14-15 هجري)', start: null, end: null, alert: false, recurrence: { type: 'hijri-monthly', days: [13, 14, 15] } }
       ],
       personal: [
         { name: 'وقت راحة', start: '13:00', end: '13:30' },
@@ -4667,8 +4691,77 @@
       }
     }
 
+    function getHijriDay(date) {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric' });
+        const v = parseInt(fmt.format(date));
+        return isNaN(v) ? null : v;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function itemMatchesRecurrence(item, date) {
+      if (!item.recurrence) return false;
+      if (item.recurrence.type === 'weekly') return item.recurrence.days.includes(date.getDay());
+      if (item.recurrence.type === 'hijri-monthly') {
+        const hd = getHijriDay(date);
+        return hd !== null && item.recurrence.days.includes(hd);
+      }
+      return false;
+    }
+
+    const weekDayNamesAr = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    function describeRecurrence(r) {
+      if (!r) return 'بدون تكرار';
+      if (r.type === 'weekly') return '🔁 كل ' + r.days.map(d => weekDayNamesAr[d]).join(' و');
+      if (r.type === 'hijri-monthly') return '🔁 أيام ' + r.days.join('،') + ' هجري كل شهر';
+      return 'بدون تكرار';
+    }
+    function describeRecurrenceRaw(r) {
+      if (!r) return '';
+      if (r.type === 'weekly') return 'أسبوعي:' + r.days.map(d => d + 1).join(',');
+      if (r.type === 'hijri-monthly') return 'هجري:' + r.days.join(',');
+      return '';
+    }
+    function parseRecurrenceInput(input) {
+      const clean = input.replace(/\s/g, '');
+      const parts = clean.split(':');
+      if (parts.length !== 2) return null;
+      const [kind, daysStr] = parts;
+      if (kind === 'أسبوعي' || kind.toLowerCase() === 'w') {
+        const days = daysStr.split(',').map(s => parseInt(s) - 1).filter(n => n >= 0 && n <= 6);
+        return days.length ? { type: 'weekly', days } : null;
+      }
+      if (kind === 'هجري' || kind.toLowerCase() === 'h') {
+        const days = daysStr.split(',').map(s => parseInt(s)).filter(n => n >= 1 && n <= 30);
+        return days.length ? { type: 'hijri-monthly', days } : null;
+      }
+      return null;
+    }
+
+    async function setPresetItemRecurrence(catId, idx) {
+      const item = agendaPresetItems[catId] && agendaPresetItems[catId][idx];
+      if (!item) return;
+      const input = await pgPrompt(
+        `تكرار "${item.name}" — الحالي: ${describeRecurrence(item.recurrence)}\nاكتب "أسبوعي:2,5" لأيام معينة كل أسبوع (1=أحد...7=سبت)، أو "هجري:13,14,15" لأيام هجرية كل شهر، أو امسح النص كله عشان تشيل التكرار`,
+        describeRecurrenceRaw(item.recurrence)
+      );
+      if (input === null) return;
+      if (!input.trim()) { delete item.recurrence; saveData(); renderAgendaPresetsList(); toast('اتشال التكرار من البند', 'success'); return; }
+      const parsed = parseRecurrenceInput(input.trim());
+      if (!parsed) { toast('الصيغة مش مفهومة، اكتبها زي المثال بالظبط', 'error'); return; }
+      item.recurrence = parsed;
+      saveData();
+      renderAgendaPresetsList();
+      toast('اتحفظ التكرار ✅', 'success');
+    }
+
     function renderAgendaPresetsList() {
       const wrap = document.getElementById('agendaPresetsList');
+      const dateInputEl = document.getElementById('agendaPresetsDateInput');
+      const selectedDateStr = (dateInputEl && dateInputEl.value) || agendaSelectedDate || formatDate(new Date());
+      const selectedDateObj = parseDate(selectedDateStr);
       wrap.innerHTML = agendaCategories.map(c => {
         const items = agendaPresetItems[c.id] || [];
         return `
@@ -4678,19 +4771,23 @@
             <button type="button" class="agenda-preset-fold" data-id="${c.id}">▾</button>
           </div>
           <div class="agenda-preset-cat-body" data-body="${c.id}">
-            ${items.length === 0 ? '<div class="mini-list-empty">لا توجد بنود جاهزة</div>' : items.map((it, idx) => `
-              <div class="agenda-preset-item">
+            ${items.length === 0 ? '<div class="mini-list-empty">لا توجد بنود جاهزة</div>' : items.map((it, idx) => {
+              const matches = itemMatchesRecurrence(it, selectedDateObj);
+              return `
+              <div class="agenda-preset-item${matches ? ' recurrence-match' : ''}">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                  <input type="checkbox" class="agenda-preset-check" data-cat="${c.id}" data-idx="${idx}" style="accent-color:${c.color};width:18px;height:18px;flex-shrink:0;" />
-                  <span class="agenda-preset-item-time">${it.start}</span>
+                  <input type="checkbox" class="agenda-preset-check" data-cat="${c.id}" data-idx="${idx}" ${matches ? 'checked' : ''} style="accent-color:${c.color};width:18px;height:18px;flex-shrink:0;" />
+                  <span class="agenda-preset-item-time">${it.start || (it.recurrence ? '📿' : '—')}</span>
                   <span class="agenda-preset-item-name" data-cat="${c.id}" data-idx="${idx}">${it.name}</span>
+                  <button type="button" class="agenda-preset-recur-btn${it.recurrence ? ' active' : ''}" data-cat="${c.id}" data-idx="${idx}" title="التكرار">🔁</button>
                 </label>
-                <div class="agenda-preset-times" data-times="${c.id}-${idx}" style="display:none;">
-                  <input type="time" class="agenda-preset-start" data-cat="${c.id}" data-idx="${idx}" value="${it.start}" />
+                ${matches ? `<div class="agenda-preset-recur-note">${describeRecurrence(it.recurrence)} — اليوم ده منها، متعلّم!</div>` : ''}
+                <div class="agenda-preset-times" data-times="${c.id}-${idx}" style="display:${matches && it.start ? 'flex' : 'none'};">
+                  <input type="time" class="agenda-preset-start" data-cat="${c.id}" data-idx="${idx}" value="${it.start || ''}" />
                   <span>—</span>
-                  <input type="time" class="agenda-preset-end" data-cat="${c.id}" data-idx="${idx}" value="${it.end}" />
+                  <input type="time" class="agenda-preset-end" data-cat="${c.id}" data-idx="${idx}" value="${it.end || ''}" />
                 </div>
-                <div class="agenda-preset-alert-row" data-alertrow="${c.id}-${idx}" style="display:none;">
+                <div class="agenda-preset-alert-row" data-alertrow="${c.id}-${idx}" style="display:${matches && it.start ? 'flex' : 'none'};">
                   <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
                     <input type="checkbox" class="agenda-preset-alert-cb" data-cat="${c.id}" data-idx="${idx}" ${it.alert ? 'checked' : ''} style="accent-color:${c.color};width:14px;height:14px;" />
                     🔔 نبهني قبل
@@ -4699,7 +4796,7 @@
                   <span>دقيقة</span>
                 </div>
               </div>
-            `).join('')}
+            `; }).join('')}
             <button type="button" class="agenda-preset-add-item" data-cat="${c.id}">➕ إضافة بند</button>
           </div>
         </div>`;
@@ -4753,6 +4850,9 @@
       });
       wrap.querySelectorAll('.agenda-preset-item-name').forEach(el => {
         el.addEventListener('dblclick', () => editOrDeletePresetItem(el.dataset.cat, parseInt(el.dataset.idx)));
+      });
+      wrap.querySelectorAll('.agenda-preset-recur-btn').forEach(btn => {
+        btn.addEventListener('click', () => setPresetItemRecurrence(btn.dataset.cat, parseInt(btn.dataset.idx)));
       });
       wrap.querySelectorAll('.agenda-preset-add-item').forEach(btn => {
         btn.addEventListener('click', () => addAgendaPresetItem(btn.dataset.cat));
@@ -7120,7 +7220,7 @@
       document.getElementById('closeAgendaSide').addEventListener('click', () => document.getElementById('agendaSideOverlay').classList.remove('open'));
       document.getElementById('agendaSideOverlay').addEventListener('click', (e) => { if (e.target.id === 'agendaSideOverlay') document.getElementById('agendaSideOverlay').classList.remove('open'); });
       document.getElementById('agendaPresetsAddBtn').addEventListener('click', addSelectedAgendaPresets);
-      document.getElementById('agendaPresetsDateInput').addEventListener('change', function() { agendaSelectedDate = this.value; renderAgendaClock(); });
+      document.getElementById('agendaPresetsDateInput').addEventListener('change', function() { agendaSelectedDate = this.value; renderAgendaClock(); renderAgendaPresetsList(); });
       document.getElementById('updatePrayerTimesBtn').addEventListener('click', updatePrayerTimesFromLocation);
       document.getElementById('agendaNoteSaveBtn').addEventListener('click', saveAgendaNoteFromEditor);
       document.getElementById('agendaNoteDeleteBtn').addEventListener('click', deleteAgendaNoteFromEditor);
