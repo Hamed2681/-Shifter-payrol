@@ -3266,12 +3266,16 @@
     // بنود جاهزة لكل فئة (تقدر تعدّل توقيتها قبل الإضافة) — دي بنود اقتراحية بس، الفئات المخصصة اللي المستخدم يضيفها ملهاش بنود جاهزة
     let agendaPresetItems = {
       religious: [
+        { name: 'قيام الليل', start: '01:00', end: '01:30', alert: true, alertBefore: 10 },
         { name: 'سنة الفجر القبلية (ركعتان)', start: '04:50', end: '05:00', alert: true, alertBefore: 10 },
         { name: 'صلاة الفجر', start: '05:00', end: '05:20', alert: true, alertBefore: 15 },
+        { name: 'أذكار الصباح', start: '05:20', end: '05:40', alert: true, alertBefore: 5 },
+        { name: 'صلاة الضحى', start: '08:00', end: '08:20', alert: true, alertBefore: 10 },
         { name: 'سنة الظهر القبلية (أربع ركعات)', start: '11:40', end: '12:00', alert: true, alertBefore: 10 },
         { name: 'صلاة الظهر', start: '12:00', end: '12:20', alert: true, alertBefore: 15 },
         { name: 'سنة الظهر البعدية (ركعتان)', start: '12:20', end: '12:30', alert: true, alertBefore: 5 },
         { name: 'صلاة العصر', start: '15:30', end: '15:50', alert: true, alertBefore: 15 },
+        { name: 'أذكار المساء', start: '16:00', end: '16:20', alert: true, alertBefore: 5 },
         { name: 'صلاة المغرب', start: '18:00', end: '18:20', alert: true, alertBefore: 15 },
         { name: 'سنة المغرب البعدية (ركعتان)', start: '18:20', end: '18:30', alert: true, alertBefore: 5 },
         { name: 'صلاة العشاء', start: '19:30', end: '19:50', alert: true, alertBefore: 15 },
@@ -4533,12 +4537,16 @@
       const items = agendaPresetItems.religious;
       if (!items) return;
       const map = {
+        'قيام الليل': [addMinutesToTime(times.fajr, -180), addMinutesToTime(times.fajr, -150)],
         'سنة الفجر القبلية (ركعتان)': [addMinutesToTime(times.fajr, -10), times.fajr],
         'صلاة الفجر': [times.fajr, addMinutesToTime(times.fajr, 20)],
+        'أذكار الصباح': [addMinutesToTime(times.fajr, 20), addMinutesToTime(times.fajr, 40)],
+        'صلاة الضحى': times.sunrise ? [addMinutesToTime(times.sunrise, 20), addMinutesToTime(times.sunrise, 40)] : ['08:00', '08:20'],
         'سنة الظهر القبلية (أربع ركعات)': [addMinutesToTime(times.dhuhr, -20), times.dhuhr],
         'صلاة الظهر': [times.dhuhr, addMinutesToTime(times.dhuhr, 20)],
         'سنة الظهر البعدية (ركعتان)': [addMinutesToTime(times.dhuhr, 20), addMinutesToTime(times.dhuhr, 30)],
         'صلاة العصر': [times.asr, addMinutesToTime(times.asr, 20)],
+        'أذكار المساء': [addMinutesToTime(times.asr, 30), addMinutesToTime(times.asr, 50)],
         'صلاة المغرب': [times.maghrib, addMinutesToTime(times.maghrib, 20)],
         'سنة المغرب البعدية (ركعتان)': [addMinutesToTime(times.maghrib, 20), addMinutesToTime(times.maghrib, 30)],
         'صلاة العشاء': [times.isha, addMinutesToTime(times.isha, 20)],
@@ -4560,7 +4568,7 @@
         const t = data.data.timings;
         const clean = (s) => s.split(' ')[0];
         applyPrayerTimesToPresets({
-          fajr: clean(t.Fajr), dhuhr: clean(t.Dhuhr), asr: clean(t.Asr), maghrib: clean(t.Maghrib), isha: clean(t.Isha)
+          fajr: clean(t.Fajr), dhuhr: clean(t.Dhuhr), asr: clean(t.Asr), maghrib: clean(t.Maghrib), isha: clean(t.Isha), sunrise: clean(t.Sunrise)
         });
         agendaPrayerCoords = { latitude, longitude };
         agendaPrayerLastFetchDate = formatDate(today);
