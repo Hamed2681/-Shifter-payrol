@@ -3266,20 +3266,20 @@
     // بنود جاهزة لكل فئة (تقدر تعدّل توقيتها قبل الإضافة) — دي بنود اقتراحية بس، الفئات المخصصة اللي المستخدم يضيفها ملهاش بنود جاهزة
     let agendaPresetItems = {
       religious: [
-        { name: 'قيام الليل', start: '01:00', end: '01:30', alert: true, alertBefore: 10 },
-        { name: 'سنة الفجر القبلية (ركعتان)', start: '04:50', end: '05:00', alert: true, alertBefore: 10 },
-        { name: 'صلاة الفجر', start: '05:00', end: '05:20', alert: true, alertBefore: 15 },
-        { name: 'أذكار الصباح', start: '05:20', end: '05:40', alert: true, alertBefore: 5 },
-        { name: 'صلاة الضحى', start: '08:00', end: '08:20', alert: true, alertBefore: 10 },
-        { name: 'سنة الظهر القبلية (أربع ركعات)', start: '11:40', end: '12:00', alert: true, alertBefore: 10 },
-        { name: 'صلاة الظهر', start: '12:00', end: '12:20', alert: true, alertBefore: 15 },
-        { name: 'سنة الظهر البعدية (ركعتان)', start: '12:20', end: '12:30', alert: true, alertBefore: 5 },
-        { name: 'صلاة العصر', start: '15:30', end: '15:50', alert: true, alertBefore: 15 },
-        { name: 'أذكار المساء', start: '16:00', end: '16:20', alert: true, alertBefore: 5 },
-        { name: 'صلاة المغرب', start: '18:00', end: '18:20', alert: true, alertBefore: 15 },
-        { name: 'سنة المغرب البعدية (ركعتان)', start: '18:20', end: '18:30', alert: true, alertBefore: 5 },
-        { name: 'صلاة العشاء', start: '19:30', end: '19:50', alert: true, alertBefore: 15 },
-        { name: 'سنة العشاء البعدية (ركعتان)', start: '19:50', end: '20:00', alert: true, alertBefore: 5 }
+        { name: 'قيام الليل', start: '01:00', end: '01:30', alert: true, alertBefore: 10, kind: 'qiyam' },
+        { name: 'سنة الفجر القبلية (ركعتان)', start: '04:50', end: '05:00', alert: true, alertBefore: 10, kind: 'fajr_sunnah_before' },
+        { name: 'صلاة الفجر', start: '05:00', end: '05:20', alert: true, alertBefore: 15, kind: 'fajr' },
+        { name: 'أذكار الصباح', start: '05:20', end: '05:40', alert: true, alertBefore: 5, kind: 'morning_adhkar' },
+        { name: 'صلاة الضحى', start: '08:00', end: '08:20', alert: true, alertBefore: 10, kind: 'duha' },
+        { name: 'سنة الظهر القبلية (أربع ركعات)', start: '11:40', end: '12:00', alert: true, alertBefore: 10, kind: 'dhuhr_sunnah_before' },
+        { name: 'صلاة الظهر', start: '12:00', end: '12:20', alert: true, alertBefore: 15, kind: 'dhuhr' },
+        { name: 'سنة الظهر البعدية (ركعتان)', start: '12:20', end: '12:30', alert: true, alertBefore: 5, kind: 'dhuhr_sunnah_after' },
+        { name: 'صلاة العصر', start: '15:30', end: '15:50', alert: true, alertBefore: 15, kind: 'asr' },
+        { name: 'أذكار المساء', start: '16:00', end: '16:20', alert: true, alertBefore: 5, kind: 'evening_adhkar' },
+        { name: 'صلاة المغرب', start: '18:00', end: '18:20', alert: true, alertBefore: 15, kind: 'maghrib' },
+        { name: 'سنة المغرب البعدية (ركعتان)', start: '18:20', end: '18:30', alert: true, alertBefore: 5, kind: 'maghrib_sunnah_after' },
+        { name: 'صلاة العشاء', start: '19:30', end: '19:50', alert: true, alertBefore: 15, kind: 'isha' },
+        { name: 'سنة العشاء البعدية (ركعتان)', start: '19:50', end: '20:00', alert: true, alertBefore: 5, kind: 'isha_sunnah_after' }
       ],
       personal: [
         { name: 'وقت راحة', start: '13:00', end: '13:30' },
@@ -4537,23 +4537,76 @@
       const items = agendaPresetItems.religious;
       if (!items) return;
       const map = {
-        'قيام الليل': [addMinutesToTime(times.fajr, -180), addMinutesToTime(times.fajr, -150)],
-        'سنة الفجر القبلية (ركعتان)': [addMinutesToTime(times.fajr, -10), times.fajr],
-        'صلاة الفجر': [times.fajr, addMinutesToTime(times.fajr, 20)],
-        'أذكار الصباح': [addMinutesToTime(times.fajr, 20), addMinutesToTime(times.fajr, 40)],
-        'صلاة الضحى': times.sunrise ? [addMinutesToTime(times.sunrise, 20), addMinutesToTime(times.sunrise, 40)] : ['08:00', '08:20'],
-        'سنة الظهر القبلية (أربع ركعات)': [addMinutesToTime(times.dhuhr, -20), times.dhuhr],
-        'صلاة الظهر': [times.dhuhr, addMinutesToTime(times.dhuhr, 20)],
-        'سنة الظهر البعدية (ركعتان)': [addMinutesToTime(times.dhuhr, 20), addMinutesToTime(times.dhuhr, 30)],
-        'صلاة العصر': [times.asr, addMinutesToTime(times.asr, 20)],
-        'أذكار المساء': [addMinutesToTime(times.asr, 30), addMinutesToTime(times.asr, 50)],
-        'صلاة المغرب': [times.maghrib, addMinutesToTime(times.maghrib, 20)],
-        'سنة المغرب البعدية (ركعتان)': [addMinutesToTime(times.maghrib, 20), addMinutesToTime(times.maghrib, 30)],
-        'صلاة العشاء': [times.isha, addMinutesToTime(times.isha, 20)],
-        'سنة العشاء البعدية (ركعتان)': [addMinutesToTime(times.isha, 20), addMinutesToTime(times.isha, 30)]
+        qiyam: [addMinutesToTime(times.fajr, -180), addMinutesToTime(times.fajr, -150)],
+        fajr_sunnah_before: [addMinutesToTime(times.fajr, -10), times.fajr],
+        fajr: [times.fajr, addMinutesToTime(times.fajr, 20)],
+        morning_adhkar: [addMinutesToTime(times.fajr, 20), addMinutesToTime(times.fajr, 40)],
+        duha: times.sunrise ? [addMinutesToTime(times.sunrise, 20), addMinutesToTime(times.sunrise, 40)] : null,
+        dhuhr_sunnah_before: [addMinutesToTime(times.dhuhr, -20), times.dhuhr],
+        dhuhr: [times.dhuhr, addMinutesToTime(times.dhuhr, 20)],
+        dhuhr_sunnah_after: [addMinutesToTime(times.dhuhr, 20), addMinutesToTime(times.dhuhr, 30)],
+        asr: [times.asr, addMinutesToTime(times.asr, 20)],
+        evening_adhkar: [addMinutesToTime(times.asr, 30), addMinutesToTime(times.asr, 50)],
+        maghrib: [times.maghrib, addMinutesToTime(times.maghrib, 20)],
+        maghrib_sunnah_after: [addMinutesToTime(times.maghrib, 20), addMinutesToTime(times.maghrib, 30)],
+        isha: [times.isha, addMinutesToTime(times.isha, 20)],
+        isha_sunnah_after: [addMinutesToTime(times.isha, 20), addMinutesToTime(times.isha, 30)]
       };
       items.forEach(it => {
-        if (map[it.name]) { it.start = map[it.name][0]; it.end = map[it.name][1]; }
+        if (it.kind && map[it.kind]) { it.start = map[it.kind][0]; it.end = map[it.kind][1]; }
+      });
+    }
+
+    // بيحاول يخمّن نوع البند (kind) من اسمه لو مكتوب بصياغة مختلفة عن الافتراضي (زي بيانات قديمة أو بنود المستخدم بأسماء مخصصة)
+    function guessPrayerKind(name) {
+      const n = (name || '').replace(/[أإآ]/g, 'ا');
+      if (n.includes('قيام')) return 'qiyam';
+      if (n.includes('ضحى')) return 'duha';
+      if (n.includes('صباح')) return 'morning_adhkar';
+      if (n.includes('مساء')) return 'evening_adhkar';
+      if (n.includes('وتر')) return null;
+      if (n.includes('فجر')) return n.includes('سنة') ? 'fajr_sunnah_before' : 'fajr';
+      if (n.includes('ظهر')) {
+        if (n.includes('سنة')) return (n.includes('4') || n.includes('٤') || n.includes('اربع')) ? 'dhuhr_sunnah_before' : 'dhuhr_sunnah_after';
+        return 'dhuhr';
+      }
+      if (n.includes('عصر')) return 'asr';
+      if (n.includes('مغرب')) return n.includes('سنة') ? 'maghrib_sunnah_after' : 'maghrib';
+      if (n.includes('عشاء')) return n.includes('سنة') ? 'isha_sunnah_after' : 'isha';
+      return null;
+    }
+
+    // ترحيل بيانات قديمة: بنود دينية اتضافت قبل ما نستخدم نظام "kind" — بنحاول نخمّن نوعها من اسمها،
+    // وبنضيف أي نوع أساسي ناقص خالص (بدون ما نلمس أو نكرر بنود المستخدم الموجودة أو المخصصة)
+    function migrateReligiousPresetKinds() {
+      const items = agendaPresetItems.religious;
+      if (!items) return;
+      items.forEach(it => {
+        if (!it.kind) {
+          const guessed = guessPrayerKind(it.name);
+          if (guessed) it.kind = guessed;
+        }
+      });
+      const requiredDefaults = [
+        { kind: 'qiyam', name: 'قيام الليل', start: '01:00', end: '01:30', alertBefore: 10 },
+        { kind: 'fajr_sunnah_before', name: 'سنة الفجر القبلية (ركعتان)', start: '04:50', end: '05:00', alertBefore: 10 },
+        { kind: 'fajr', name: 'صلاة الفجر', start: '05:00', end: '05:20', alertBefore: 15 },
+        { kind: 'morning_adhkar', name: 'أذكار الصباح', start: '05:20', end: '05:40', alertBefore: 5 },
+        { kind: 'duha', name: 'صلاة الضحى', start: '08:00', end: '08:20', alertBefore: 10 },
+        { kind: 'dhuhr_sunnah_before', name: 'سنة الظهر القبلية (أربع ركعات)', start: '11:40', end: '12:00', alertBefore: 10 },
+        { kind: 'dhuhr', name: 'صلاة الظهر', start: '12:00', end: '12:20', alertBefore: 15 },
+        { kind: 'dhuhr_sunnah_after', name: 'سنة الظهر البعدية (ركعتان)', start: '12:20', end: '12:30', alertBefore: 5 },
+        { kind: 'asr', name: 'صلاة العصر', start: '15:30', end: '15:50', alertBefore: 15 },
+        { kind: 'evening_adhkar', name: 'أذكار المساء', start: '16:00', end: '16:20', alertBefore: 5 },
+        { kind: 'maghrib', name: 'صلاة المغرب', start: '18:00', end: '18:20', alertBefore: 15 },
+        { kind: 'maghrib_sunnah_after', name: 'سنة المغرب البعدية (ركعتان)', start: '18:20', end: '18:30', alertBefore: 5 },
+        { kind: 'isha', name: 'صلاة العشاء', start: '19:30', end: '19:50', alertBefore: 15 },
+        { kind: 'isha_sunnah_after', name: 'سنة العشاء البعدية (ركعتان)', start: '19:50', end: '20:00', alertBefore: 5 }
+      ];
+      requiredDefaults.forEach(def => {
+        if (!items.some(it => it.kind === def.kind)) {
+          items.push({ name: def.name, start: def.start, end: def.end, alert: true, alertBefore: def.alertBefore, kind: def.kind });
+        }
       });
     }
 
@@ -4666,6 +4719,33 @@
           const alertRowEl = wrap.querySelector(`.agenda-preset-alert-row[data-alertrow="${key}"]`);
           if (timesEl) timesEl.style.display = cb.checked ? 'flex' : 'none';
           if (alertRowEl) alertRowEl.style.display = cb.checked ? 'flex' : 'none';
+        });
+      });
+      wrap.querySelectorAll('.agenda-preset-start, .agenda-preset-end').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const item = agendaPresetItems[inp.dataset.cat] && agendaPresetItems[inp.dataset.cat][inp.dataset.idx];
+          if (!item) return;
+          if (inp.classList.contains('agenda-preset-start')) {
+            item.start = inp.value;
+            const timeLabel = wrap.querySelector(`.agenda-preset-item-name[data-cat="${inp.dataset.cat}"][data-idx="${inp.dataset.idx}"]`)?.previousElementSibling;
+            if (timeLabel && timeLabel.classList.contains('agenda-preset-item-time')) timeLabel.textContent = inp.value;
+          } else {
+            item.end = inp.value;
+          }
+          saveData();
+          toast('اتحفظ الميعاد الجديد ✅', 'success');
+        });
+      });
+      wrap.querySelectorAll('.agenda-preset-alert-cb').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const item = agendaPresetItems[cb.dataset.cat] && agendaPresetItems[cb.dataset.cat][cb.dataset.idx];
+          if (item) { item.alert = cb.checked; saveData(); }
+        });
+      });
+      wrap.querySelectorAll('.agenda-preset-alert-before').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const item = agendaPresetItems[inp.dataset.cat] && agendaPresetItems[inp.dataset.cat][inp.dataset.idx];
+          if (item) { item.alertBefore = parseInt(inp.value) || 0; saveData(); }
         });
       });
       wrap.querySelectorAll('.agenda-preset-cat-header').forEach(header => {
@@ -6935,6 +7015,7 @@
       migrateLegacyCompanyData();
       loadCompaniesMeta();
       loadData();
+      migrateReligiousPresetKinds();
       loadEditUnlockedState();
       renderCompanySelect();
       document.getElementById('companySelect').addEventListener('change', function() {
@@ -8050,6 +8131,7 @@
               currentMonth = data.currentMonth;
             }
             saveData();
+            migrateReligiousPresetKinds();
             renderCalendar();
             renderYear();
             renderStats();
